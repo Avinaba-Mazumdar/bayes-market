@@ -1,0 +1,298 @@
+package rest_test
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/bayesmarket/bayesmarket/internal/config"
+	"github.com/bayesmarket/bayesmarket/internal/database"
+	"github.com/bayesmarket/bayesmarket/internal/transport/rest"
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+func init() {
+	gin.SetMode(gin.TestMode)
+}
+
+func getTestEnv(t *testing.T) (*pgxpool.Pool, *config.Config, *gin.Engine) {
+	cfg, err := config.Load()
+	if err != nil || cfg.DatabaseURL == "" || strings.Contains(cfg.DatabaseURL, "ep-cool-pool-123456") {
+		t.Skip("Skipping live REST tests: valid DATABASE_URL not configured")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
+	if err != nil {
+		t.Skipf("Skipping live REST tests: cannot connect to Neon: %v", err)
+	}
+
+	router := rest.SetupRouter(pool, cfg)
+	return pool, cfg, router
+}
+
+// 1. Health check endpoint test
+func TestHealthzEndpoint(t *testing.T) {
+	pool, _, router := getTestEnv(t)
+	defer pool.Close()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, "/healthz", nil)
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status 200, got %d. Body: %s", w.Code, w.Body.String())
+	}
+
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("Failed to parse JSON: %v", err)
+	}
+
+	if resp["status"] != "healthy" {
+		t.Errorf("Expected status 'healthy', got %v", resp["status"])
+	}
+	if resp["database"] != "connected" {
+		t.Errorf("Expected database 'connected', got %v", resp["database"])
+	}
+}
+
+// 2. Task 4.1: Guest Authentication & Session Issuance
+func TestGuestAuthEndpoint(t *testing.T) {
+	pool, _, router := getTestEnv(t)
+	defer pool.Close()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPost, "/api/v1/auth/guest", nil)
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("Expected status 201, got %d. Body: %s", w.Code, w.Body.String())
+	}
+
+	var authResp rest.GuestAuthResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &authResp); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	if authResp.Token == "" {
+		t.Error("Expected non-empty JWT token string")
+	}
+	if !authResp.User.IsGuest {
+		t.Error("Expected is_guest to be true")
+	}
+	if authResp.User.CashBalance != "1000.00000000" {
+		t.Errorf("Expected cash_balance '1000.00000000', got '%s'", authResp.User.CashBalance)
+	}
+	if authResp.User.ID == "" {
+		t.Error("Expected valid user UUID")
+	}
+}
+
+// 3. Task 4.3: Market Discovery Endpoints
+func TestMarketDiscoveryEndpoints(t *testing.T) {
+	pool, _, router := getTestEnv(t)
+	defer pool.Close()
+
+	// GET /api/v1/markets
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, "/api/v1/markets", nil)
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status 200, got %d. Body: %s", w.Code, w.Body.String())
+	}
+
+	var markets []rest.MarketSummaryResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &markets); err != nil {
+		t.Fatalf("Failed to unmarshal markets: %v", err)
+	}
+
+	if len(markets) < 4 {
+		t.Fatalf("Expected at least 4 active markets, found %d", len(markets))
+	}
+
+	// Verify first market details
+	m := markets[0]
+	if m.ID == "" || m.Slug == "" || m.Title == "" {
+		t.Errorf("Incomplete market metadata: %+v", m)
+	}
+	if m.ProbabilityYes == "" || m.ProbabilityNo == "" {
+		t.Errorf("Missing implied probabilities: %+v", m)
+	}
+
+	// GET /api/v1/markets/:id by Slug
+	wSingle := httptest.NewRecorder()
+	reqSingle, _ := http.NewRequest(http.MethodGet, "/api/v1/markets/"+m.Slug, nil)
+	router.ServeHTTP(wSingle, reqSingle)
+
+	if wSingle.Code != http.StatusOK {
+		t.Fatalf("Expected status 200 for single market by slug, got %d", wSingle.Code)
+	}
+
+	var singleMarket rest.MarketSummaryResponse
+	if err := json.Unmarshal(wSingle.Body.Bytes(), &singleMarket); err != nil {
+		t.Fatalf("Failed to unmarshal single market: %v", err)
+	}
+	if singleMarket.ID != m.ID {
+		t.Errorf("Market ID mismatch: got %s, expected %s", singleMarket.ID, m.ID)
+	}
+}
+
+// 4. Task 4.3: Authoritative CPMM Quote Endpoint
+func TestMarketQuoteEndpoint(t *testing.T) {
+	pool, _, router := getTestEnv(t)
+	defer pool.Close()
+
+	// 1. Quote a BUY of 100 USDC on YES for Bitcoin market
+	payloadBuy := map[string]string{
+		"action":      "BUY",
+		"outcome":     "YES",
+		"amount_usdc": "100.00000000",
+	}
+	bodyBytes, _ := json.Marshal(payloadBuy)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPost, "/api/v1/markets/will-bitcoin-hit-125k-in-2026/quote", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status 200 for buy quote, got %d. Body: %s", w.Code, w.Body.String())
+	}
+
+	var quoteResp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &quoteResp); err != nil {
+		t.Fatalf("Failed to unmarshal quote response: %v", err)
+	}
+
+	if quoteResp["action"] != "BUY" {
+		t.Errorf("Expected action 'BUY', got %v", quoteResp["action"])
+	}
+	if quoteResp["deposit_usdc"] != "100.00000000" {
+		t.Errorf("Expected deposit_usdc '100.00000000', got %v", quoteResp["deposit_usdc"])
+	}
+	if quoteResp["shares_received"] == "" || quoteResp["avg_price"] == "" {
+		t.Errorf("Missing expected quote metrics: %+v", quoteResp)
+	}
+
+	// 2. Quote a SELL of 50 shares
+	payloadSell := map[string]string{
+		"action":  "SELL",
+		"outcome": "YES",
+		"shares":  "50.00000000",
+	}
+	bodyBytesSell, _ := json.Marshal(payloadSell)
+
+	wSell := httptest.NewRecorder()
+	reqSell, _ := http.NewRequest(http.MethodPost, "/api/v1/markets/will-bitcoin-hit-125k-in-2026/quote", bytes.NewReader(bodyBytesSell))
+	reqSell.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(wSell, reqSell)
+
+	if wSell.Code != http.StatusOK {
+		t.Fatalf("Expected status 200 for sell quote, got %d. Body: %s", wSell.Code, wSell.Body.String())
+	}
+
+	var quoteSellResp map[string]interface{}
+	if err := json.Unmarshal(wSell.Body.Bytes(), &quoteSellResp); err != nil {
+		t.Fatalf("Failed to unmarshal sell quote: %v", err)
+	}
+
+	if quoteSellResp["action"] != "SELL" {
+		t.Errorf("Expected action 'SELL', got %v", quoteSellResp["action"])
+	}
+	if quoteSellResp["payout_usdc"] == "" {
+		t.Error("Expected payout_usdc to be present in sell quote")
+	}
+}
+
+// 5. Task 4.4: Sandbox Faucet Claim & 5-Minute Cooldown Enforcement
+func TestFaucetClaimAndCooldown(t *testing.T) {
+	pool, _, router := getTestEnv(t)
+	defer pool.Close()
+
+	// First obtain a fresh guest token
+	wAuth := httptest.NewRecorder()
+	reqAuth, _ := http.NewRequest(http.MethodPost, "/api/v1/auth/guest", nil)
+	router.ServeHTTP(wAuth, reqAuth)
+	var authResp rest.GuestAuthResponse
+	_ = json.Unmarshal(wAuth.Body.Bytes(), &authResp)
+
+	token := authResp.Token
+
+	// Claim 1: Should succeed and return $1,500.00 balance
+	wFaucet1 := httptest.NewRecorder()
+	reqFaucet1, _ := http.NewRequest(http.MethodPost, "/api/v1/faucet", nil)
+	reqFaucet1.Header.Set("Authorization", "Bearer "+token)
+	router.ServeHTTP(wFaucet1, reqFaucet1)
+
+	if wFaucet1.Code != http.StatusOK {
+		t.Fatalf("Expected status 200 for first faucet claim, got %d. Body: %s", wFaucet1.Code, wFaucet1.Body.String())
+	}
+
+	var faucetResp map[string]interface{}
+	_ = json.Unmarshal(wFaucet1.Body.Bytes(), &faucetResp)
+	if faucetResp["new_balance"] != "1500.00000000" {
+		t.Errorf("Expected new balance '1500.00000000', got %v", faucetResp["new_balance"])
+	}
+
+	// Claim 2: Immediate second claim must trigger HTTP 429 Cooldown
+	wFaucet2 := httptest.NewRecorder()
+	reqFaucet2, _ := http.NewRequest(http.MethodPost, "/api/v1/faucet", nil)
+	reqFaucet2.Header.Set("Authorization", "Bearer "+token)
+	router.ServeHTTP(wFaucet2, reqFaucet2)
+
+	if wFaucet2.Code != http.StatusTooManyRequests {
+		t.Fatalf("Expected HTTP 429 for cooldown rejection, got %d. Body: %s", wFaucet2.Code, wFaucet2.Body.String())
+	}
+}
+
+// 6. Task 4.4: Portfolio Read Endpoint
+func TestPortfolioReadEndpoint(t *testing.T) {
+	pool, _, router := getTestEnv(t)
+	defer pool.Close()
+
+	// 1. Unauthenticated request should return 401
+	wUnauth := httptest.NewRecorder()
+	reqUnauth, _ := http.NewRequest(http.MethodGet, "/api/v1/portfolio", nil)
+	router.ServeHTTP(wUnauth, reqUnauth)
+	if wUnauth.Code != http.StatusUnauthorized {
+		t.Errorf("Expected HTTP 401 for unauthenticated portfolio read, got %d", wUnauth.Code)
+	}
+
+	// 2. Authenticated request
+	wAuth := httptest.NewRecorder()
+	reqAuth, _ := http.NewRequest(http.MethodPost, "/api/v1/auth/guest", nil)
+	router.ServeHTTP(wAuth, reqAuth)
+	var authResp rest.GuestAuthResponse
+	_ = json.Unmarshal(wAuth.Body.Bytes(), &authResp)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, "/api/v1/portfolio", nil)
+	req.Header.Set("Authorization", "Bearer "+authResp.Token)
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected HTTP 200 for portfolio read, got %d. Body: %s", w.Code, w.Body.String())
+	}
+
+	var portfolio rest.PortfolioResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &portfolio); err != nil {
+		t.Fatalf("Failed to parse portfolio JSON: %v", err)
+	}
+
+	if portfolio.CashBalanceUSDC != "1000.00000000" {
+		t.Errorf("Expected cash balance '1000.00000000', got '%s'", portfolio.CashBalanceUSDC)
+	}
+	if portfolio.TotalPortfolioValue != "1000.00000000" {
+		t.Errorf("Expected total portfolio value '1000.00000000', got '%s'", portfolio.TotalPortfolioValue)
+	}
+}

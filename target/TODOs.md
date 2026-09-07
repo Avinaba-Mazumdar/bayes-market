@@ -129,23 +129,23 @@ Construct the pure, high-precision Constant Product Market Maker mathematical en
 
 Implement the RESTful HTTP API layer, guest session issuance, in-memory token-bucket rate limiting, and market discovery endpoints.
 
-- [ ] **Task 4.1: Ephemeral 1-Click Guest Session Authentication**
+- [x] **Task 4.1: Ephemeral 1-Click Guest Session Authentication**
     - Create `backend/internal/transport/rest/auth_handler.go` and `POST /api/v1/auth/guest`.
     - Provision guest record in `users` with `is_guest = true` and `cash_balance = 1000.00000000` (virtual USDC). All financial API values are decimal strings, never JSON numbers.
     - Issue cryptographically signed HMAC-SHA256 JWT containing `user_id` and guest claims.
     - Implement JWT authentication middleware extracting user context into HTTP request context.
 
-- [ ] **Task 4.2: In-Memory Token-Bucket Rate Limiting**
+- [x] **Task 4.2: In-Memory Token-Bucket Rate Limiting**
     - Create `backend/internal/middleware/rate_limiter.go` using `golang.org/x/time/rate`.
     - Implement 60 public reads/minute per IP (burst 10) and 12 quote/order requests per guest ID and IP per minute (burst 3).
     - Return standardized `429 Too Many Requests` with `Retry-After` header when limit is exceeded.
 
-- [ ] **Task 4.3: Market Discovery & Quote Endpoints**
+- [x] **Task 4.3: Market Discovery & Quote Endpoints**
     - Implement `GET /api/v1/markets`: Returns active markets with category, volume, implied probabilities, and resolution date.
     - Implement `GET /api/v1/markets/:id`: Returns full market metadata, pool reserves, 24h stats, and resolution rules.
     - Implement `POST /api/v1/markets/:id/quote`: Accepts `{ outcome: "YES", amount_usdc: "100.00000000" }` and returns authoritative decimal-string shares, price, and slippage without mutating state.
 
-- [ ] **Task 4.4: Sandbox Faucet & Portfolio Read Endpoints**
+- [x] **Task 4.4: Sandbox Faucet & Portfolio Read Endpoints**
     - Implement `POST /api/v1/faucet`: Claims 500 virtual USDC for guest accounts with an enforced 5-minute cooldown period and an `Idempotency-Key`.
     - Implement `GET /api/v1/portfolio`: Returns user cash balance, open positions, current market value, and unrealized profit/loss.
 

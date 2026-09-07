@@ -13,7 +13,7 @@ import (
 
 	"github.com/bayesmarket/bayesmarket/internal/config"
 	"github.com/bayesmarket/bayesmarket/internal/database"
-	"github.com/gin-gonic/gin"
+	"github.com/bayesmarket/bayesmarket/internal/transport/rest"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -75,29 +75,7 @@ func main() {
 		log.Fatal("[FATAL] Cannot execute seed/migrate: database connection was not established.")
 	}
 
-	router := gin.New()
-	router.Use(gin.Logger(), gin.Recovery())
-
-	// Health check endpoint
-	router.GET("/healthz", func(c *gin.Context) {
-		dbStatus := "disconnected"
-		if dbPool != nil {
-			pingCtx, pingCancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
-			defer pingCancel()
-			if err := dbPool.Ping(pingCtx); err == nil {
-				dbStatus = "connected"
-			} else {
-				dbStatus = "degraded"
-			}
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"status":    "healthy",
-			"service":   "bayesmarket-backend",
-			"database":  dbStatus,
-			"timestamp": time.Now().UTC().Format(time.RFC3339),
-		})
-	})
+	router := rest.SetupRouter(dbPool, cfg)
 
 	srv := &http.Server{
 		Addr:         ":" + port,

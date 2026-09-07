@@ -21,7 +21,7 @@ type Config struct {
 // It searches both current directory and workspace root for .env.
 func Load() (*Config, error) {
 	// Attempt to load from potential .env locations (current dir, parent dir, workspace root)
-	for _, envPath := range []string{".env", "../.env", "../../.env", "../../../.env"} {
+	for _, envPath := range []string{".env", "../.env", "../../.env", "../../../.env", "../../../../.env", "../../../../../.env"} {
 		if _, err := os.Stat(envPath); err == nil {
 			_ = godotenv.Load(envPath)
 			break
