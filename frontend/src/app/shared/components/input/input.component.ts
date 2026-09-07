@@ -73,11 +73,18 @@ export type InputVariant = 'default' | 'mono';
                 background: transparent;
                 border: none;
                 outline: none;
+                box-shadow: none;
                 color: var(--ink, #f8fafc);
                 font-family: var(--font-ui, system-ui, sans-serif);
                 font-size: 14px;
                 line-height: 1.4;
                 box-sizing: border-box;
+            }
+
+            .native-input:focus,
+            .native-input:focus-visible {
+                outline: none;
+                box-shadow: none;
             }
 
             .native-input::placeholder {

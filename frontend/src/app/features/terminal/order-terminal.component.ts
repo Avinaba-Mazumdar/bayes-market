@@ -282,8 +282,15 @@ export interface OrderIntent {
                 font-size: 20px;
                 font-weight: 700;
                 outline: none;
+                box-shadow: none;
                 font-feature-settings: 'tnum' 1;
                 min-width: 0;
+            }
+
+            .amount-field:focus,
+            .amount-field:focus-visible {
+                outline: none;
+                box-shadow: none;
             }
 
             .quick-chips-row {

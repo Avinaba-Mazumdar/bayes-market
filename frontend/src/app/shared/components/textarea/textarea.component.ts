@@ -62,12 +62,19 @@ export type TextareaVariant = 'default' | 'mono';
                 background: transparent;
                 border: none;
                 outline: none;
+                box-shadow: none;
                 resize: vertical;
                 color: var(--ink, #f8fafc);
                 font-family: var(--font-ui, system-ui, sans-serif);
                 font-size: 14px;
                 line-height: 1.5;
                 box-sizing: border-box;
+            }
+
+            .native-textarea:focus,
+            .native-textarea:focus-visible {
+                outline: none;
+                box-shadow: none;
             }
 
             .native-textarea::placeholder {

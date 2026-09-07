@@ -67,6 +67,25 @@ h6 {
     box-shadow: 0 0 0 4px var(--focus-ring, rgba(232, 64, 137, 0.35));
 }
 
+/* Suppress inner input/textarea focus outlines and box-shadows when enclosed in custom focus-within wrappers */
+.search-input:focus,
+.search-input:focus-visible,
+.native-input:focus,
+.native-input:focus-visible,
+.native-textarea:focus,
+.native-textarea:focus-visible,
+.amount-field:focus,
+.amount-field:focus-visible,
+.input-wrapper input:focus,
+.input-wrapper input:focus-visible,
+.search-input-wrapper input:focus,
+.search-input-wrapper input:focus-visible,
+.textarea-wrapper textarea:focus,
+.textarea-wrapper textarea:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
 /* Minimum Accessible Touch Envelope (WCAG SC 2.5.5 Level AAA) */
 button,
 input,

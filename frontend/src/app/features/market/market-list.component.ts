@@ -263,10 +263,15 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
                 gap: 8px;
                 min-height: var(--touch-target-min, 44px);
                 min-width: 260px;
+                box-sizing: border-box;
+                transition:
+                    border-color 0.15s ease,
+                    box-shadow 0.15s ease;
             }
 
             .search-input-wrapper:focus-within {
                 border-color: var(--primary-border, #e84089);
+                box-shadow: 0 0 0 2px var(--focus-ring, rgba(232, 64, 137, 0.35));
             }
 
             .search-icon {
@@ -284,7 +289,21 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
                 font-family: var(--font-ui);
                 font-size: 14px;
                 outline: none;
+                box-shadow: none;
                 width: 100%;
+            }
+
+            .search-input:focus,
+            .search-input:focus-visible {
+                outline: none;
+                box-shadow: none;
+            }
+
+            .search-input::-webkit-search-decoration,
+            .search-input::-webkit-search-cancel-button,
+            .search-input::-webkit-search-results-button,
+            .search-input::-webkit-search-results-decoration {
+                -webkit-appearance: none;
             }
 
             /* --- Markets Grid --- */
