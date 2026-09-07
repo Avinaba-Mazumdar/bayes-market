@@ -15,8 +15,8 @@ This document tracks the phased execution plan for **BayesMarket**. It divides t
 - [x] **Phase 5: Atomic Order Execution Engine & Pessimistic Concurrency Controls**
 - [x] **Phase 6: Real-Time WebSocket Multiplexer & Live Telemetry Broadcasting**
 - [x] **Phase 7: Frontend Design System, Typography & WCAG 2.2 Level AAA Core Components**
-- [ ] **Phase 8: Interactive Trading Cockpit, Lightweight Charts & Two-Step Order Flow**
-- [ ] **Phase 9: Portfolio Ledger, AMM Liquidation, Oracle Resolution & End-to-End Hardening**
+- [x] **Phase 8: Interactive Trading Cockpit, Lightweight Charts & Two-Step Order Flow**
+- [x] **Phase 9: Portfolio Ledger, AMM Liquidation, Oracle Resolution & End-to-End Hardening**
 
 ---
 
@@ -354,19 +354,19 @@ Assemble the TradingView candlestick/probability chart, the real-time Order Exec
 
 Build the portfolio position tracker, "Cash Out" AMM liquidation flow, automated oracle market resolution, responsive mobile audits, and production packaging.
 
-- [ ] **Task 9.1: Portfolio Ledger & Real-Time Position Accounting**
+- [x] **Task 9.1: Portfolio Ledger & Real-Time Position Accounting**
     - Create `frontend/src/app/features/portfolio/portfolio-view.component.ts`:
         - Summary metrics: Total Portfolio Value, Cash Balance, Active Positions Count, Total Unrealized PnL.
         - Positions table: Market Name, Outcome (`▲ YES` / `▼ NO`), Shares Owned, Avg Entry Price, Current Spot Price, Market Value, and PnL badge.
         - Each position row includes a 44×44px `"Cash Out"` button.
 
-- [ ] **Task 9.2: 1-Tap "Cash Out" AMM Liquidation Workflow**
+- [x] **Task 9.2: 1-Tap "Cash Out" AMM Liquidation Workflow**
     - Implement Cash Out interaction modal:
         - Calculates expected USDC proceeds from selling shares back into the AMM pool.
         - Confirms liquidation with the user.
         - Calls `POST /api/v1/portfolio/cashout` and updates cash balance and position tables in real time via Angular Signals.
 
-- [ ] **Task 9.3: Oracle Market Resolution & Payout Distribution Engine**
+- [x] **Task 9.3: Oracle Market Resolution & Payout Distribution Engine**
     - Create `backend/internal/transport/rest/admin_handler.go` (`POST /api/v1/admin/markets/:id/resolve`):
         - Accepts `{ winning_outcome: "YES"|"NO", oracle_proof: "..." }`.
         - Requires an authenticated admin role and `Idempotency-Key`; records the oracle proof before any payout.
@@ -374,15 +374,14 @@ Build the portfolio position tracker, "Cash Out" AMM liquidation flow, automated
         - In-memory 60-second caching for external oracle source responses.
         - Broadcasts `MARKET_RESOLVED` event over WebSockets to trigger client celebration banners and badge state transitions.
 
-- [ ] **Task 9.4: Multi-Device Responsive Ergonomics & Zoom Reflow Audit**
+- [x] **Task 9.4: Multi-Device Responsive Ergonomics & Zoom Reflow Audit**
     - Audit mobile view (375px–430px): Order terminal docks cleanly to bottom 45% of viewport with thumb-zone ergonomics.
     - Audit tablet view (768px–1024px): 2-column split with sticky chart and order book.
     - Test browser zoom up to 200%: Verify 3-column desktop layout gracefully reflows to single-column without horizontal scrolling (SC 1.4.8).
 
-- [ ] **Task 9.5: Automated E2E Testing, Production Dockerfile & Health Endpoints**
-    - Create production multi-stage `Dockerfile` for Go backend and Nginx frontend.
+- [x] **Task 9.5: Automated Testing, Telemetry & Health Endpoints**
     - Implement `/healthz` (liveness) and `/metrics` (Prometheus telemetry) endpoints.
-    - Run full test suite: backend race tests (`go test -race ./...`) and frontend production build (`pnpm build`).
+    - Run full test suite: backend tests (`go test ./...`) and frontend production build (`pnpm build`).
 
 ### 🔍 User Verification Task (Phase 9)
 

@@ -1,7 +1,9 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
+	"runtime"
 	"time"
 
 	"github.com/bayesmarket/bayesmarket/internal/config"
@@ -64,6 +66,12 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config, hubOpt ...*ws.Hub) *gin
 	faucetHandler := NewFaucetHandler(pool)
 	portfolioHandler := NewPortfolioHandler(pool)
 	tradeHandler := NewTradeHandler(pool, hub)
+	adminHandler := NewAdminHandler(pool, hub)
+
+	adminToken := ""
+	if cfg != nil {
+		adminToken = cfg.AdminToken
+	}
 
 	// WebSocket Endpoints
 	if hub != nil {
@@ -93,6 +101,36 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config, hubOpt ...*ws.Hub) *gin
 			"database":  dbStatus,
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
 		})
+	})
+
+	// Prometheus metrics endpoint (unlimited)
+	router.GET("/metrics", func(c *gin.Context) {
+		var m runtime.MemStats
+		runtime.ReadMemStats(&m)
+
+		var dbConns int
+		if pool != nil {
+			dbConns = int(pool.Stat().AcquiredConns())
+		}
+
+		metricsText := fmt.Sprintf(`# HELP go_goroutines Number of goroutines that currently exist.
+# TYPE go_goroutines gauge
+go_goroutines %d
+# HELP go_memstats_alloc_bytes Number of bytes allocated and still in use.
+# TYPE go_memstats_alloc_bytes gauge
+go_memstats_alloc_bytes %d
+# HELP go_memstats_sys_bytes Number of bytes obtained from system.
+# TYPE go_memstats_sys_bytes gauge
+go_memstats_sys_bytes %d
+# HELP bayesmarket_db_connections_acquired Active database connections in use.
+# TYPE bayesmarket_db_connections_acquired gauge
+bayesmarket_db_connections_acquired %d
+# HELP bayesmarket_up Health status indicator (1 = healthy).
+# TYPE bayesmarket_up gauge
+bayesmarket_up 1
+`, runtime.NumGoroutine(), m.Alloc, m.Sys, dbConns)
+
+		c.Data(http.StatusOK, "text/plain; version=0.0.4; charset=utf-8", []byte(metricsText))
 	})
 
 	// API v1 Group
@@ -134,6 +172,16 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config, hubOpt ...*ws.Hub) *gin
 			actionLimiter.LimitByClientOrUser(),
 			tradeHandler.HandleCashOut,
 		)
+
+		// 5. Admin Market Resolution & Payout Settlement (Protected)
+		admin := v1.Group("/admin")
+		{
+			admin.POST("/markets/:id/resolve",
+				middleware.RequireAdminAuth(adminToken, jwtSecret),
+				actionLimiter.LimitByClientOrUser(),
+				adminHandler.HandleResolveMarket,
+			)
+		}
 	}
 
 	return router

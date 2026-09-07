@@ -125,3 +125,60 @@ func GetUserID(c *gin.Context) (uuid.UUID, bool) {
 	id, ok := val.(uuid.UUID)
 	return id, ok
 }
+
+// RequireAdminAuth validates that the request contains an authorized administrative credential.
+// It accepts either a static admin token (configured via ADMIN_TOKEN) or a valid non-guest administrative JWT.
+func RequireAdminAuth(adminToken string, jwtSecret string) gin.HandlerFunc {
+	secretBytes := []byte(jwtSecret)
+
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error":   "unauthorized",
+				"message": "Administrative authorization header is required",
+			})
+			return
+		}
+
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error":   "unauthorized",
+				"message": "Authorization header must be formatted as 'Bearer <token>'",
+			})
+			return
+		}
+
+		tokenString := strings.TrimSpace(parts[1])
+
+		// 1. Direct match with configured AdminToken
+		if adminToken != "" && tokenString == adminToken {
+			c.Next()
+			return
+		}
+
+		// 2. JWT evaluation with non-guest administrative claims
+		claims := &GuestClaims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, errors.New("unexpected signing method")
+			}
+			return secretBytes, nil
+		})
+
+		if err == nil && token.Valid && !claims.IsGuest {
+			if parsedID, err := uuid.Parse(claims.UserID); err == nil {
+				c.Set(CtxUserIDKey, parsedID)
+				c.Set(CtxIsGuestKey, false)
+			}
+			c.Next()
+			return
+		}
+
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			"error":   "forbidden",
+			"message": "Admin privileges required to perform this action",
+		})
+	}
+}

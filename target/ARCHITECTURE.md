@@ -51,7 +51,7 @@ Traders and developers can interact with the platform immediately via an **insta
 
 | Category                     | Technology / Library                 | Version   | Engineering Rationale                                                                                                        |
 | :--------------------------- | :----------------------------------- | :-------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| **Language & Runtime**       | **Go (Golang)**                      | `1.27.1`  | Latest stable release. Generic methods, high-performance green-thread scheduler, <18MB scratch Docker image.                 |
+| **Language & Runtime**       | **Go (Golang)**                      | `1.24+`   | Latest release. Generic methods, high-performance green-thread scheduler, lightweight static binary.                         |
 | **HTTP Routing**             | **Gin (`github.com/gin-gonic/gin`)** | `v1.10.0` | High-performance, battle-tested HTTP framework with built-in JSON binding/validation and native `gorilla/websocket` support. |
 | **WebSocket Engine**         | `github.com/gorilla/websocket`       | `v1.5.3`  | RFC 6455 implementation with dedicated read/write pumps, ping/pong support, and stable Go ecosystem adoption.                |
 | **Database Driver**          | `github.com/jackc/pgx/v5`            | `v5.7.1`  | High-performance PostgreSQL connection pool (`pgxpool`) with native binary encoding.                                         |
@@ -62,13 +62,13 @@ Traders and developers can interact with the platform immediately via an **insta
 
 ### 2.4 Persistence & Infrastructure
 
-| Layer                   | Provider / Tool             | Configuration                                      | Rationale                                                                                                            |
-| :---------------------- | :-------------------------- | :------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
-| **Database**            | **Neon PostgreSQL**         | Version `18.x`                                     | Latest major release with enhanced concurrent B-tree index scans and `FOR UPDATE` locking. Scales to zero when idle. |
-| **Database Migrations** | `golang-migrate/migrate/v4` | `v4.18.0`                                          | Version-controlled idempotent SQL migrations (`.up.sql` / `.down.sql`).                                              |
-| **Containerization**    | **Docker**                  | Multi-Stage (`golang:1.27-alpine` $\to$ `scratch`) | Production container is **< 18MB** with zero CVE vulnerability attack surface.                                       |
-| **Backend Hosting**     | **Fly.io** / **Render**     | Shared CPU, 256MB RAM                              | Sub-15ms cold start for Go binaries, generous free tier.                                                             |
-| **Frontend Hosting**    | **Cloudflare Pages**        | Global Edge CDN                                    | Sub-50ms TTFB globally, automated Git CI/CD, free SSL and DDoS mitigation.                                           |
+| Layer                   | Provider / Tool             | Configuration         | Rationale                                                                                                            |
+| :---------------------- | :-------------------------- | :-------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| **Database**            | **Neon PostgreSQL**         | Version `18.x`        | Latest major release with enhanced concurrent B-tree index scans and `FOR UPDATE` locking. Scales to zero when idle. |
+| **Database Migrations** | `golang-migrate/migrate/v4` | `v4.18.0`             | Version-controlled idempotent SQL migrations (`.up.sql` / `.down.sql`).                                              |
+| **Packaging & Runtime** | **Native Static Binary**    | `CGO_ENABLED=0` build | Minimal memory footprint with sub-millisecond invocation and zero external container dependencies.                   |
+| **Backend Hosting**     | **Fly.io** / **Render**     | Shared CPU, 256MB RAM | Sub-15ms cold start for Go binaries, generous free tier.                                                             |
+| **Frontend Hosting**    | **Cloudflare Pages**        | Global Edge CDN       | Sub-50ms TTFB globally, automated Git CI/CD, free SSL and DDoS mitigation.                                           |
 
 ---
 
@@ -259,7 +259,6 @@ bayesmarket/
 │   └── TODOs.md                  # 9-Phase Implementation Task Board & Verification Gates
 ├── .env.example                  # Environment Configuration Template (Neon Database)
 ├── .prettierrc                  # Workspace Formatting Configuration
-├── docker-compose.yml           # Local Development Orchestration (Postgres + API + Client)
 ├── Makefile                     # Developer Commands (make test, make dev, make seed)
 ├── turbo.json                   # Turborepo Pipeline Configuration
 ├── pnpm-workspace.yaml          # Monorepo Workspace Definitions
@@ -299,8 +298,7 @@ bayesmarket/
 │   │           ├── client.go            # Goroutine Read/Write Pumps
 │   │           └── simulator.go         # Background Ticker (Simulated Market Activity)
 │   ├── go.mod
-│   ├── go.sum
-│   └── Dockerfile               # Multi-Stage Scratch Image (< 18MB)
+│   └── go.sum
 │
 └── frontend/                    # ANGULAR 22+ FRONTEND CLIENT
     ├── src/

@@ -1,6 +1,6 @@
-import { Component, computed, inject, input, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, inject, input, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideArrowLeft, LucideArrowUp, LucideArrowDown } from '@lucide/angular';
+import { LucideArrowLeft, LucideArrowUp, LucideArrowDown, LucideCheckCircle2 } from '@lucide/angular';
 import { ApiService } from '../../core/services/api.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { Market, OrderResponse } from '../../core/models/market.model';
@@ -26,7 +26,8 @@ import { ButtonComponent } from '../../shared/components/button/button.component
         ButtonComponent,
         LucideArrowLeft,
         LucideArrowUp,
-        LucideArrowDown
+        LucideArrowDown,
+        LucideCheckCircle2
     ],
     template: `
         <div class="cockpit-container">
@@ -81,6 +82,25 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                         </div>
                     </div>
                 </header>
+
+                <!-- Resolution Celebration Banner (WCAG live polite alert) -->
+                @if (isResolved()) {
+                    <section class="resolution-celebration-banner" role="alert" aria-live="polite">
+                        <div class="banner-badge-icon">
+                            <svg lucideCheckCircle2 [size]="28" aria-hidden="true"></svg>
+                        </div>
+                        <div class="banner-body">
+                            <div class="banner-title-row">
+                                <h2 class="banner-title">Market Resolved: {{ winningOutcomeDisplay() }} Won</h2>
+                                <app-badge variant="secondary" size="sm">OFFICIAL SETTLEMENT</app-badge>
+                            </div>
+                            <p class="banner-description">
+                                This binary prediction market has officially settled. All winning shares (<strong>{{ winningOutcomeDisplay() }}</strong
+                                >) have been redeemed at the fixed oracle price of <strong>$1.00 USDC</strong> per share. Losing shares have expired at $0.00.
+                            </p>
+                        </div>
+                    </section>
+                }
 
                 <!-- 2-Column Cockpit Grid (Reflows to Single Column on Mobile/Zoom) -->
                 <div class="cockpit-grid">
@@ -207,6 +227,54 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 flex-wrap: wrap;
                 border-bottom: 1px solid var(--hairline, #1e2638);
                 padding-bottom: 20px;
+            }
+
+            .resolution-celebration-banner {
+                display: flex;
+                align-items: flex-start;
+                gap: 16px;
+                padding: 18px 24px;
+                background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%);
+                border: 1px solid var(--outcome-yes, #10b981);
+                border-radius: var(--radius-lg, 12px);
+                box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+            }
+
+            .banner-badge-icon {
+                color: var(--outcome-yes, #10b981);
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                margin-top: 2px;
+            }
+
+            .banner-body {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .banner-title-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+
+            .banner-title {
+                margin: 0;
+                font-family: var(--font-ui);
+                font-size: 18px;
+                font-weight: 700;
+                color: var(--ink, #f8fafc);
+            }
+
+            .banner-description {
+                margin: 0;
+                font-family: var(--font-ui);
+                font-size: 13.5px;
+                color: var(--ink-secondary, #cbd5e1);
+                line-height: 1.5;
             }
 
             .title-meta-block {
@@ -455,6 +523,36 @@ export class MarketDetailComponent implements OnInit, OnDestroy {
     // Two-step confirmation state
     readonly isConfirmDialogOpen = signal<boolean>(false);
     readonly pendingOrderIntent = signal<OrderIntent | null>(null);
+
+    // Oracle Market Resolution state
+    readonly isResolvedBannerVisible = signal<boolean>(false);
+    readonly winningOutcome = signal<string | null>(null);
+
+    protected readonly isResolved = computed(() => {
+        return this.market()?.status === 'resolved' || this.isResolvedBannerVisible();
+    });
+
+    protected readonly winningOutcomeDisplay = computed(() => {
+        return this.winningOutcome() || this.market()?.winning_outcome || 'YES';
+    });
+
+    constructor() {
+        effect(() => {
+            const res = this.wsService.lastMarketResolved();
+            if (res && res.market_id === this.id()) {
+                this.isResolvedBannerVisible.set(true);
+                this.winningOutcome.set(res.winning_outcome);
+                const current = this.market();
+                if (current) {
+                    this.market.set({
+                        ...current,
+                        status: 'resolved',
+                        winning_outcome: res.winning_outcome
+                    });
+                }
+            }
+        });
+    }
 
     protected readonly yesPct = computed(() => {
         const m = this.market();

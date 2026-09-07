@@ -15,6 +15,7 @@ type Config struct {
 	CORSOrigin  string
 	JWTSecret   string
 	Environment string
+	AdminToken  string
 }
 
 // Load reads configuration from environment variables and local .env files.
@@ -48,6 +49,11 @@ func Load() (*Config, error) {
 		jwtSecret = "bayesmarket-development-hmac-sha256-default-secret-key-32b"
 	}
 
+	adminToken := os.Getenv("ADMIN_TOKEN")
+	if adminToken == "" {
+		adminToken = "bayesmarket-admin-secret-token"
+	}
+
 	env := os.Getenv("APP_ENV")
 	if env == "" {
 		env = "development"
@@ -59,5 +65,6 @@ func Load() (*Config, error) {
 		CORSOrigin:  strings.TrimSpace(corsOrigin),
 		JWTSecret:   strings.TrimSpace(jwtSecret),
 		Environment: strings.TrimSpace(env),
+		AdminToken:  strings.TrimSpace(adminToken),
 	}, nil
 }

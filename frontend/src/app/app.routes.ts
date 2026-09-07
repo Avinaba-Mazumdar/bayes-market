@@ -14,6 +14,11 @@ export const routes: Routes = [
         title: 'Trading Cockpit — BayesMarket'
     },
     {
+        path: 'portfolio',
+        loadComponent: () => import('./features/portfolio/portfolio-view.component').then((m) => m.PortfolioViewComponent),
+        title: 'Portfolio & PnL Ledger — BayesMarket'
+    },
+    {
         path: '**',
         redirectTo: ''
     }

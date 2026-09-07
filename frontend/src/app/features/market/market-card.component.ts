@@ -13,10 +13,16 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
             <a [routerLink]="['/markets', market().id]" class="market-card-link">
                 <!-- Header Meta: Category Badge & Status -->
                 <div class="card-meta-row">
-                    <app-badge variant="outline" size="sm">
-                        {{ market().category.toUpperCase() }}
-                    </app-badge>
-                    <span class="meta-date"> Resolves {{ formattedDate() }} </span>
+                    @if (market().status === 'resolved') {
+                        <app-badge variant="secondary" size="sm"> RESOLVED: {{ market().winning_outcome || 'SETTLED' }} </app-badge>
+                    } @else {
+                        <app-badge variant="outline" size="sm">
+                            {{ market().category.toUpperCase() }}
+                        </app-badge>
+                    }
+                    <span class="meta-date">
+                        {{ market().status === 'resolved' ? 'Settled' : 'Resolves ' + formattedDate() }}
+                    </span>
                 </div>
 
                 <!-- Market Title -->

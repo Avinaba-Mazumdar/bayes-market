@@ -15,6 +15,7 @@ export interface Market {
     resolution_source: string;
     resolution_date: string;
     status: 'active' | 'closed' | 'resolved';
+    winning_outcome?: 'YES' | 'NO' | string;
     probability_yes: string;
     probability_no: string;
     probability_yes_pct: string;
@@ -68,18 +69,69 @@ export interface OrderResponse {
 }
 
 export interface UserPosition {
+    id?: string;
     market_id: string;
+    market_slug?: string;
     market_title: string;
+    category?: string;
     outcome: 'YES' | 'NO';
     shares_owned: string;
     avg_buy_price: string;
+    total_invested_usdc?: string;
     current_price: string;
-    market_value: string;
-    unrealized_pnl: string;
+    current_value_usdc?: string;
+    market_value?: string;
+    unrealized_pnl_usdc?: string;
+    unrealized_pnl?: string;
+    unrealized_pnl_pct?: string;
 }
 
 export interface PortfolioResponse {
-    cash_balance: string;
-    total_portfolio_value: string;
+    user_id?: string;
+    cash_balance?: string;
+    cash_balance_usdc?: string;
+    positions_value_usdc?: string;
+    total_portfolio_value?: string;
+    total_portfolio_value_usdc?: string;
+    total_invested_usdc?: string;
+    total_unrealized_pnl_usdc?: string;
+    total_unrealized_pnl_pct?: string;
     positions: UserPosition[];
+}
+
+export interface CashOutRequest {
+    market_id: string;
+    outcome: 'YES' | 'NO';
+    shares: string;
+    min_payout_usdc?: string;
+}
+
+export interface CashOutResponse {
+    trade_id: string;
+    market_id: string;
+    user_id: string;
+    trade_type: string;
+    outcome: 'YES' | 'NO';
+    shares_sold: string;
+    payout_usdc: string;
+    execution_price: string;
+    price_impact_pct: string;
+    new_cash_balance: string;
+    remaining_shares: string;
+    created_at: string;
+}
+
+export interface ResolveMarketRequest {
+    winning_outcome: 'YES' | 'NO';
+    oracle_proof: string;
+}
+
+export interface ResolveMarketResponse {
+    status: string;
+    market_id: string;
+    winning_outcome: 'YES' | 'NO';
+    total_payout_usdc: string;
+    winners_credited: number;
+    oracle_proof: string;
+    resolved_at: string;
 }

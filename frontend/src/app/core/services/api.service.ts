@@ -1,7 +1,18 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { BuyQuoteResponse, Market, OrderResponse, PlaceOrderRequest, PortfolioResponse, QuoteRequest } from '../models/market.model';
+import {
+    BuyQuoteResponse,
+    CashOutRequest,
+    CashOutResponse,
+    Market,
+    OrderResponse,
+    PlaceOrderRequest,
+    PortfolioResponse,
+    QuoteRequest,
+    ResolveMarketRequest,
+    ResolveMarketResponse
+} from '../models/market.model';
 
 export interface GuestAuthResponse {
     token: string;
@@ -98,5 +109,29 @@ export class ApiService {
             Authorization: `Bearer ${token}`
         });
         return this.http.get<PortfolioResponse>(`${this.baseUrl}/portfolio`, { headers });
+    }
+
+    /**
+     * Liquidate outcome shares back to USDC via AMM pool.
+     */
+    cashOut(request: CashOutRequest, token: string, idempotencyKey: string): Observable<CashOutResponse> {
+        const headers = new HttpHeaders({
+            Authorization: `Bearer ${token}`,
+            'Idempotency-Key': idempotencyKey,
+            'Content-Type': 'application/json'
+        });
+        return this.http.post<CashOutResponse>(`${this.baseUrl}/portfolio/cashout`, request, { headers });
+    }
+
+    /**
+     * Administratively resolve a prediction market and trigger complete-set payout distribution.
+     */
+    resolveMarket(marketId: string, request: ResolveMarketRequest, adminToken: string, idempotencyKey: string): Observable<ResolveMarketResponse> {
+        const headers = new HttpHeaders({
+            Authorization: `Bearer ${adminToken}`,
+            'Idempotency-Key': idempotencyKey,
+            'Content-Type': 'application/json'
+        });
+        return this.http.post<ResolveMarketResponse>(`${this.baseUrl}/admin/markets/${encodeURIComponent(marketId)}/resolve`, request, { headers });
     }
 }

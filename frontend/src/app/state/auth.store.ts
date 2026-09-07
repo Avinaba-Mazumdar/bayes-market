@@ -90,7 +90,7 @@ export class AuthStore {
 
         this.apiService.getPortfolio(token).subscribe({
             next: (portfolio) => {
-                const formatted = this.formatBalance(portfolio.cash_balance);
+                const formatted = this.formatBalance(portfolio.cash_balance || portfolio.cash_balance_usdc || '0');
                 this.updateBalance(formatted);
             },
             error: (err) => {
