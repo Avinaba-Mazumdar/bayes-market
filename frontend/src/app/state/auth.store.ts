@@ -1,10 +1,12 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { ApiService } from '../core/services/api.service';
 import { ToastService } from '../shared/components/toast/toast.service';
+import { UserProfile } from '../core/models/market.model';
 
-const TOKEN_STORAGE_KEY = 'bayesmarket_guest_token';
-const USER_ID_STORAGE_KEY = 'bayesmarket_guest_user_id';
-const BALANCE_STORAGE_KEY = 'bayesmarket_guest_balance';
+const TOKEN_STORAGE_KEY = 'bayesmarket_auth_token';
+const LEGACY_TOKEN_STORAGE_KEY = 'bayesmarket_guest_token';
+const USER_PROFILE_STORAGE_KEY = 'bayesmarket_auth_profile';
+const BALANCE_STORAGE_KEY = 'bayesmarket_user_balance';
 
 @Injectable({
     providedIn: 'root'
@@ -14,10 +16,20 @@ export class AuthStore {
     private readonly toastService = inject(ToastService);
 
     readonly token = signal<string | null>(this.getInitialToken());
-    readonly userId = signal<string | null>(this.getInitialUserId());
+    readonly user = signal<UserProfile | null>(this.getInitialProfile());
+    readonly userId = signal<string | null>(this.getInitialProfile()?.id || null);
     readonly cashBalance = signal<string>(this.getInitialBalance());
+
+    readonly isGuest = computed(() => this.user()?.is_guest ?? true);
+    readonly authProvider = computed(() => this.user()?.auth_provider || 'guest');
+    readonly userName = computed(() => this.user()?.name || (this.isGuest() ? 'Guest Trader' : 'Verified Trader'));
+    readonly userEmail = computed(() => this.user()?.email || null);
+    readonly userAvatar = computed(() => this.user()?.avatar_url || null);
+
     readonly isInitializing = signal<boolean>(false);
+    readonly isAuthenticating = signal<boolean>(false);
     readonly isClaimingFaucet = signal<boolean>(false);
+    readonly isAuthModalOpen = signal<boolean>(false);
 
     constructor() {
         this.initializeSession();
@@ -25,14 +37,21 @@ export class AuthStore {
 
     private getInitialToken(): string | null {
         if (typeof window !== 'undefined' && window.localStorage) {
-            return localStorage.getItem(TOKEN_STORAGE_KEY);
+            return localStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY);
         }
         return null;
     }
 
-    private getInitialUserId(): string | null {
+    private getInitialProfile(): UserProfile | null {
         if (typeof window !== 'undefined' && window.localStorage) {
-            return localStorage.getItem(USER_ID_STORAGE_KEY);
+            const raw = localStorage.getItem(USER_PROFILE_STORAGE_KEY);
+            if (raw) {
+                try {
+                    return JSON.parse(raw);
+                } catch {
+                    return null;
+                }
+            }
         }
         return null;
     }
@@ -45,33 +64,57 @@ export class AuthStore {
     }
 
     /**
-     * Initializes or verifies guest session.
+     * Initializes or verifies session (Google or Guest).
      */
     initializeSession(): void {
         const existingToken = this.token();
         if (existingToken) {
-            // Verify session by fetching portfolio balance
-            this.refreshBalance();
+            // Verify session by fetching user profile and portfolio balance
+            this.fetchCurrentUserProfile(existingToken);
             return;
         }
 
         this.provisionNewGuestSession();
     }
 
+    private fetchCurrentUserProfile(token: string): void {
+        if (!this.apiService || typeof this.apiService.getCurrentUser !== 'function') {
+            return;
+        }
+        this.apiService.getCurrentUser(token).subscribe({
+            next: (profile) => {
+                this.user.set(profile);
+                this.userId.set(profile.id);
+                const formatted = this.formatBalance(profile.cash_balance);
+                this.updateBalance(formatted);
+                this.persistSession(token, profile);
+            },
+            error: (err) => {
+                // If token expired or invalid, seamlessly re-provision guest
+                if (err?.status === 401) {
+                    this.clearSession();
+                    this.provisionNewGuestSession();
+                }
+            }
+        });
+    }
+
+    /**
+     * Provisions a fresh anonymous guest session.
+     */
     provisionNewGuestSession(): void {
+        if (!this.apiService || typeof this.apiService.createGuestSession !== 'function') {
+            return;
+        }
         this.isInitializing.set(true);
         this.apiService.createGuestSession().subscribe({
             next: (res) => {
                 this.token.set(res.token);
+                this.user.set(res.user);
                 this.userId.set(res.user.id);
                 const formattedBalance = this.formatBalance(res.user.cash_balance);
-                this.cashBalance.set(formattedBalance);
-
-                if (typeof window !== 'undefined' && window.localStorage) {
-                    localStorage.setItem(TOKEN_STORAGE_KEY, res.token);
-                    localStorage.setItem(USER_ID_STORAGE_KEY, res.user.id);
-                    localStorage.setItem(BALANCE_STORAGE_KEY, formattedBalance);
-                }
+                this.updateBalance(formattedBalance);
+                this.persistSession(res.token, res.user);
                 this.isInitializing.set(false);
             },
             error: (err) => {
@@ -79,6 +122,43 @@ export class AuthStore {
                 this.isInitializing.set(false);
             }
         });
+    }
+
+    /**
+     * Authenticates with Google via ID Token.
+     */
+    loginWithGoogle(idToken: string, email?: string, name?: string): void {
+        this.isAuthenticating.set(true);
+        const guestToken = this.isGuest() ? this.token() : null;
+
+        this.apiService.verifyGoogleToken({ id_token: idToken, email, name }, guestToken).subscribe({
+            next: (res) => {
+                this.token.set(res.token);
+                this.user.set(res.user);
+                this.userId.set(res.user.id);
+                const formattedBalance = this.formatBalance(res.user.cash_balance);
+                this.updateBalance(formattedBalance);
+                this.persistSession(res.token, res.user);
+                this.isAuthenticating.set(false);
+                this.isAuthModalOpen.set(false);
+
+                this.toastService.success('Signed in with Google', `Welcome, ${res.user.name || res.user.email || 'Trader'}! Your account is connected.`);
+            },
+            error: (err) => {
+                this.isAuthenticating.set(false);
+                const msg = err?.error?.message || 'Failed to authenticate with Google';
+                this.toastService.error('Authentication Error', msg);
+            }
+        });
+    }
+
+    /**
+     * Logs out of Google / registered account and reverts to a fresh guest session.
+     */
+    logout(): void {
+        this.clearSession();
+        this.provisionNewGuestSession();
+        this.toastService.info('Signed Out', 'Switched back to an anonymous guest sandbox.');
     }
 
     /**
@@ -94,9 +174,8 @@ export class AuthStore {
                 this.updateBalance(formatted);
             },
             error: (err) => {
-                // If token expired or invalid, re-provision
                 if (err?.status === 401) {
-                    this.provisionNewGuestSession();
+                    this.initializeSession();
                 }
             }
         });
@@ -118,7 +197,7 @@ export class AuthStore {
     claimFaucet(): void {
         const token = this.token();
         if (!token) {
-            this.toastService.error('Session Error', 'Guest session not ready');
+            this.toastService.error('Session Error', 'Session not ready');
             return;
         }
 
@@ -128,7 +207,7 @@ export class AuthStore {
                 const formatted = this.formatBalance(res.user.cash_balance);
                 this.updateBalance(formatted);
                 this.isClaimingFaucet.set(false);
-                this.toastService.success('Faucet Claimed', `+$${res.amount} USDC credited to your guest balance`);
+                this.toastService.success('Faucet Claimed', `+$${res.amount} USDC credited to your balance`);
             },
             error: (err) => {
                 this.isClaimingFaucet.set(false);
@@ -136,6 +215,33 @@ export class AuthStore {
                 this.toastService.warning('Faucet Cooldown', msg);
             }
         });
+    }
+
+    openAuthModal(): void {
+        this.isAuthModalOpen.set(true);
+    }
+
+    closeAuthModal(): void {
+        this.isAuthModalOpen.set(false);
+    }
+
+    private persistSession(token: string, profile: UserProfile): void {
+        if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.setItem(TOKEN_STORAGE_KEY, token);
+            localStorage.setItem(USER_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+        }
+    }
+
+    private clearSession(): void {
+        if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.removeItem(TOKEN_STORAGE_KEY);
+            localStorage.removeItem(LEGACY_TOKEN_STORAGE_KEY);
+            localStorage.removeItem(USER_PROFILE_STORAGE_KEY);
+            localStorage.removeItem(BALANCE_STORAGE_KEY);
+        }
+        this.token.set(null);
+        this.user.set(null);
+        this.userId.set(null);
     }
 
     formatBalance(raw: string | number): string {

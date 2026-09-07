@@ -2,16 +2,19 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
+    AuthResponse,
     BuyQuoteResponse,
     CashOutRequest,
     CashOutResponse,
+    GoogleVerifyRequest,
     Market,
     OrderResponse,
     PlaceOrderRequest,
     PortfolioResponse,
     QuoteRequest,
     ResolveMarketRequest,
-    ResolveMarketResponse
+    ResolveMarketResponse,
+    UserProfile
 } from '../models/market.model';
 
 export interface GuestAuthResponse {
@@ -53,8 +56,37 @@ export class ApiService {
     /**
      * Create or retrieve an ephemeral guest trading session.
      */
-    createGuestSession(): Observable<GuestAuthResponse> {
-        return this.http.post<GuestAuthResponse>(`${this.baseUrl}/auth/guest`, {});
+    createGuestSession(): Observable<AuthResponse> {
+        return this.http.post<AuthResponse>(`${this.baseUrl}/auth/guest`, {});
+    }
+
+    /**
+     * Authenticate via Google OAuth ID token (GIS / One Tap or simulation).
+     * Optionally passes existing guest token to upgrade session.
+     */
+    verifyGoogleToken(request: GoogleVerifyRequest, guestToken?: string | null): Observable<AuthResponse> {
+        let headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+        if (guestToken) {
+            headers = headers.set('Authorization', `Bearer ${guestToken}`);
+        }
+        return this.http.post<AuthResponse>(`${this.baseUrl}/auth/google/verify`, request, { headers });
+    }
+
+    /**
+     * Retrieve the Google OAuth 2.0 authorization URL.
+     */
+    getGoogleAuthUrl(): Observable<{ url: string; state?: string; simulated: boolean; message?: string }> {
+        return this.http.get<{ url: string; state?: string; simulated: boolean; message?: string }>(`${this.baseUrl}/auth/google/url`);
+    }
+
+    /**
+     * Get the authenticated user's profile and current balances.
+     */
+    getCurrentUser(token: string): Observable<UserProfile> {
+        const headers = new HttpHeaders({
+            Authorization: `Bearer ${token}`
+        });
+        return this.http.get<UserProfile>(`${this.baseUrl}/auth/me`, { headers });
     }
 
     /**

@@ -10,12 +10,15 @@ import (
 
 // Config encapsulates validated runtime configuration settings.
 type Config struct {
-	DatabaseURL string
-	ServerPort  string
-	CORSOrigin  string
-	JWTSecret   string
-	Environment string
-	AdminToken  string
+	DatabaseURL        string
+	ServerPort         string
+	CORSOrigin         string
+	JWTSecret          string
+	Environment        string
+	AdminToken         string
+	GoogleClientID     string
+	GoogleClientSecret string
+	GoogleRedirectURI  string
 }
 
 // Load reads configuration from environment variables and local .env files.
@@ -54,17 +57,27 @@ func Load() (*Config, error) {
 		adminToken = "bayesmarket-admin-secret-token"
 	}
 
+	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
+	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	googleRedirectURI := os.Getenv("GOOGLE_REDIRECT_URI")
+	if googleRedirectURI == "" {
+		googleRedirectURI = "http://localhost:4200/auth/callback"
+	}
+
 	env := os.Getenv("APP_ENV")
 	if env == "" {
 		env = "development"
 	}
 
 	return &Config{
-		DatabaseURL: strings.TrimSpace(dbURL),
-		ServerPort:  strings.TrimSpace(port),
-		CORSOrigin:  strings.TrimSpace(corsOrigin),
-		JWTSecret:   strings.TrimSpace(jwtSecret),
-		Environment: strings.TrimSpace(env),
-		AdminToken:  strings.TrimSpace(adminToken),
+		DatabaseURL:        strings.TrimSpace(dbURL),
+		ServerPort:         strings.TrimSpace(port),
+		CORSOrigin:         strings.TrimSpace(corsOrigin),
+		JWTSecret:          strings.TrimSpace(jwtSecret),
+		Environment:        strings.TrimSpace(env),
+		AdminToken:         strings.TrimSpace(adminToken),
+		GoogleClientID:     strings.TrimSpace(googleClientID),
+		GoogleClientSecret: strings.TrimSpace(googleClientSecret),
+		GoogleRedirectURI:  strings.TrimSpace(googleRedirectURI),
 	}, nil
 }

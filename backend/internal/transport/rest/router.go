@@ -61,7 +61,7 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config, hubOpt ...*ws.Hub) *gin
 	}
 
 	// Handlers
-	authHandler := NewAuthHandler(pool, jwtSecret)
+	authHandler := NewAuthHandler(pool, cfg)
 	marketHandler := NewMarketHandler(pool)
 	faucetHandler := NewFaucetHandler(pool)
 	portfolioHandler := NewPortfolioHandler(pool)
@@ -140,6 +140,10 @@ bayesmarket_up 1
 		auth := v1.Group("/auth")
 		{
 			auth.POST("/guest", actionLimiter.LimitByClientOrUser(), authHandler.HandleGuestAuth)
+			auth.POST("/google/verify", middleware.OptionalAuth(jwtSecret), actionLimiter.LimitByClientOrUser(), authHandler.HandleGoogleAuthVerify)
+			auth.GET("/google/url", publicReadLimiter.LimitByIP(), authHandler.HandleGoogleAuthURL)
+			auth.POST("/google/callback", middleware.OptionalAuth(jwtSecret), actionLimiter.LimitByClientOrUser(), authHandler.HandleGoogleAuthCallback)
+			auth.GET("/me", middleware.RequireAuth(jwtSecret), publicReadLimiter.LimitByIP(), authHandler.HandleGetMe)
 		}
 
 		// 2. Markets, Quotes & Orders

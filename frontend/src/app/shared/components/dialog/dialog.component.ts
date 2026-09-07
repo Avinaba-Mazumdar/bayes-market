@@ -40,18 +40,17 @@ export type DialogRole = 'dialog' | 'alertdialog';
 
                         <!-- Header -->
                         <div class="dialog-header">
-                            <ng-content select="[header]">
-                                @if (title()) {
-                                    <h2 [id]="dialogId + '-title'" class="dialog-title">
-                                        {{ title() }}
-                                    </h2>
-                                }
-                                @if (description()) {
-                                    <p [id]="dialogId + '-desc'" class="dialog-description">
-                                        {{ description() }}
-                                    </p>
-                                }
-                            </ng-content>
+                            <ng-content select="[header]" />
+                            @if (title()) {
+                                <h2 [id]="dialogId + '-title'" class="dialog-title">
+                                    {{ title() }}
+                                </h2>
+                            }
+                            @if (description()) {
+                                <p [id]="dialogId + '-desc'" class="dialog-description">
+                                    {{ description() }}
+                                </p>
+                            }
                         </div>
 
                         <!-- Body Content -->
@@ -88,6 +87,7 @@ export type DialogRole = 'dialog' | 'alertdialog';
                 justify-content: center;
                 padding: 16px;
                 box-sizing: border-box;
+                overflow-y: auto;
             }
 
             /* --- Backdrop Overlay --- */
@@ -117,6 +117,7 @@ export type DialogRole = 'dialog' | 'alertdialog';
                 display: flex;
                 justify-content: center;
                 pointer-events: none;
+                margin: auto;
             }
 
             /* --- Content Modal Box --- */

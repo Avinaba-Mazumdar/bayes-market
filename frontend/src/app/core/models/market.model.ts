@@ -135,3 +135,25 @@ export interface ResolveMarketResponse {
     oracle_proof: string;
     resolved_at: string;
 }
+
+export interface UserProfile {
+    id: string;
+    email?: string | null;
+    name?: string | null;
+    avatar_url?: string | null;
+    is_guest: boolean;
+    auth_provider: 'guest' | 'google';
+    cash_balance: string;
+    created_at: string;
+}
+
+export interface GoogleVerifyRequest {
+    id_token: string;
+    email?: string;
+    name?: string;
+}
+
+export interface AuthResponse {
+    token: string;
+    user: UserProfile;
+}

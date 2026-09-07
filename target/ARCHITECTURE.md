@@ -519,16 +519,24 @@ erDiagram
 -- Enable cryptographic extension for UUID generation
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 1. USERS & GUEST SESSIONS
+-- 1. USERS, GUEST SESSIONS & GOOGLE OAUTH
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     is_guest BOOLEAN NOT NULL DEFAULT true,
     cash_balance NUMERIC(28, 8) NOT NULL DEFAULT 1000.00000000, -- Seeded with $1,000.00 USDC
+    email VARCHAR(255) NULL,
+    name VARCHAR(255) NULL,
+    avatar_url TEXT NULL,
+    google_id VARCHAR(255) NULL,
+    auth_provider VARCHAR(50) NOT NULL DEFAULT 'guest',          -- 'guest' | 'google'
     ip_address VARCHAR(45),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     last_active TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_positive_balance CHECK (cash_balance >= 0)
 );
+
+CREATE UNIQUE INDEX idx_users_email_unique ON users(email) WHERE email IS NOT NULL;
+CREATE UNIQUE INDEX idx_users_google_id_unique ON users(google_id) WHERE google_id IS NOT NULL;
 
 -- 2. PREDICTION MARKETS
 CREATE TABLE markets (

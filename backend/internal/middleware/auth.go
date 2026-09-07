@@ -11,16 +11,28 @@ import (
 )
 
 const (
-	CtxUserIDKey  = "userID"
-	CtxIsGuestKey = "isGuest"
+	CtxUserIDKey       = "userID"
+	CtxIsGuestKey      = "isGuest"
+	CtxUserEmailKey    = "userEmail"
+	CtxUserNameKey     = "userName"
+	CtxUserAvatarKey   = "userAvatar"
+	CtxAuthProviderKey = "authProvider"
+	CtxAuthClaimsKey   = "authClaims"
 )
 
-// GuestClaims defines the cryptographic JWT payload for guest sessions.
-type GuestClaims struct {
-	UserID  string `json:"user_id"`
-	IsGuest bool   `json:"is_guest"`
+// AuthClaims defines the cryptographic JWT payload for guest and registered user sessions.
+type AuthClaims struct {
+	UserID       string `json:"user_id"`
+	IsGuest      bool   `json:"is_guest"`
+	Email        string `json:"email,omitempty"`
+	Name         string `json:"name,omitempty"`
+	AvatarURL    string `json:"avatar_url,omitempty"`
+	AuthProvider string `json:"auth_provider,omitempty"`
 	jwt.RegisteredClaims
 }
+
+// GuestClaims is retained as an alias for backwards compatibility.
+type GuestClaims = AuthClaims
 
 // RequireAuth validates the Bearer JWT in the Authorization header.
 func RequireAuth(jwtSecret string) gin.HandlerFunc {
@@ -74,6 +86,11 @@ func RequireAuth(jwtSecret string) gin.HandlerFunc {
 
 		c.Set(CtxUserIDKey, parsedID)
 		c.Set(CtxIsGuestKey, claims.IsGuest)
+		c.Set(CtxUserEmailKey, claims.Email)
+		c.Set(CtxUserNameKey, claims.Name)
+		c.Set(CtxUserAvatarKey, claims.AvatarURL)
+		c.Set(CtxAuthProviderKey, claims.AuthProvider)
+		c.Set(CtxAuthClaimsKey, claims)
 		c.Next()
 	}
 }
@@ -109,6 +126,11 @@ func OptionalAuth(jwtSecret string) gin.HandlerFunc {
 			if parsedID, err := uuid.Parse(claims.UserID); err == nil {
 				c.Set(CtxUserIDKey, parsedID)
 				c.Set(CtxIsGuestKey, claims.IsGuest)
+				c.Set(CtxUserEmailKey, claims.Email)
+				c.Set(CtxUserNameKey, claims.Name)
+				c.Set(CtxUserAvatarKey, claims.AvatarURL)
+				c.Set(CtxAuthProviderKey, claims.AuthProvider)
+				c.Set(CtxAuthClaimsKey, claims)
 			}
 		}
 
@@ -124,6 +146,16 @@ func GetUserID(c *gin.Context) (uuid.UUID, bool) {
 	}
 	id, ok := val.(uuid.UUID)
 	return id, ok
+}
+
+// GetClaims retrieves the full AuthClaims payload from request context.
+func GetClaims(c *gin.Context) (*AuthClaims, bool) {
+	val, exists := c.Get(CtxAuthClaimsKey)
+	if !exists {
+		return nil, false
+	}
+	claims, ok := val.(*AuthClaims)
+	return claims, ok
 }
 
 // RequireAdminAuth validates that the request contains an authorized administrative credential.

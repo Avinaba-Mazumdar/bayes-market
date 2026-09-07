@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucidePlay, LucidePause, LucidePlus } from '@lucide/angular';
+import { LucidePlay, LucidePause, LucidePlus, LucideLogIn, LucideLogOut, LucideUser } from '@lucide/angular';
 import { WebSocketService } from '../../services/websocket.service';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { AuthStore } from '../../../state/auth.store';
@@ -8,7 +8,7 @@ import { AuthStore } from '../../../state/auth.store';
 @Component({
     selector: 'app-top-header-dock',
     standalone: true,
-    imports: [RouterLink, RouterLinkActive, ButtonComponent, LucidePlay, LucidePause, LucidePlus],
+    imports: [RouterLink, RouterLinkActive, ButtonComponent, LucidePlay, LucidePause, LucidePlus, LucideLogIn, LucideLogOut, LucideUser],
     template: `
         <header class="top-header-dock" role="banner">
             <div class="dock-container">
@@ -90,6 +90,47 @@ import { AuthStore } from '../../../state/auth.store';
                             <span>Faucet</span>
                         }
                     </app-button>
+
+                    <!-- Auth State & Sign In / Profile -->
+                    @if (authStore.isGuest()) {
+                        <button
+                            type="button"
+                            class="auth-action-btn guest-badge-btn"
+                            (click)="authStore.openAuthModal()"
+                            aria-label="Guest session active. Click to sign in or connect account."
+                            title="Guest Trader (Click to Sign In with Google)"
+                        >
+                            <span class="guest-indicator-dot" aria-hidden="true"></span>
+                            <span class="auth-btn-text">Sign In</span>
+                            <svg lucideLogIn class="auth-icon" [size]="14" aria-hidden="true"></svg>
+                        </button>
+                    } @else {
+                        <div class="user-profile-dock">
+                            <button
+                                type="button"
+                                class="auth-action-btn user-logged-in-btn"
+                                (click)="authStore.openAuthModal()"
+                                [attr.aria-label]="'Trading as ' + authStore.userName() + '. Click for account details.'"
+                                [title]="'Logged in as ' + authStore.userName()"
+                            >
+                                @if (authStore.userAvatar()) {
+                                    <img [src]="authStore.userAvatar()!" [alt]="authStore.userName()" class="header-avatar" referrerpolicy="no-referrer" />
+                                } @else {
+                                    <svg lucideUser class="auth-icon" [size]="14" aria-hidden="true"></svg>
+                                }
+                                <span class="auth-user-name">{{ authStore.userName() }}</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="signout-quick-btn"
+                                (click)="authStore.logout()"
+                                aria-label="Sign out and switch to guest"
+                                title="Sign out"
+                            >
+                                <svg lucideLogOut [size]="14" aria-hidden="true"></svg>
+                            </button>
+                        </div>
+                    }
                 </div>
             </div>
         </header>
@@ -313,12 +354,113 @@ import { AuthStore } from '../../../state/auth.store';
                 flex-shrink: 0;
                 margin-right: 4px;
             }
+
+            /* Auth Styles */
+            .auth-action-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                min-height: var(--touch-target-min, 44px);
+                min-width: var(--touch-target-min, 44px);
+                padding: 8px 14px;
+                border-radius: var(--radius-md, 10px);
+                font-family: var(--font-ui);
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                transition:
+                    background-color 0.15s ease,
+                    border-color 0.15s ease,
+                    color 0.15s ease;
+            }
+
+            .guest-badge-btn {
+                background-color: rgba(245, 158, 11, 0.08);
+                border: 1px solid rgba(245, 158, 11, 0.35);
+                color: #fcd34d;
+            }
+
+            .guest-badge-btn:hover {
+                background-color: rgba(245, 158, 11, 0.16);
+                border-color: #f59e0b;
+                color: #ffffff;
+            }
+
+            .guest-indicator-dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background-color: #f59e0b;
+                box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+            }
+
+            .user-profile-dock {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .user-logged-in-btn {
+                background-color: var(--surface-card, #111622);
+                border: 1px solid var(--border-strong, #606e85);
+                color: var(--ink, #f8fafc);
+                padding: 6px 12px;
+            }
+
+            .user-logged-in-btn:hover {
+                background-color: var(--surface-card-elevated, #171f30);
+                border-color: var(--primary-border, #e84089);
+            }
+
+            .header-avatar {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 1px solid var(--primary-border, #e84089);
+            }
+
+            .auth-user-name {
+                max-width: 110px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .signout-quick-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 36px;
+                min-height: var(--touch-target-min, 44px);
+                padding: 8px;
+                background-color: transparent;
+                border: 1px solid var(--hairline, #1e2638);
+                border-radius: var(--radius-md, 10px);
+                color: var(--muted, #a2b4c9);
+                cursor: pointer;
+                transition:
+                    background-color 0.15s ease,
+                    color 0.15s ease;
+            }
+
+            .signout-quick-btn:hover {
+                background-color: rgba(239, 68, 68, 0.12);
+                border-color: rgba(239, 68, 68, 0.4);
+                color: #f87171;
+            }
         `
     ]
 })
-export class TopHeaderDockComponent {
+export class TopHeaderDockComponent implements OnInit {
     readonly wsService = inject(WebSocketService);
     readonly authStore = inject(AuthStore);
+
+    ngOnInit(): void {
+        if (!this.wsService.isConnected() && this.wsService.connectionStatus() === 'disconnected') {
+            this.wsService.connect();
+        }
+    }
 
     get userBalance() {
         return this.authStore.cashBalance;
