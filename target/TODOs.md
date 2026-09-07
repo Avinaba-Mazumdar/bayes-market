@@ -89,26 +89,26 @@ Implement the production PostgreSQL database schema, automated migration runner,
 
 Construct the pure, high-precision Constant Product Market Maker mathematical engine enforcing arbitrary-precision arithmetic and zero floating-point drift.
 
-- [ ] **Task 3.1: Core CPMM Bonding Invariant Engine**
+- [x] **Task 3.1: Core CPMM Bonding Invariant Engine**
     - Create `backend/internal/amm/cpmm.go` utilizing `shopspring/decimal`.
     - Implement the virtual-reserve invariant $k = R_{\text{YES}} \times R_{\text{NO}}$ and the complete-set accounting invariant: each issued YES/NO pair is backed by exactly one USDC in `collateral_reserve`.
     - Implement spot price calculation functions:
       $$P_{\text{YES}} = \frac{R_{\text{NO}}}{R_{\text{YES}} + R_{\text{NO}}}, \quad P_{\text{NO}} = \frac{R_{\text{YES}}}{R_{\text{YES}} + R_{\text{NO}}}$$
     - Enforce constraint: $P_{\text{YES}} + P_{\text{NO}} = 1.000000$ to 6 decimal places.
 
-- [ ] **Task 3.2: Share Purchase & Quote Calculation Algorithm**
+- [x] **Task 3.2: Share Purchase & Quote Calculation Algorithm**
     - Implement `CalculateCompleteSetBuy(depositUSDC, outcome, currentYes, currentNo, collateral)`:
         - Mint $d$ complete YES/NO sets and add $d$ to collateral. For YES: $R_{\text{NO}}' = R_{\text{NO}} + d$, $R_{\text{YES}}' = k / R_{\text{NO}}'$, $\Delta \text{YES} = R_{\text{YES}} + d - R_{\text{YES}}'$.
         - Average execution price $\bar{P} = d / \Delta \text{YES}$; use the symmetric formula for NO.
         - Marginal price impact / slippage: $\text{Slippage} = \frac{\bar{P} - P_{\text{initial}}}{P_{\text{initial}}} \times 100\%$.
 
-- [ ] **Task 3.3: Pool Liquidation & "Cash Out" Share Sale Algorithm**
+- [x] **Task 3.3: Pool Liquidation & "Cash Out" Share Sale Algorithm**
     - Implement `CalculateCompleteSetSell(sharesToSell, outcome, currentYes, currentNo, collateral)`:
         - For YES shares $s$, solve $d = (A - \sqrt{A^2 - 4sR_{\text{NO}}}) / 2$, where $A = R_{\text{YES}} + R_{\text{NO}} + s$; burn $d$ complete sets and return $d$ USDC.
         - Reject any quote that would make collateral, virtual inventory, or a user position negative.
         - Returns net USDC payout and post-sale spot prices.
 
-- [ ] **Task 3.4: Rigorous Invariant & Concurrency Unit Test Suite**
+- [x] **Task 3.4: Rigorous Invariant & Concurrency Unit Test Suite**
     - Write extensive unit tests in `backend/internal/amm/cpmm_test.go`:
         - Invariant preservation: $k_{\text{after}} = k_{\text{before}}$ within the documented decimal rounding bound across 10,000 random transaction iterations.
         - Solvency preservation: issued YES supply equals issued NO supply and is fully backed by the collateral reserve after every operation.
