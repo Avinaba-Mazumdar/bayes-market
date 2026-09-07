@@ -3,7 +3,7 @@ package ws
 // Standard WebSocket broadcast message types.
 const (
 	MessageTypePriceUpdate    = "PRICE_UPDATE"
-	MessageTypeTradeEvent      = "TRADE_EVENT"
+	MessageTypeTradeEvent     = "TRADE_EVENT"
 	MessageTypeMarketResolved = "MARKET_RESOLVED"
 	MessageTypePing           = "PING"
 	MessageTypePong           = "PONG"

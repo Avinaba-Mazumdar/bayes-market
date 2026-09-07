@@ -14,7 +14,7 @@ This document tracks the phased execution plan for **BayesMarket**. It divides t
 - [x] **Phase 4: Backend REST API, Token-Bucket Rate Limiting & Guest Session Management**
 - [x] **Phase 5: Atomic Order Execution Engine & Pessimistic Concurrency Controls**
 - [x] **Phase 6: Real-Time WebSocket Multiplexer & Live Telemetry Broadcasting**
-- [ ] **Phase 7: Frontend Design System, Typography & WCAG 2.2 Level AAA Core Components**
+- [x] **Phase 7: Frontend Design System, Typography & WCAG 2.2 Level AAA Core Components**
 - [ ] **Phase 8: Interactive Trading Cockpit, Lightweight Charts & Two-Step Order Flow**
 - [ ] **Phase 9: Portfolio Ledger, AMM Liquidation, Oracle Resolution & End-to-End Hardening**
 
@@ -252,7 +252,7 @@ Implement the low-latency WebSocket connection broker, non-blocking channel fan-
 
 Implement the institutional-grade design system stylesheet, Scoutie Sans + JetBrains Mono typography pairing, universal 44×44px interactive components, and WCAG 2.2 Level AAA layout shell.
 
-- [ ] **Task 7.1: Design Tokens & Base CSS Architecture**
+- [x] **Task 7.1: Design Tokens & Base CSS Architecture**
     - Create `frontend/src/styles/tokens.css` declaring all CSS custom properties from `target/DESIGN.md`:
         - Canvas: `--canvas: #07090e`, `--canvas-subtle: #0c1017`.
         - Cards: `--surface-card: #111622`, `--surface-card-elevated: #171f30`, `--surface-terminal: #0e131d`.
@@ -261,12 +261,12 @@ Implement the institutional-grade design system stylesheet, Scoutie Sans + JetBr
         - Text: `--ink: #f8fafc`, `--ink-secondary: #cbd5e1`, `--body: #a2b4c9`.
         - Borders: `--border-strong: #606e85`, `--hairline: #1e2638`.
 
-- [ ] **Task 7.2: Typography System & SC 1.4.8 Visual Rules**
+- [x] **Task 7.2: Typography System & SC 1.4.8 Visual Rules**
     - Import web fonts: **Scoutie Sans** (interface) and **JetBrains Mono** (quantitative financial figures).
     - Enforce tabular figures across JetBrains Mono (`font-feature-settings: "tnum" 1`).
     - Implement SC 1.4.8 visual presentation constraints: `max-width: 68ch` on prose, `line-height: 1.55`, `margin-bottom: 2.25em` on paragraphs, left-aligned only (`text-align: left`).
 
-- [ ] **Task 7.3: Universal 44×44px Interactive Primitives (SC 2.5.5 Level AAA)**
+- [x] **Task 7.3: Universal 44×44px Interactive Primitives (SC 2.5.5 Level AAA)**
     - Implement standalone Angular UI components with guaranteed `min-height: 44px; min-width: 44px;` and $\ge 8\text{px}$ touch envelopes:
         - `ButtonPrimaryComponent`: Deep Amaranth button with `#ffffff` text (**7.67:1** contrast).
         - `ButtonYesComponent` / `ButtonNoComponent`: Dual-coded outcome selector buttons.
@@ -274,7 +274,7 @@ Implement the institutional-grade design system stylesheet, Scoutie Sans + JetBr
         - `QuickAmountChipComponent`: Quick-fill chips (`+$10`, `+$50`, `+$100`, `Max`).
         - `ChartIntervalChipComponent`: Timeframe chips (`1H`, `1D`, `1W`, `ALL`).
 
-- [ ] **Task 7.4: Navigation Shell & Focus Visibility (SC 2.4.12 & SC 2.4.13 Level AAA)**
+- [x] **Task 7.4: Navigation Shell & Focus Visibility (SC 2.4.12 & SC 2.4.13 Level AAA)**
     - Implement `TopHeaderDockComponent`:
         - Left: BayesMarket brand emblem and navigation links.
         - Right: Guest balance pill (`"$1,000.00 USDC"` in JetBrains Mono), `[+ Faucet]` button, live WebSocket pulse indicator.

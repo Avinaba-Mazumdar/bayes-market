@@ -10,32 +10,96 @@
 }
 
 html {
-    background-color: var(--color-canvas);
-    color: var(--color-ink);
+    background-color: var(--canvas, #07090e);
+    color: var(--ink, #f8fafc);
     font-family: var(--font-ui);
     font-size: 16px;
-    line-height: 1.5;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* SC 2.4.12 Focus Never Obscured */
     scroll-padding-top: 76px;
     scroll-padding-bottom: 96px;
 }
 
 body {
     min-height: 100vh;
-    background-color: var(--color-canvas);
-    color: var(--color-ink);
+    background-color: var(--canvas, #07090e);
+    color: var(--ink, #f8fafc);
     overflow-x: hidden;
+    font-family: var(--font-ui);
 }
 
-/* Tabular figures for quantitative data */
-.tabular-nums {
+/* SC 1.4.8 Visual Presentation (Level AAA) */
+p,
+.prose {
+    max-width: 68ch;
+    line-height: 1.55;
+    margin-bottom: 2.25em;
+    text-align: left;
+    text-justify: none;
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-ui);
+    color: var(--ink, #f8fafc);
+    text-align: left;
+    font-weight: 700;
+}
+
+/* Tabular figures for all quantitative financial data */
+.tabular-nums,
+.mono {
     font-family: var(--font-mono);
     font-feature-settings: 'tnum' 1;
 }
 
-/* Accessible focus outlines (WCAG SC 2.4.12 & SC 2.4.13) */
+/* Universal Accessible Focus Outlines (WCAG SC 2.4.12 & SC 2.4.13 Level AAA) */
 :focus-visible {
-    outline: 2px solid var(--color-focus-outline);
+    outline: 2px solid var(--focus-outline, #e84089);
     outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--focus-ring, rgba(232, 64, 137, 0.35));
+}
+
+/* Minimum Accessible Touch Envelope (WCAG SC 2.5.5 Level AAA) */
+button,
+input,
+select,
+textarea,
+[role='button'],
+a.btn {
+    min-height: var(--touch-target-min, 44px);
+    min-width: var(--touch-target-min, 44px);
+}
+
+/* Sensory Overrides: Reduced Motion (SC 2.3.3 Level AAA) */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Sensory Overrides: Forced Colors / System High Contrast */
+@media (forced-colors: active) {
+    :focus-visible {
+        outline: 3px solid Highlight;
+        outline-offset: 3px;
+        box-shadow: none;
+    }
+
+    button,
+    [role='button'] {
+        border: 1px solid ButtonBorder;
+    }
 }

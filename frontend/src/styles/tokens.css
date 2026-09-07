@@ -2,77 +2,142 @@
 /* Strict WCAG 2.2 Level AAA Compliant */
 
 :root {
-    /* Surface & Base Colors */
-    --color-canvas: #07090e;
-    --color-canvas-subtle: #0c1017;
-    --color-surface-card: #111622;
-    --color-surface-card-elevated: #171f30;
-    --color-surface-terminal: #0e131d;
-    --color-surface-glass: rgba(17, 22, 34, 0.88);
-    --color-surface-glass-border: rgba(255, 255, 255, 0.14);
+    /* Surface & Base Colors (Obsidian Dark Mode) */
+    --canvas: #07090e;
+    --canvas-subtle: #0c1017;
+    --surface-card: #111622;
+    --surface-card-elevated: #171f30;
+    --surface-terminal: #0e131d;
+    --surface-glass: rgba(17, 22, 34, 0.88);
+    --surface-glass-border: rgba(255, 255, 255, 0.14);
+
+    /* Backward compatibility aliases */
+    --color-canvas: var(--canvas);
+    --color-canvas-subtle: var(--canvas-subtle);
+    --color-surface-card: var(--surface-card);
+    --color-surface-card-elevated: var(--surface-card-elevated);
+    --color-surface-terminal: var(--surface-terminal);
+    --color-surface-glass: var(--surface-glass);
+    --color-surface-glass-border: var(--surface-glass-border);
 
     /* Primary Brand (Deep Amaranth) */
-    --color-primary: #a6034c;
-    --color-primary-active: #85023d;
-    --color-primary-hover: #ab034e;
-    --color-primary-subtle: rgba(166, 3, 76, 0.15);
-    --color-primary-border: #e84089;
-    --color-primary-glow: rgba(166, 3, 76, 0.35);
+    --primary: #a6034c;
+    --primary-active: #85023d;
+    --primary-hover: #ab034e;
+    --primary-subtle: rgba(166, 3, 76, 0.15);
+    --primary-border: #e84089;
+    --primary-glow: rgba(166, 3, 76, 0.35);
+
+    --color-primary: var(--primary);
+    --color-primary-active: var(--primary-active);
+    --color-primary-hover: var(--primary-hover);
+    --color-primary-subtle: var(--primary-subtle);
+    --color-primary-border: var(--primary-border);
+    --color-primary-glow: var(--primary-glow);
 
     /* Accent (Sky Cyan) */
-    --color-accent: #38bdf8;
-    --color-accent-active: #0284c7;
-    --color-accent-subtle: rgba(56, 189, 248, 0.12);
+    --accent: #38bdf8;
+    --accent-active: #0284c7;
+    --accent-subtle: rgba(56, 189, 248, 0.12);
 
-    /* Outcome YES (Mint / Emerald) */
-    --color-outcome-yes: #10b981;
-    --color-outcome-yes-text: #34d399;
-    --color-outcome-yes-active: #059669;
-    --color-outcome-yes-subtle: #06281b;
-    --color-outcome-yes-border: #10b981;
-    --color-outcome-yes-glow: rgba(16, 185, 129, 0.3);
+    --color-accent: var(--accent);
+    --color-accent-active: var(--accent-active);
+    --color-accent-subtle: var(--accent-subtle);
 
-    /* Outcome NO (Rose / Coral) */
-    --color-outcome-no: #fb7185;
-    --color-outcome-no-text: #fda4af;
-    --color-outcome-no-active: #e11d48;
-    --color-outcome-no-subtle: #330814;
-    --color-outcome-no-border: #fb7185;
-    --color-outcome-no-glow: rgba(251, 113, 133, 0.3);
+    /* Outcome YES (Mint / Emerald Dual-Coded) */
+    --outcome-yes: #10b981;
+    --outcome-yes-text: #34d399;
+    --outcome-yes-active: #059669;
+    --outcome-yes-subtle: #06281b;
+    --outcome-yes-border: #10b981;
+    --outcome-yes-glow: rgba(16, 185, 129, 0.3);
 
-    /* Typography & Ink (AAA-Compliant Contrast >= 7.0:1) */
-    --color-ink: #f8fafc;
-    --color-ink-secondary: #cbd5e1;
-    --color-body: #a2b4c9;
-    --color-muted: #a2b4c9;
-    --color-hairline: #1e2638;
-    --color-border-strong: #606e85;
-    --color-on-primary: #ffffff;
-    --color-on-outcome: #07090e;
-    --color-on-dark: #f8fafc;
+    --color-outcome-yes: var(--outcome-yes);
+    --color-outcome-yes-text: var(--outcome-yes-text);
+    --color-outcome-yes-active: var(--outcome-yes-active);
+    --color-outcome-yes-subtle: var(--outcome-yes-subtle);
+    --color-outcome-yes-border: var(--outcome-yes-border);
+    --color-outcome-yes-glow: var(--outcome-yes-glow);
+
+    /* Outcome NO (Rose / Coral Dual-Coded) */
+    --outcome-no: #fb7185;
+    --outcome-no-text: #fda4af;
+    --outcome-no-active: #e11d48;
+    --outcome-no-subtle: #330814;
+    --outcome-no-border: #fb7185;
+    --outcome-no-glow: rgba(251, 113, 133, 0.3);
+
+    --color-outcome-no: var(--outcome-no);
+    --color-outcome-no-text: var(--outcome-no-text);
+    --color-outcome-no-active: var(--outcome-no-active);
+    --color-outcome-no-subtle: var(--outcome-no-subtle);
+    --color-outcome-no-border: var(--outcome-no-border);
+    --color-outcome-no-glow: var(--outcome-no-glow);
+
+    /* Typography & Ink (Strict WCAG 2.2 AAA Contrast >= 7.0:1) */
+    --ink: #f8fafc;
+    --ink-secondary: #cbd5e1;
+    --body: #a2b4c9;
+    --muted: #a2b4c9;
+    --hairline: #1e2638;
+    --border-strong: #606e85;
+    --on-primary: #ffffff;
+    --on-outcome: #07090e;
+    --on-dark: #f8fafc;
+
+    --color-ink: var(--ink);
+    --color-ink-secondary: var(--ink-secondary);
+    --color-body: var(--body);
+    --color-muted: var(--muted);
+    --color-hairline: var(--hairline);
+    --color-border-strong: var(--border-strong);
+    --color-on-primary: var(--on-primary);
+    --color-on-outcome: var(--on-outcome);
+    --color-on-dark: var(--on-dark);
 
     /* Status Tokens */
-    --color-status-profit: #34d399;
-    --color-status-profit-bg: #06281b;
-    --color-status-profit-border: #10b981;
-    --color-status-loss: #fda4af;
-    --color-status-loss-bg: #330814;
-    --color-status-loss-border: #fb7185;
-    --color-status-warning: #fcd34d;
-    --color-status-warning-bg: #2a1a02;
-    --color-status-warning-border: #f59e0b;
-    --color-status-info: #7dd3fc;
-    --color-status-info-bg: #082536;
-    --color-status-info-border: #38bdf8;
-    --color-status-resolved: #d8b4fe;
-    --color-status-resolved-bg: #250e38;
-    --color-status-resolved-border: #c084fc;
+    --status-profit: #34d399;
+    --status-profit-bg: #06281b;
+    --status-profit-border: #10b981;
+    --status-loss: #fda4af;
+    --status-loss-bg: #330814;
+    --status-loss-border: #fb7185;
+    --status-warning: #fcd34d;
+    --status-warning-bg: #2a1a02;
+    --status-warning-border: #f59e0b;
+    --status-info: #7dd3fc;
+    --status-info-bg: #082536;
+    --status-info-border: #38bdf8;
+    --status-resolved: #d8b4fe;
+    --status-resolved-bg: #250e38;
+    --status-resolved-border: #c084fc;
+
+    --color-status-profit: var(--status-profit);
+    --color-status-profit-bg: var(--status-profit-bg);
+    --color-status-profit-border: var(--status-profit-border);
+    --color-status-loss: var(--status-loss);
+    --color-status-loss-bg: var(--status-loss-bg);
+    --color-status-loss-border: var(--status-loss-border);
+    --color-status-warning: var(--status-warning);
+    --color-status-warning-bg: var(--status-warning-bg);
+    --color-status-warning-border: var(--status-warning-border);
+    --color-status-info: var(--status-info);
+    --color-status-info-bg: var(--status-info-bg);
+    --color-status-info-border: var(--status-info-border);
+    --color-status-resolved: var(--status-resolved);
+    --color-status-resolved-bg: var(--status-resolved-bg);
+    --color-status-resolved-border: var(--status-resolved-border);
 
     /* Interactive & Focus (WCAG SC 2.4.12 & SC 2.4.13) */
-    --color-link: #fda4af;
-    --color-link-active: #ffffff;
-    --color-focus-outline: #e84089;
-    --color-focus-ring: rgba(232, 64, 137, 0.35);
+    --link: #fda4af;
+    --link-active: #ffffff;
+    --focus-outline: #e84089;
+    --focus-ring: rgba(232, 64, 137, 0.35);
+
+    --color-link: var(--link);
+    --color-link-active: var(--link-active);
+    --color-focus-outline: var(--focus-outline);
+    --color-focus-ring: var(--focus-ring);
 
     /* Elevation Shadows */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -92,7 +157,7 @@
     --radius-pill: 9999px;
     --radius-full: 9999px;
 
-    /* Spacing Scale */
+    /* Spacing Scale (8-point grid with 4px sub-grid) */
     --space-xxs: 4px;
     --space-xs: 8px;
     --space-sm: 12px;
@@ -103,9 +168,9 @@
     --space-section: 48px;
 
     /* Typography Families */
-    --font-ui: 'Scoutie Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-ui: 'Scoutie Sans', 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 
-    /* Minimum Accessible Touch/Click Envelope (WCAG SC 2.5.5 AAA: >= 44x44px) */
+    /* Minimum Accessible Touch Envelope (WCAG SC 2.5.5 Level AAA: >= 44x44px) */
     --touch-target-min: 44px;
 }
