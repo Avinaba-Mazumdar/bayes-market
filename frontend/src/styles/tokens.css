@@ -1,0 +1,111 @@
+/* BayesMarket Design System - Institutional Trading Terminal Tokens */
+/* Strict WCAG 2.2 Level AAA Compliant */
+
+:root {
+    /* Surface & Base Colors */
+    --color-canvas: #07090e;
+    --color-canvas-subtle: #0c1017;
+    --color-surface-card: #111622;
+    --color-surface-card-elevated: #171f30;
+    --color-surface-terminal: #0e131d;
+    --color-surface-glass: rgba(17, 22, 34, 0.88);
+    --color-surface-glass-border: rgba(255, 255, 255, 0.14);
+
+    /* Primary Brand (Deep Amaranth) */
+    --color-primary: #a6034c;
+    --color-primary-active: #85023d;
+    --color-primary-hover: #ab034e;
+    --color-primary-subtle: rgba(166, 3, 76, 0.15);
+    --color-primary-border: #e84089;
+    --color-primary-glow: rgba(166, 3, 76, 0.35);
+
+    /* Accent (Sky Cyan) */
+    --color-accent: #38bdf8;
+    --color-accent-active: #0284c7;
+    --color-accent-subtle: rgba(56, 189, 248, 0.12);
+
+    /* Outcome YES (Mint / Emerald) */
+    --color-outcome-yes: #10b981;
+    --color-outcome-yes-text: #34d399;
+    --color-outcome-yes-active: #059669;
+    --color-outcome-yes-subtle: #06281b;
+    --color-outcome-yes-border: #10b981;
+    --color-outcome-yes-glow: rgba(16, 185, 129, 0.3);
+
+    /* Outcome NO (Rose / Coral) */
+    --color-outcome-no: #fb7185;
+    --color-outcome-no-text: #fda4af;
+    --color-outcome-no-active: #e11d48;
+    --color-outcome-no-subtle: #330814;
+    --color-outcome-no-border: #fb7185;
+    --color-outcome-no-glow: rgba(251, 113, 133, 0.3);
+
+    /* Typography & Ink (AAA-Compliant Contrast >= 7.0:1) */
+    --color-ink: #f8fafc;
+    --color-ink-secondary: #cbd5e1;
+    --color-body: #a2b4c9;
+    --color-muted: #a2b4c9;
+    --color-hairline: #1e2638;
+    --color-border-strong: #606e85;
+    --color-on-primary: #ffffff;
+    --color-on-outcome: #07090e;
+    --color-on-dark: #f8fafc;
+
+    /* Status Tokens */
+    --color-status-profit: #34d399;
+    --color-status-profit-bg: #06281b;
+    --color-status-profit-border: #10b981;
+    --color-status-loss: #fda4af;
+    --color-status-loss-bg: #330814;
+    --color-status-loss-border: #fb7185;
+    --color-status-warning: #fcd34d;
+    --color-status-warning-bg: #2a1a02;
+    --color-status-warning-border: #f59e0b;
+    --color-status-info: #7dd3fc;
+    --color-status-info-bg: #082536;
+    --color-status-info-border: #38bdf8;
+    --color-status-resolved: #d8b4fe;
+    --color-status-resolved-bg: #250e38;
+    --color-status-resolved-border: #c084fc;
+
+    /* Interactive & Focus (WCAG SC 2.4.12 & SC 2.4.13) */
+    --color-link: #fda4af;
+    --color-link-active: #ffffff;
+    --color-focus-outline: #e84089;
+    --color-focus-ring: rgba(232, 64, 137, 0.35);
+
+    /* Elevation Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 12px 28px -4px rgba(0, 0, 0, 0.65);
+    --shadow-terminal: 0 8px 32px rgba(0, 0, 0, 0.7);
+    --shadow-glow-primary: 0 0 20px rgba(166, 3, 76, 0.4);
+    --shadow-glow-yes: 0 0 16px rgba(16, 185, 129, 0.35);
+    --shadow-glow-no: 0 0 16px rgba(251, 113, 133, 0.35);
+
+    /* Border Radii */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --radius-pill: 9999px;
+    --radius-full: 9999px;
+
+    /* Spacing Scale */
+    --space-xxs: 4px;
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 16px;
+    --space-lg: 20px;
+    --space-xl: 24px;
+    --space-xxl: 32px;
+    --space-section: 48px;
+
+    /* Typography Families */
+    --font-ui: 'Scoutie Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+
+    /* Minimum Accessible Touch/Click Envelope (WCAG SC 2.5.5 AAA: >= 44x44px) */
+    --touch-target-min: 44px;
+}

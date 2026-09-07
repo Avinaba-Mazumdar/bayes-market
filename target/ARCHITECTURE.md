@@ -38,14 +38,14 @@ Traders and developers can interact with the platform immediately via an **insta
 
 ### 2.2 Frontend Stack (Client SPA)
 
-| Category               | Technology / Library              | Version    | Engineering Rationale                                                                                                                 |
-| :--------------------- | :-------------------------------- | :--------- | :------------------------------------------------------------------------------------------------------------------------------------ |
-| **Framework**          | **Angular**                       | `^22.1.5`  | Current stable major (released September 2026). Zoneless by default, native Signal Forms, Signal inputs/outputs, and streaming SSR.   |
-| **Language**           | **TypeScript**                    | `^7.0.2`   | Major release powered by the Go-based compiler ("Project Corsa"), delivering 8–12x faster compile times and strict type verification. |
-| **Financial Charting** | `@tradingview/lightweight-charts` | `^5.1.0`   | High-DPI canvas charting engine (45kb bundle, 60fps hardware accelerated). Zero React/Vue bloat.                                      |
-| **Icons & Micro-UI**   | `lucide-angular`                  | `^0.445.0` | Modern tree-shakeable SVG icon set.                                                                                                   |
-| **Design System**      | **Modern Vanilla CSS Tokens**     | Native     | CSS Custom Properties, CSS Grid, Glassmorphic panels, obsidian dark mode (`#0a0d14`). Zero Tailwind runtime overhead.                 |
-| **State Management**   | **Angular Signal Stores**         | Native     | Fine-grained reactivity. WebSocket price ticks mutate Signals directly without RxJS stream overhead.                                  |
+| Category               | Technology / Library          | Version   | Engineering Rationale                                                                                                                 |
+| :--------------------- | :---------------------------- | :-------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| **Framework**          | **Angular**                   | `^22.1.5` | Current stable major (released September 2026). Zoneless by default, native Signal Forms, Signal inputs/outputs, and streaming SSR.   |
+| **Language**           | **TypeScript**                | `^7.0.2`  | Major release powered by the Go-based compiler ("Project Corsa"), delivering 8–12x faster compile times and strict type verification. |
+| **Financial Charting** | `lightweight-charts`          | `^5.2.1`  | High-DPI canvas charting engine (TradingView v5, 60fps hardware accelerated). Zero React/Vue bloat.                                   |
+| **Icons & Micro-UI**   | `@lucide/angular`             | `^1.41.0` | Modern tree-shakeable SVG icon set for Angular.                                                                                       |
+| **Design System**      | **Modern Vanilla CSS Tokens** | Native    | CSS Custom Properties, CSS Grid, Glassmorphic panels, obsidian dark mode (`#0a0d14`). Zero Tailwind runtime overhead.                 |
+| **State Management**   | **Angular Signal Stores**     | Native    | Fine-grained reactivity. WebSocket price ticks mutate Signals directly without RxJS stream overhead.                                  |
 
 ### 2.3 Backend Stack (Trading Engine & API)
 
@@ -64,7 +64,7 @@ Traders and developers can interact with the platform immediately via an **insta
 
 | Layer                   | Provider / Tool             | Configuration                                      | Rationale                                                                                                            |
 | :---------------------- | :-------------------------- | :------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
-| **Database**            | **Neon PostgreSQL**         | Version `17.x`                                     | Latest major release with enhanced concurrent B-tree index scans and `FOR UPDATE` locking. Scales to zero when idle. |
+| **Database**            | **Neon PostgreSQL**         | Version `18.x`                                     | Latest major release with enhanced concurrent B-tree index scans and `FOR UPDATE` locking. Scales to zero when idle. |
 | **Database Migrations** | `golang-migrate/migrate/v4` | `v4.18.0`                                          | Version-controlled idempotent SQL migrations (`.up.sql` / `.down.sql`).                                              |
 | **Containerization**    | **Docker**                  | Multi-Stage (`golang:1.27-alpine` $\to$ `scratch`) | Production container is **< 18MB** with zero CVE vulnerability attack surface.                                       |
 | **Backend Hosting**     | **Fly.io** / **Render**     | Shared CPU, 256MB RAM                              | Sub-15ms cold start for Go binaries, generous free tier.                                                             |

@@ -8,7 +8,7 @@ This document tracks the phased execution plan for **BayesMarket**. It divides t
 
 ## Phase Overview & Progress Tracker
 
-- [ ] **Phase 1: Project Scaffolding, Development Tooling & Monorepo Foundation**
+- [x] **Phase 1: Project Scaffolding, Development Tooling & Monorepo Foundation**
 - [ ] **Phase 2: Database Schema, Migration Pipeline & Seed Datasets**
 - [ ] **Phase 3: Fixed-Point Mathematical AMM Engine & Invariant Test Suite**
 - [ ] **Phase 4: Backend REST API, Token-Bucket Rate Limiting & Guest Session Management**
@@ -22,24 +22,24 @@ This document tracks the phased execution plan for **BayesMarket**. It divides t
 
 ## Phase 1: Project Scaffolding, Development Tooling & Monorepo Foundation
 
-Establish the monorepo directory layout, initialize Go and Angular workspaces, configure Neon Serverless PostgreSQL 17, and set up unified development scripts.
+Establish the monorepo directory layout, initialize Go and Angular workspaces, configure Neon Serverless PostgreSQL 18, and set up unified development scripts.
 
-- [ ] **Task 1.1: Monorepo & Backend Workspace Initialization**
+- [x] **Task 1.1: Monorepo & Backend Workspace Initialization**
     - Initialize Go 1.24+ module in `backend/` (`go mod init github.com/bayesmarket/bayesmarket`).
     - Install core backend dependencies: `github.com/jackc/pgx/v5`, `github.com/shopspring/decimal`, `github.com/gorilla/websocket`, `github.com/gin-gonic/gin`, `golang.org/x/time/rate`.
     - Establish backend package structure: `cmd/api/`, `internal/amm/`, `internal/database/`, `internal/middleware/`, `internal/transport/`, `internal/models/`.
 
-- [ ] **Task 1.2: Frontend Workspace Initialization (Angular 22 Zoneless)**
+- [x] **Task 1.2: Frontend Workspace Initialization (Angular 22 Zoneless)**
     - Initialize Angular 22 standalone client in `frontend/` configured for zoneless change detection (`provideExperimentalZonelessChangeDetection()`).
     - Install frontend dependencies: `@tradingview/lightweight-charts`.
     - Set up directory structure: `src/app/core/`, `src/app/features/`, `src/app/state/`, `src/styles/`.
 
-- [ ] **Task 1.3: Neon Database & Environment Configuration**
+- [x] **Task 1.3: Neon Database & Environment Configuration**
     - Configure root `.env.example` with Neon PostgreSQL connection parameters (`DATABASE_URL=postgres://...@...neon.tech/bayesmarket?sslmode=require`, `SERVER_PORT=8080`, `JWT_SECRET`, `CORS_ORIGIN=http://localhost:4200`).
     - Implement environment loader in backend validating required configuration on startup.
     - Provide `.env` loading and verification scripts ensuring pooled/direct connection to Neon.
 
-- [ ] **Task 1.4: Code Formatting & Tooling Validation**
+- [x] **Task 1.4: Code Formatting & Tooling Validation**
     - Configure root `.prettierrc` for Markdown, JSON, and CSS formatting.
     - Verify Go formatting (`gofmt`) and linting configurations.
     - Create basic root developer task scripts in `Makefile` or `package.json` (`dev:backend`, `dev:frontend`).

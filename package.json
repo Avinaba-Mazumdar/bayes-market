@@ -1,0 +1,20 @@
+{
+    "name": "bayesmarket-monorepo",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Institutional-grade binary prediction market exchange engine and reactive trading platform",
+    "scripts": {
+        "dev:backend": "cd backend && \"C:\\Program Files\\Go\\bin\\go.exe\" run cmd/api/main.go",
+        "dev:frontend": "cd frontend && pnpm start",
+        "build:frontend": "cd frontend && pnpm build",
+        "build:backend": "cd backend && \"C:\\Program Files\\Go\\bin\\go.exe\" build ./...",
+        "test:backend": "cd backend && \"C:\\Program Files\\Go\\bin\\go.exe\" test -v -race ./...",
+        "verify:db": "cd backend && \"C:\\Program Files\\Go\\bin\\go.exe\" run cmd/verify-db/main.go",
+        "format:go": "cd backend && \"C:\\Program Files\\Go\\bin\\go.exe\" fmt ./...",
+        "lint:format": "prettier --check \"**/*.{json,md,css,html,ts}\"",
+        "format": "prettier --write \"**/*.{json,md,css,html,ts}\" && cd backend && \"C:\\Program Files\\Go\\bin\\go.exe\" fmt ./..."
+    },
+    "devDependencies": {
+        "prettier": "^3.5.3"
+    }
+}
