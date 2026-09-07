@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -17,6 +18,10 @@ import (
 )
 
 func main() {
+	seedOnly := flag.Bool("seed", false, "Run migrations and seed initial markets, then exit")
+	migrateOnly := flag.Bool("migrate", false, "Run pending database migrations, then exit")
+	flag.Parse()
+
 	cfg, err := config.Load()
 	if err != nil {
 		log.Printf("[WARN] Configuration load warning: %v\n", err)
@@ -30,7 +35,7 @@ func main() {
 	// Attempt database connection pool initialization (Neon PostgreSQL)
 	var dbPool *pgxpool.Pool
 	if cfg != nil && cfg.DatabaseURL != "" && !strings.Contains(cfg.DatabaseURL, "ep-cool-pool-123456") {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
 		pool, err := database.NewPool(ctx, cfg.DatabaseURL)
@@ -40,9 +45,34 @@ func main() {
 		} else {
 			dbPool = pool
 			defer dbPool.Close()
+
+			// Run pending migrations
+			log.Println("[INFO] Checking and applying database migrations...")
+			if err := database.RunMigrations(ctx, dbPool); err != nil {
+				log.Fatalf("[FATAL] Database migration failed: %v\n", err)
+			}
+
+			// If seed flag passed, populate initial prediction markets
+			if *seedOnly {
+				log.Println("[INFO] Seeding initial prediction markets...")
+				if err := database.SeedInitialMarkets(ctx, dbPool); err != nil {
+					log.Fatalf("[FATAL] Seeding failed: %v\n", err)
+				}
+				log.Println("[INFO] Database seeded successfully.")
+				return
+			}
+
+			if *migrateOnly {
+				log.Println("[INFO] Migrations completed successfully.")
+				return
+			}
 		}
 	} else {
 		log.Println("[INFO] Placeholder or empty DATABASE_URL detected. Server running in disconnected sandbox mode.")
+	}
+
+	if *seedOnly || *migrateOnly {
+		log.Fatal("[FATAL] Cannot execute seed/migrate: database connection was not established.")
 	}
 
 	router := gin.New()

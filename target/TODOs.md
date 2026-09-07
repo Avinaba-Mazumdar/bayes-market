@@ -9,7 +9,7 @@ This document tracks the phased execution plan for **BayesMarket**. It divides t
 ## Phase Overview & Progress Tracker
 
 - [x] **Phase 1: Project Scaffolding, Development Tooling & Monorepo Foundation**
-- [ ] **Phase 2: Database Schema, Migration Pipeline & Seed Datasets**
+- [x] **Phase 2: Database Schema, Migration Pipeline & Seed Datasets**
 - [ ] **Phase 3: Fixed-Point Mathematical AMM Engine & Invariant Test Suite**
 - [ ] **Phase 4: Backend REST API, Token-Bucket Rate Limiting & Guest Session Management**
 - [ ] **Phase 5: Atomic Order Execution Engine & Pessimistic Concurrency Controls**
@@ -56,25 +56,25 @@ Establish the monorepo directory layout, initialize Go and Angular workspaces, c
 
 Implement the production PostgreSQL database schema, automated migration runner, connection pool lifecycle, and real-world seed markets.
 
-- [ ] **Task 2.1: PostgreSQL DDL Schema & Migration Pipeline**
+- [x] **Task 2.1: PostgreSQL DDL Schema & Migration Pipeline**
     - Create migration files in `backend/internal/database/migrations/`:
         - `000001_init_schema.up.sql`: Tables for `users`, `markets`, `liquidity_pools`, `trades`, `user_positions`, `ledger_entries`, `idempotency_keys`, and `faucet_claims`.
         - Use `NUMERIC(28, 8)` for all balances, shares, prices, and collateral; enforce `cash_balance >= 0`, `reserve_yes > 0`, `reserve_no > 0`, `collateral_reserve >= 0`, and `shares_owned >= 0`.
         - Add `UNIQUE (user_id, idempotency_key)` to `trades` and `PRIMARY KEY (actor_id, operation, idempotency_key)` to `idempotency_keys`; add indexes `idx_trades_market_created`, `idx_positions_user`, and `idx_ledger_entries_transaction`.
 
-- [ ] **Task 2.2: Connection Pool Management (`pgx/v5`)**
+- [x] **Task 2.2: Connection Pool Management (`pgx/v5`)**
     - Implement connection pool factory in `backend/internal/database/db.go` with configurable min/max connections, idle timeouts, and health ping telemetry.
     - Implement a migration runner utility executing pending SQL migration scripts on startup.
 
-- [ ] **Task 2.3: Seed Data Generator for Initial Prediction Markets**
-    - Implement seed loader in `backend/internal/database/seed.go` inserting realistic markets across categories:
-        - **AI & Tech**: _"Will OpenAI release GPT-5 before December 2026?"_ (72% YES)
-        - **Crypto**: _"Will Bitcoin exceed $125,000 in Q4 2026?"_ (45% YES)
-        - **Macro**: _"Will the US Federal Reserve cut interest rates at the next FOMC?"_ (84% YES)
-        - **Space & Science**: _"Will SpaceX successfully land a Starship on Mars by 2027?"_ (31% YES)
-    - Seed collateral-backed complete-set pools with virtual reserves calibrated to those probabilities; for the 72% YES market, use $R_{\text{YES}}=7,000$, $R_{\text{NO}}=18,000$, $k=126,000,000$, and $C=25,000$.
+- [x] **Task 2.3: Seed Data Generator for Initial Prediction Markets**
+    - Implement seed loader in `backend/internal/database/seed.go` inserting real-time trending questions across Macro, Crypto, AI & Tech, and Science:
+        - **Macro**: _"Will the US Federal Reserve cut interest rates at the next FOMC meeting?"_ (84% YES: $R_{\text{YES}}=3,200$, $R_{\text{NO}}=16,800$, $k=53,760,000$, $C=20,000$ USDC)
+        - **Crypto**: _"Will Bitcoin hit $125,000 before December 31, 2026?"_ (45% YES: $R_{\text{YES}}=11,000$, $R_{\text{NO}}=9,000$, $k=99,000,000$, $C=20,000$ USDC)
+        - **AI & Tech**: _"Will OpenAI release GPT-5 before December 31, 2026?"_ (40% YES: $R_{\text{YES}}=12,000$, $R_{\text{NO}}=8,000$, $k=96,000,000$, $C=20,000$ USDC)
+        - **Science**: _"Will SpaceX land an uncrewed Starship on Mars before 2028?"_ (22% YES: $R_{\text{YES}}=15,600$, $R_{\text{NO}}=4,400$, $k=68,640,000$, $C=20,000$ USDC)
+    - Seed collateral-backed complete-set pools with virtual reserves calibrated to exact Polymarket market probability weights.
 
-- [ ] **Task 2.4: Schema Constraint & Migration Unit Tests**
+- [x] **Task 2.4: Schema Constraint & Migration Unit Tests**
     - Write unit tests in `backend/internal/database/db_test.go` verifying that negative balances and zero reserves trigger database check constraint errors.
 
 ### 🔍 User Verification Task (Phase 2)
