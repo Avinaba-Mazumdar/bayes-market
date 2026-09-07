@@ -225,7 +225,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 justify-content: space-between;
                 gap: 24px;
                 flex-wrap: wrap;
-                border-bottom: 1px solid var(--hairline, #1e2638);
+                border-bottom: 1px solid var(--hairline, #1e293b);
                 padding-bottom: 20px;
             }
 
@@ -234,14 +234,14 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 align-items: flex-start;
                 gap: 16px;
                 padding: 18px 24px;
-                background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%);
-                border: 1px solid var(--outcome-yes, #10b981);
-                border-radius: var(--radius-lg, 12px);
-                box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+                background: linear-gradient(135deg, rgba(5, 193, 104, 0.12) 0%, rgba(56, 189, 248, 0.08) 100%);
+                border: 1px solid var(--outcome-yes, #05c168);
+                border-radius: var(--radius-lg, 14px);
+                box-shadow: 0 4px 20px rgba(5, 193, 104, 0.15);
             }
 
             .banner-badge-icon {
-                color: var(--outcome-yes, #10b981);
+                color: var(--outcome-yes, #05c168);
                 flex-shrink: 0;
                 display: flex;
                 align-items: center;
@@ -273,7 +273,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 margin: 0;
                 font-family: var(--font-ui);
                 font-size: 13.5px;
-                color: var(--ink-secondary, #cbd5e1);
+                color: var(--ink-secondary, #94a3b8);
                 line-height: 1.5;
             }
 
@@ -293,14 +293,14 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 
             .res-date {
                 font-family: var(--font-ui);
-                font-size: 12.5px;
-                color: var(--muted, #a2b4c9);
+                font-size: 12px;
+                color: var(--muted, #94a3b8);
             }
 
             .market-hero-title {
                 margin: 0;
                 font-family: var(--font-ui);
-                font-size: 28px;
+                font-size: 26px;
                 font-weight: 700;
                 color: var(--ink, #f8fafc);
                 line-height: 1.3;
@@ -317,22 +317,22 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 display: flex;
                 align-items: center;
                 gap: 8px;
-                padding: 10px 18px;
-                border-radius: var(--radius-lg, 14px);
+                padding: 8px 16px;
+                border-radius: var(--radius-pill, 9999px);
                 user-select: none;
-                min-height: var(--touch-target-min, 44px);
+                min-height: 44px;
             }
 
             .spot-yes {
-                background-color: rgba(16, 185, 129, 0.15);
-                border: 1.5px solid var(--outcome-yes-border, #10b981);
-                color: var(--outcome-yes-text, #34d399);
+                background-color: rgba(0, 220, 130, 0.12);
+                border: 1.5px solid rgba(0, 220, 130, 0.35);
+                color: var(--outcome-yes, #00dc82);
             }
 
             .spot-no {
-                background-color: rgba(251, 113, 133, 0.15);
-                border: 1.5px solid var(--outcome-no-border, #fb7185);
-                color: var(--outcome-no-text, #fda4af);
+                background-color: rgba(255, 51, 102, 0.12);
+                border: 1.5px solid rgba(255, 51, 102, 0.35);
+                color: var(--outcome-no, #ff3366);
             }
 
             .spot-glyph {
@@ -344,8 +344,8 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 
             .spot-prob {
                 font-family: var(--font-mono);
-                font-size: 22px;
-                font-weight: 700;
+                font-size: 20px;
+                font-weight: 800;
                 font-feature-settings: 'tnum' 1;
             }
 
@@ -377,14 +377,14 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 
             .sticky-sidebar-wrapper {
                 position: sticky;
-                top: 84px;
+                top: 80px;
             }
 
             /* --- Resolution Card --- */
             .resolution-card {
-                background-color: var(--surface-card, #111622);
-                border: 1px solid var(--hairline, #1e2638);
-                border-radius: var(--radius-xl, 20px);
+                background-color: var(--surface-card, #131126);
+                border: 1px solid var(--hairline, #252140);
+                border-radius: var(--radius-lg, 14px);
                 padding: 24px;
                 display: flex;
                 flex-direction: column;
@@ -401,22 +401,22 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             .section-title {
                 margin: 0;
                 font-family: var(--font-ui);
-                font-size: 18px;
+                font-size: 17px;
                 font-weight: 700;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
             }
 
             .market-description {
                 font-family: var(--font-ui);
                 font-size: 14.5px;
                 line-height: 1.6;
-                color: var(--ink-secondary, #cbd5e1);
+                color: var(--muted, #9d97b8);
                 margin: 0;
             }
 
             .oracle-source-box {
-                background-color: var(--canvas-subtle, #0c1017);
-                border: 1px solid var(--hairline, #1e2638);
+                background-color: var(--canvas-subtle, #0e0c1c);
+                border: 1px solid var(--hairline, #252140);
                 border-radius: var(--radius-md, 10px);
                 padding: 12px 16px;
                 display: flex;
@@ -430,13 +430,13 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
             }
 
             .oracle-text {
                 font-family: var(--font-ui);
                 font-size: 13.5px;
-                color: var(--status-info, #7dd3fc);
+                color: var(--accent, #00d4ff);
                 margin: 0;
             }
 
@@ -444,7 +444,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
                 gap: 12px;
-                border-top: 1px solid var(--hairline, #1e2638);
+                border-top: 1px solid var(--hairline, #252140);
                 padding-top: 16px;
             }
 
@@ -457,7 +457,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             .spec-label {
                 font-family: var(--font-ui);
                 font-size: 11px;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
                 text-transform: uppercase;
             }
 
@@ -465,7 +465,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 font-family: var(--font-mono);
                 font-size: 14px;
                 font-weight: 600;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 font-feature-settings: 'tnum' 1;
             }
 
@@ -483,8 +483,8 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             .spinner {
                 width: 40px;
                 height: 40px;
-                border: 3px solid rgba(166, 3, 76, 0.2);
-                border-top-color: var(--primary-border, #e84089);
+                border: 3px solid rgba(124, 77, 255, 0.2);
+                border-top-color: var(--primary-border, #7c4dff);
                 border-radius: 50%;
                 animation: spin 0.8s linear infinite;
             }

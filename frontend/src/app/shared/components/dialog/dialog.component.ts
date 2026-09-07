@@ -94,7 +94,7 @@ export type DialogRole = 'dialog' | 'alertdialog';
             .dialog-overlay {
                 position: fixed;
                 inset: 0;
-                background-color: rgba(7, 9, 14, 0.82);
+                background-color: rgba(8, 7, 17, 0.84);
                 backdrop-filter: blur(12px);
                 -webkit-backdrop-filter: blur(12px);
                 animation: overlayFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -127,8 +127,8 @@ export type DialogRole = 'dialog' | 'alertdialog';
                 width: 100%;
                 max-height: calc(100vh - 48px);
                 overflow-y: auto;
-                background-color: var(--surface-card, #111622);
-                border: 1px solid var(--border-strong, #606e85);
+                background-color: var(--surface-card, #131126);
+                border: 1px solid var(--border-strong, #3d3766);
                 border-radius: var(--radius-xl, 20px);
                 padding: 24px;
                 box-shadow:
@@ -180,7 +180,7 @@ export type DialogRole = 'dialog' | 'alertdialog';
                 background: transparent;
                 border: none;
                 border-radius: var(--radius-md, 10px);
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
                 cursor: pointer;
                 transition:
                     color 0.15s ease,
@@ -188,12 +188,12 @@ export type DialogRole = 'dialog' | 'alertdialog';
             }
 
             .dialog-close-btn:hover {
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 background-color: rgba(255, 255, 255, 0.06);
             }
 
             .dialog-close-btn:focus-visible {
-                outline: 2px solid var(--focus-outline, #e84089);
+                outline: 2px solid var(--focus-outline, #7c4dff);
                 outline-offset: 2px;
             }
 

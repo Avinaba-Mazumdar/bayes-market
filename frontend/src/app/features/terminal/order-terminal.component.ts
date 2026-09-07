@@ -134,6 +134,7 @@ export interface OrderIntent {
             <div class="action-footer">
                 <app-button
                     [variant]="selectedOutcome() === 'YES' ? 'yes' : 'no'"
+                    [selected]="true"
                     size="lg"
                     [fullWidth]="true"
                     [disabled]="isTradeDisabled()"
@@ -159,11 +160,11 @@ export interface OrderIntent {
             }
 
             .order-terminal-card {
-                background-color: var(--surface-terminal, #0e131d);
-                border: 1px solid var(--border-strong, #606e85);
-                border-radius: var(--radius-xl, 20px);
+                background-color: var(--surface-card, #131126);
+                border: 1px solid var(--hairline, #252140);
+                border-radius: var(--radius-lg, 14px);
                 padding: var(--space-lg, 20px);
-                box-shadow: var(--shadow-terminal);
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
                 display: flex;
                 flex-direction: column;
                 gap: 16px;
@@ -173,7 +174,7 @@ export interface OrderIntent {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                border-bottom: 1px solid var(--hairline, #1e2638);
+                border-bottom: 1px solid var(--hairline, #252140);
                 padding-bottom: 12px;
             }
 
@@ -181,7 +182,7 @@ export interface OrderIntent {
                 font-family: var(--font-ui);
                 font-size: 16px;
                 font-weight: 700;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 letter-spacing: -0.2px;
             }
 
@@ -189,24 +190,24 @@ export interface OrderIntent {
                 display: flex;
                 align-items: center;
                 gap: 6px;
-                background-color: var(--canvas, #07090e);
-                padding: 4px 10px;
-                border-radius: var(--radius-sm, 6px);
-                border: 1px solid var(--hairline, #1e2638);
+                background-color: var(--canvas-subtle, #0e0c1c);
+                padding: 4px 12px;
+                border-radius: var(--radius-pill, 9999px);
+                border: 1px solid var(--hairline, #252140);
             }
 
             .balance-title {
                 font-family: var(--font-ui);
                 font-size: 11px;
                 font-weight: 600;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
             }
 
             .balance-num {
                 font-family: var(--font-mono);
                 font-size: 13px;
                 font-weight: 700;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 font-feature-settings: 'tnum' 1;
             }
 
@@ -246,38 +247,40 @@ export interface OrderIntent {
                 font-family: var(--font-ui);
                 font-size: 13px;
                 font-weight: 600;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
             }
 
             .input-wrapper {
                 display: flex;
                 align-items: center;
-                background-color: var(--canvas, #07090e);
-                border: 1px solid var(--border-strong, #606e85);
-                border-radius: var(--radius-lg, 14px);
+                background-color: var(--canvas-subtle, #0e0c1c);
+                border: 1px solid var(--hairline, #252140);
+                border-radius: var(--radius-md, 10px);
                 padding: 4px 8px 4px 14px;
                 gap: 8px;
-                min-height: var(--touch-target-min, 44px);
-                transition: border-color 0.15s ease;
+                min-height: 44px;
+                transition:
+                    border-color 0.15s ease,
+                    box-shadow 0.15s ease;
             }
 
             .input-wrapper:focus-within {
-                border-color: var(--primary-border, #e84089);
-                box-shadow: 0 0 0 2px var(--focus-ring, rgba(232, 64, 137, 0.35));
+                border-color: var(--primary-border, #7c4dff);
+                box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.25);
             }
 
             .currency-symbol {
                 font-family: var(--font-mono);
                 font-size: 18px;
                 font-weight: 700;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
             }
 
             .amount-field {
                 flex: 1;
                 background: transparent;
                 border: none;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 font-family: var(--font-mono);
                 font-size: 20px;
                 font-weight: 700;
@@ -297,12 +300,13 @@ export interface OrderIntent {
                 display: flex;
                 align-items: center;
                 gap: 8px;
+                flex-wrap: wrap;
             }
 
             .quote-drawer {
-                background-color: var(--canvas-subtle, #0c1017);
-                border: 1px solid var(--hairline, #1e2638);
-                border-radius: var(--radius-lg, 14px);
+                background-color: var(--canvas-subtle, #0e0c1c);
+                border: 1px solid var(--hairline, #252140);
+                border-radius: var(--radius-md, 10px);
                 padding: 14px;
                 display: flex;
                 flex-direction: column;
@@ -323,20 +327,20 @@ export interface OrderIntent {
 
             .quote-label {
                 font-family: var(--font-ui);
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
             }
 
             .quote-val {
                 font-family: var(--font-mono);
                 font-weight: 600;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 font-feature-settings: 'tnum' 1;
             }
 
             .shares-highlight {
                 font-size: 15px;
                 font-weight: 700;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
             }
 
             .slippage-val-group {
@@ -346,7 +350,7 @@ export interface OrderIntent {
             }
 
             .total-return-row {
-                border-top: 1px solid var(--hairline, #1e2638);
+                border-top: 1px solid var(--hairline, #252140);
                 padding-top: 10px;
                 margin-top: 2px;
             }
@@ -361,7 +365,7 @@ export interface OrderIntent {
                 font-family: var(--font-mono);
                 font-size: 15px;
                 font-weight: 700;
-                color: var(--status-profit, #34d399);
+                color: var(--outcome-yes, #00dc82);
                 font-feature-settings: 'tnum' 1;
             }
 
@@ -369,7 +373,7 @@ export interface OrderIntent {
                 font-family: var(--font-mono);
                 font-size: 12px;
                 font-weight: 600;
-                color: var(--status-profit, #34d399);
+                color: var(--outcome-yes, #00dc82);
             }
 
             .action-footer {
@@ -382,7 +386,7 @@ export interface OrderIntent {
             .validation-warning {
                 font-family: var(--font-ui);
                 font-size: 12px;
-                color: var(--status-warning, #fcd34d);
+                color: var(--status-warning, #fbbf24);
                 text-align: center;
             }
 

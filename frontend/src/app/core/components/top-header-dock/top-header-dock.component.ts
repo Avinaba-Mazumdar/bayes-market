@@ -16,10 +16,9 @@ import { AuthStore } from '../../../state/auth.store';
                 <div class="dock-left">
                     <a routerLink="/" class="brand-link" aria-label="BayesMarket Home">
                         <div class="brand-emblem" aria-hidden="true">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#a6034c" />
-                                <path d="M2 17L12 22L22 17" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />
-                                <path d="M2 12L12 17L22 12" stroke="#34d399" stroke-width="2" stroke-linecap="round" />
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="#7c4dff" stroke-width="2.5" />
+                                <path d="M7 12L10.5 15.5L17 9" stroke="#00d4ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                         </div>
                         <span class="brand-text">Bayes<span class="brand-highlight">Market</span></span>
@@ -78,7 +77,7 @@ import { AuthStore } from '../../../state/auth.store';
                     <!-- Guest Balance Pill (JetBrains Mono tabular figures) -->
                     <div class="balance-pill" aria-label="Current cash balance">
                         <span class="balance-label">USDC</span>
-                        <span class="balance-amount tabular-nums">{{ userBalance() }}</span>
+                        <span class="balance-amount tabular-nums">\${{ userBalance() }}</span>
                     </div>
 
                     <!-- Faucet Button -->
@@ -144,18 +143,18 @@ import { AuthStore } from '../../../state/auth.store';
                 z-index: 1000;
             }
             .top-header-dock {
-                height: 64px;
-                background-color: var(--surface-glass, rgba(17, 22, 34, 0.88));
+                height: 60px;
+                background-color: var(--surface-glass, rgba(19, 17, 38, 0.88));
                 backdrop-filter: blur(16px);
                 -webkit-backdrop-filter: blur(16px);
-                border-bottom: 1px solid var(--hairline, #1e2638);
+                border-bottom: 1px solid var(--hairline, #252140);
                 display: flex;
                 align-items: center;
                 padding: 0 var(--space-lg, 20px);
             }
             .dock-container {
                 width: 100%;
-                max-width: 1600px;
+                max-width: 1560px;
                 margin: 0 auto;
                 display: flex;
                 align-items: center;
@@ -182,51 +181,52 @@ import { AuthStore } from '../../../state/auth.store';
                 justify-content: center;
                 width: 32px;
                 height: 32px;
-                background-color: rgba(166, 3, 76, 0.15);
-                border: 1px solid var(--primary-border, #e84089);
+                background-color: rgba(54, 0, 179, 0.16);
+                border: 1px solid rgba(124, 77, 255, 0.35);
                 border-radius: var(--radius-sm, 6px);
             }
             .brand-text {
                 font-family: var(--font-ui);
                 font-size: 18px;
                 font-weight: 700;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 letter-spacing: -0.3px;
             }
             .brand-highlight {
-                color: var(--primary-border, #e84089);
+                color: var(--primary-border, #7c4dff);
             }
             .nav-links {
                 display: flex;
                 align-items: center;
-                gap: 4px;
-                margin-left: 8px;
+                gap: 6px;
+                margin-left: 12px;
             }
             .nav-tab {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                min-height: var(--touch-target-min, 44px);
-                min-width: var(--touch-target-min, 44px);
-                padding: 8px 16px;
-                color: var(--ink-secondary, #cbd5e1);
+                min-height: 38px;
+                padding: 6px 14px;
+                color: var(--ink-secondary, #9d97b8);
                 font-family: var(--font-ui);
-                font-size: 14px;
+                font-size: 13.5px;
                 font-weight: 600;
                 text-decoration: none;
-                border-radius: var(--radius-md, 10px);
+                border-radius: var(--radius-pill, 9999px);
+                border: 1px solid transparent;
                 transition:
                     background-color 0.15s ease,
+                    border-color 0.15s ease,
                     color 0.15s ease;
             }
             .nav-tab:hover {
-                background-color: var(--surface-card-elevated, #171f30);
-                color: var(--ink, #f8fafc);
+                background-color: var(--surface-card, #131126);
+                color: var(--ink, #f8f7ff);
             }
             .nav-tab.active {
-                background-color: rgba(166, 3, 76, 0.18);
+                background-color: var(--surface-card-elevated, #1a1733);
                 color: #ffffff;
-                border: 1px solid rgba(232, 64, 137, 0.4);
+                border: 1px solid var(--hairline, #252140);
             }
             .telemetry-pill {
                 display: inline-flex;
@@ -281,9 +281,9 @@ import { AuthStore } from '../../../state/auth.store';
                     border-color 0.15s ease;
             }
             .stream-toggle-btn:hover {
-                background-color: var(--surface-card-elevated, #171f30);
-                color: var(--ink, #f8fafc);
-                border-color: var(--primary-border, #e84089);
+                background-color: var(--surface-card-elevated, #1a1733);
+                color: var(--ink, #f8f7ff);
+                border-color: var(--primary-border, #7c4dff);
             }
             .stream-toggle-btn.paused {
                 background-color: rgba(245, 158, 11, 0.15);
@@ -294,24 +294,24 @@ import { AuthStore } from '../../../state/auth.store';
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
-                min-height: var(--touch-target-min, 44px);
-                padding: 8px 14px;
-                background-color: var(--surface-card, #111622);
-                border: 1px solid var(--border-strong, #606e85);
-                border-radius: var(--radius-md, 10px);
+                min-height: 38px;
+                padding: 6px 14px;
+                background-color: var(--surface-card, #131126);
+                border: 1px solid var(--hairline, #252140);
+                border-radius: var(--radius-pill, 9999px);
             }
             .balance-label {
                 font-family: var(--font-ui);
                 font-size: 11px;
                 font-weight: 700;
-                color: var(--body, #a2b4c9);
+                color: var(--accent, #00d4ff);
                 letter-spacing: 0.5px;
             }
             .balance-amount {
                 font-family: var(--font-mono);
                 font-size: 14px;
                 font-weight: 700;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 font-feature-settings: 'tnum' 1;
             }
             @keyframes pulse {
@@ -360,10 +360,9 @@ import { AuthStore } from '../../../state/auth.store';
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
-                min-height: var(--touch-target-min, 44px);
-                min-width: var(--touch-target-min, 44px);
-                padding: 8px 14px;
-                border-radius: var(--radius-md, 10px);
+                min-height: 38px;
+                padding: 6px 14px;
+                border-radius: var(--radius-pill, 9999px);
                 font-family: var(--font-ui);
                 font-size: 13px;
                 font-weight: 600;
@@ -375,14 +374,14 @@ import { AuthStore } from '../../../state/auth.store';
             }
 
             .guest-badge-btn {
-                background-color: rgba(245, 158, 11, 0.08);
-                border: 1px solid rgba(245, 158, 11, 0.35);
-                color: #fcd34d;
+                background-color: rgba(54, 0, 179, 0.14);
+                border: 1px solid rgba(124, 77, 255, 0.35);
+                color: #b388ff;
             }
 
             .guest-badge-btn:hover {
-                background-color: rgba(245, 158, 11, 0.16);
-                border-color: #f59e0b;
+                background-color: rgba(54, 0, 179, 0.25);
+                border-color: #7c4dff;
                 color: #ffffff;
             }
 
@@ -390,8 +389,8 @@ import { AuthStore } from '../../../state/auth.store';
                 width: 7px;
                 height: 7px;
                 border-radius: 50%;
-                background-color: #f59e0b;
-                box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+                background-color: #7c4dff;
+                box-shadow: 0 0 6px rgba(124, 77, 255, 0.6);
             }
 
             .user-profile-dock {
@@ -401,15 +400,15 @@ import { AuthStore } from '../../../state/auth.store';
             }
 
             .user-logged-in-btn {
-                background-color: var(--surface-card, #111622);
-                border: 1px solid var(--border-strong, #606e85);
-                color: var(--ink, #f8fafc);
+                background-color: var(--surface-card, #131126);
+                border: 1px solid var(--hairline, #252140);
+                color: var(--ink, #f8f7ff);
                 padding: 6px 12px;
             }
 
             .user-logged-in-btn:hover {
-                background-color: var(--surface-card-elevated, #171f30);
-                border-color: var(--primary-border, #e84089);
+                background-color: var(--surface-card-elevated, #1a1733);
+                border-color: var(--primary-border, #7c4dff);
             }
 
             .header-avatar {
@@ -417,7 +416,7 @@ import { AuthStore } from '../../../state/auth.store';
                 height: 24px;
                 border-radius: 50%;
                 object-fit: cover;
-                border: 1px solid var(--primary-border, #e84089);
+                border: 1px solid var(--primary-border, #7c4dff);
             }
 
             .auth-user-name {
@@ -432,12 +431,12 @@ import { AuthStore } from '../../../state/auth.store';
                 align-items: center;
                 justify-content: center;
                 min-width: 36px;
-                min-height: var(--touch-target-min, 44px);
-                padding: 8px;
+                min-height: 38px;
+                padding: 6px 10px;
                 background-color: transparent;
-                border: 1px solid var(--hairline, #1e2638);
-                border-radius: var(--radius-md, 10px);
-                color: var(--muted, #a2b4c9);
+                border: 1px solid var(--hairline, #1e293b);
+                border-radius: var(--radius-pill, 9999px);
+                color: var(--muted, #94a3b8);
                 cursor: pointer;
                 transition:
                     background-color 0.15s ease,
@@ -445,9 +444,9 @@ import { AuthStore } from '../../../state/auth.store';
             }
 
             .signout-quick-btn:hover {
-                background-color: rgba(239, 68, 68, 0.12);
-                border-color: rgba(239, 68, 68, 0.4);
-                color: #f87171;
+                background-color: rgba(244, 63, 94, 0.12);
+                border-color: rgba(244, 63, 94, 0.4);
+                color: #fda4af;
             }
         `
     ]

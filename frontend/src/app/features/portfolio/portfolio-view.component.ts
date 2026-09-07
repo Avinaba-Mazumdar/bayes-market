@@ -272,9 +272,9 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
             }
 
             .metric-card {
-                background-color: var(--surface-card, #111622);
-                border: 1px solid var(--hairline, #1e2638);
-                border-radius: var(--radius-xl, 20px);
+                background-color: var(--surface-card, #131126);
+                border: 1px solid var(--hairline, #252140);
+                border-radius: var(--radius-lg, 14px);
                 padding: 20px;
                 display: flex;
                 flex-direction: column;
@@ -293,40 +293,41 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 font-family: var(--font-ui);
                 font-size: 12px;
                 font-weight: 600;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #94a3b8);
                 text-transform: uppercase;
                 letter-spacing: 0.3px;
             }
 
             .metric-glyph.info {
-                color: var(--status-info, #7dd3fc);
+                color: var(--accent, #00d4ff);
             }
             .metric-glyph.primary {
-                color: var(--primary-border, #e84089);
+                color: var(--primary-border, #7c4dff);
             }
             .metric-glyph.profit {
-                color: var(--status-profit, #34d399);
+                color: var(--outcome-yes, #00dc82);
             }
             .metric-glyph.loss {
-                color: var(--status-loss, #fda4af);
+                color: var(--outcome-no, #ff3366);
             }
 
             .active-count-badge {
                 font-family: var(--font-mono);
                 font-size: 11.5px;
                 font-weight: 700;
-                background-color: var(--hairline, #1e2638);
-                color: var(--ink, #f8fafc);
+                background-color: var(--hairline, #252140);
+                color: var(--ink, #f8f7ff);
                 padding: 2px 8px;
-                border-radius: var(--radius-sm, 6px);
+                border-radius: var(--radius-pill, 9999px);
             }
 
             .metric-value {
                 font-family: var(--font-mono);
                 font-size: 26px;
-                font-weight: 700;
-                color: var(--ink, #f8fafc);
-                letter-spacing: -0.2px;
+                font-weight: 800;
+                color: var(--ink, #f8f7ff);
+                letter-spacing: -0.5px;
+                margin: 4px 0;
                 font-feature-settings: 'tnum' 1;
             }
 
@@ -338,11 +339,11 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
             }
 
             .profit-text {
-                color: var(--status-profit, #34d399);
+                color: var(--outcome-yes, #00dc82);
             }
 
             .loss-text {
-                color: var(--status-loss, #fda4af);
+                color: var(--outcome-no, #ff3366);
             }
 
             .pnl-pct-pill {
@@ -354,26 +355,26 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
             }
 
             .profit-pill {
-                background-color: rgba(52, 211, 153, 0.1);
-                color: var(--status-profit, #34d399);
+                background-color: rgba(0, 220, 130, 0.12);
+                color: var(--outcome-yes, #00dc82);
             }
 
             .loss-pill {
-                background-color: rgba(244, 63, 94, 0.1);
-                color: var(--status-loss, #fda4af);
+                background-color: rgba(255, 51, 102, 0.12);
+                color: var(--outcome-no, #ff3366);
             }
 
             .metric-desc {
                 font-family: var(--font-ui);
                 font-size: 11.5px;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #94a3b8);
             }
 
             /* --- Positions Table --- */
             .positions-section {
-                background-color: var(--surface-card, #111622);
-                border: 1px solid var(--hairline, #1e2638);
-                border-radius: var(--radius-xl, 20px);
+                background-color: var(--surface-card, #131126);
+                border: 1px solid var(--hairline, #252140);
+                border-radius: var(--radius-lg, 14px);
                 padding: 24px;
                 display: flex;
                 flex-direction: column;
@@ -385,7 +386,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                border-bottom: 1px solid var(--hairline, #1e2638);
+                border-bottom: 1px solid var(--hairline, #252140);
                 padding-bottom: 14px;
             }
 
@@ -393,14 +394,14 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 font-family: var(--font-ui);
                 font-size: 18px;
                 font-weight: 700;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 margin: 0;
             }
 
             .positions-count {
                 font-family: var(--font-ui);
                 font-size: 12.5px;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #94a3b8);
             }
 
             .table-responsive-container {
@@ -421,15 +422,15 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 font-weight: 600;
                 text-transform: uppercase;
                 letter-spacing: 0.4px;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #94a3b8);
                 padding: 12px 14px;
-                border-bottom: 1px solid var(--hairline, #1e2638);
+                border-bottom: 1px solid var(--hairline, #252140);
                 white-space: nowrap;
             }
 
             .positions-table td {
                 padding: 14px;
-                border-bottom: 1px solid rgba(30, 38, 56, 0.5);
+                border-bottom: 1px solid var(--hairline, #252140);
                 vertical-align: middle;
             }
 
@@ -456,11 +457,11 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 flex-direction: column;
                 gap: 4px;
                 text-decoration: none;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
             }
 
             .market-link:hover .market-title-text {
-                color: var(--primary-border, #e84089);
+                color: var(--primary-border, #7c4dff);
             }
 
             .market-title-text {

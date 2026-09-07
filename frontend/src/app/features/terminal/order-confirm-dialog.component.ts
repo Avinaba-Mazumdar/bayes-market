@@ -130,8 +130,8 @@ import { OrderIntent } from './order-terminal.component';
             }
 
             .market-summary-card {
-                background-color: var(--canvas-subtle, #0c1017);
-                border: 1px solid var(--hairline, #1e2638);
+                background-color: var(--canvas-subtle, #0e0c1c);
+                border: 1px solid var(--hairline, #252140);
                 border-radius: var(--radius-md, 10px);
                 padding: 12px 14px;
             }
@@ -142,14 +142,14 @@ import { OrderIntent } from './order-terminal.component';
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
             }
 
             .market-title {
                 font-family: var(--font-ui);
                 font-size: 15px;
                 font-weight: 600;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 margin: 4px 0 0 0;
                 line-height: 1.4;
             }
@@ -171,7 +171,7 @@ import { OrderIntent } from './order-terminal.component';
                 font-family: var(--font-ui);
                 font-size: 11px;
                 font-weight: 600;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
             }
 
             .badge-glyph {
@@ -186,13 +186,13 @@ import { OrderIntent } from './order-terminal.component';
                 font-family: var(--font-mono);
                 font-size: 18px;
                 font-weight: 700;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 font-feature-settings: 'tnum' 1;
             }
 
             .financial-table {
-                background-color: var(--canvas, #07090e);
-                border: 1px solid var(--hairline, #1e2638);
+                background-color: var(--canvas, #080711);
+                border: 1px solid var(--hairline, #252140);
                 border-radius: var(--radius-lg, 14px);
                 padding: 8px 16px;
                 display: flex;
@@ -204,7 +204,7 @@ import { OrderIntent } from './order-terminal.component';
                 align-items: center;
                 justify-content: space-between;
                 padding: 10px 0;
-                border-bottom: 1px solid var(--hairline, #1e2638);
+                border-bottom: 1px solid var(--hairline, #252140);
                 font-size: 13px;
             }
 
@@ -214,29 +214,29 @@ import { OrderIntent } from './order-terminal.component';
 
             .cell-label {
                 font-family: var(--font-ui);
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
             }
 
             .cell-val {
                 font-family: var(--font-mono);
                 font-weight: 600;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 font-feature-settings: 'tnum' 1;
             }
 
             .shares-val {
-                color: var(--status-profit, #34d399);
+                color: var(--status-profit, #00dc82);
                 font-weight: 700;
             }
 
             .balance-preview-row {
                 margin-top: 4px;
                 padding-top: 12px;
-                border-top: 1px dashed var(--hairline, #1e2638);
+                border-top: 1px dashed var(--hairline, #252140);
             }
 
             .balance-preview {
-                color: var(--status-info, #7dd3fc);
+                color: var(--status-info, #00d4ff);
                 font-weight: 700;
             }
 
@@ -244,13 +244,13 @@ import { OrderIntent } from './order-terminal.component';
                 display: flex;
                 align-items: flex-start;
                 gap: 8px;
-                background-color: rgba(56, 189, 248, 0.08);
-                border: 1px solid rgba(56, 189, 248, 0.25);
+                background-color: rgba(0, 212, 255, 0.08);
+                border: 1px solid rgba(0, 212, 255, 0.25);
                 border-radius: var(--radius-md, 10px);
                 padding: 10px 12px;
                 font-family: var(--font-ui);
                 font-size: 12px;
-                color: var(--status-info, #7dd3fc);
+                color: var(--status-info, #00d4ff);
                 line-height: 1.45;
             }
 

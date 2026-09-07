@@ -194,26 +194,26 @@ import { ApiService } from '../../core/services/api.service';
                 font-family: var(--font-ui);
                 font-size: 13px;
                 font-weight: 700;
-                color: #38bdf8;
+                color: var(--accent, #00d4ff);
             }
 
             .banner-desc {
                 font-family: var(--font-ui);
                 font-size: 12px;
-                color: var(--ink-secondary, #cbd5e1);
+                color: var(--ink-secondary, #9d97b8);
                 line-height: 1.4;
             }
 
             .auth-card {
-                background-color: var(--canvas-subtle, #0c1017);
-                border: 1px solid var(--border-subtle, #1e2638);
+                background-color: var(--canvas-subtle, #0e0c1c);
+                border: 1px solid var(--border-subtle, #252140);
                 border-radius: var(--radius-lg, 14px);
                 overflow: hidden;
             }
 
             .auth-card.primary-auth {
-                border-color: rgba(232, 64, 137, 0.3);
-                background: linear-gradient(180deg, rgba(23, 31, 48, 0.6) 0%, rgba(12, 16, 23, 0.9) 100%);
+                border-color: rgba(124, 77, 255, 0.35);
+                background: linear-gradient(180deg, rgba(26, 23, 51, 0.6) 0%, rgba(14, 12, 28, 0.9) 100%);
             }
 
             .auth-card-body {
@@ -228,7 +228,7 @@ import { ApiService } from '../../core/services/api.service';
                 font-family: var(--font-ui);
                 font-size: 16px;
                 font-weight: 700;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
             }
 
             .auth-method-desc {
@@ -236,7 +236,7 @@ import { ApiService } from '../../core/services/api.service';
                 font-family: var(--font-ui);
                 font-size: 13px;
                 line-height: 1.45;
-                color: var(--body, #a2b4c9);
+                color: var(--body, #ccc7e6);
             }
 
             .google-signin-btn {
@@ -272,7 +272,7 @@ import { ApiService } from '../../core/services/api.service';
             }
 
             .google-signin-btn:focus-visible {
-                outline: 2px solid var(--primary-border, #e84089);
+                outline: 2px solid var(--primary-border, #7c4dff);
                 outline-offset: 2px;
             }
 
@@ -296,7 +296,7 @@ import { ApiService } from '../../core/services/api.service';
             .divider::after {
                 content: '';
                 flex: 1;
-                border-bottom: 1px solid var(--hairline, #1e2638);
+                border-bottom: 1px solid var(--hairline, #252140);
             }
 
             .divider-label {
@@ -304,7 +304,7 @@ import { ApiService } from '../../core/services/api.service';
                 font-family: var(--font-mono);
                 font-size: 10px;
                 font-weight: 700;
-                color: var(--muted, #64748b);
+                color: var(--muted, #9d97b8);
                 letter-spacing: 0.8px;
             }
 
@@ -357,14 +357,14 @@ import { ApiService } from '../../core/services/api.service';
                 font-family: var(--font-ui);
                 font-size: 14px;
                 font-weight: 600;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
             }
 
             .guest-desc {
                 margin: 0;
                 font-family: var(--font-ui);
                 font-size: 12px;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
                 line-height: 1.4;
             }
 
@@ -374,8 +374,8 @@ import { ApiService } from '../../core/services/api.service';
                 flex-direction: column;
                 gap: 20px;
                 padding: 16px;
-                background-color: var(--canvas-subtle, #0c1017);
-                border: 1px solid var(--border-subtle, #1e2638);
+                background-color: var(--canvas-subtle, #0e0c1c);
+                border: 1px solid var(--border-subtle, #252140);
                 border-radius: var(--radius-lg, 14px);
             }
 

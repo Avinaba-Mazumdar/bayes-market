@@ -126,13 +126,13 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
                 align-items: center;
                 justify-content: space-between;
                 gap: 24px;
-                padding: 36px 32px;
-                background: linear-gradient(135deg, rgba(17, 22, 34, 0.95) 0%, rgba(14, 19, 29, 0.85) 100%);
-                border: 1px solid var(--hairline, #1e2638);
-                border-radius: var(--radius-xl, 20px);
+                padding: 32px 28px;
+                background: linear-gradient(135deg, rgba(19, 17, 38, 0.95) 0%, rgba(14, 12, 28, 0.9) 100%);
+                border: 1px solid var(--hairline, #252140);
+                border-radius: var(--radius-lg, 14px);
                 position: relative;
                 overflow: hidden;
-                box-shadow: var(--shadow-md);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             }
 
             .hero-section::before {
@@ -142,7 +142,7 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
                 left: -20%;
                 width: 70%;
                 height: 200%;
-                background: radial-gradient(circle, rgba(166, 3, 76, 0.12) 0%, transparent 60%);
+                background: radial-gradient(circle, rgba(54, 0, 179, 0.18) 0%, transparent 60%);
                 pointer-events: none;
             }
 
@@ -156,14 +156,14 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
-                background-color: rgba(166, 3, 76, 0.2);
-                border: 1px solid var(--primary-border, #e84089);
+                background-color: rgba(54, 0, 179, 0.16);
+                border: 1px solid rgba(124, 77, 255, 0.35);
                 border-radius: var(--radius-pill, 9999px);
                 padding: 4px 12px;
                 font-family: var(--font-mono);
                 font-size: 11px;
                 font-weight: 700;
-                color: #fbcfe8;
+                color: #b388ff;
                 letter-spacing: 0.5px;
                 margin-bottom: 12px;
             }
@@ -172,25 +172,25 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
                 width: 6px;
                 height: 6px;
                 border-radius: 50%;
-                background-color: #e84089;
-                box-shadow: 0 0 6px #e84089;
+                background-color: #7c4dff;
+                box-shadow: 0 0 6px #7c4dff;
             }
 
             .hero-title {
                 font-family: var(--font-ui);
-                font-size: 34px;
+                font-size: 32px;
                 font-weight: 700;
                 line-height: 1.2;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 letter-spacing: -0.5px;
                 margin-bottom: 12px;
             }
 
             .hero-desc {
                 font-family: var(--font-ui);
-                font-size: 15px;
+                font-size: 14.5px;
                 line-height: 1.55;
-                color: var(--body, #a2b4c9);
+                color: var(--muted, #9d97b8);
                 margin: 0;
             }
 
@@ -198,9 +198,9 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
                 gap: 16px;
-                background-color: var(--canvas, #07090e);
-                border: 1px solid var(--hairline, #1e2638);
-                border-radius: var(--radius-lg, 14px);
+                background-color: var(--canvas, #080711);
+                border: 1px solid var(--hairline, #252140);
+                border-radius: var(--radius-md, 10px);
                 padding: 16px 20px;
                 position: relative;
                 z-index: 1;
@@ -215,18 +215,18 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
 
             .stat-label {
                 font-family: var(--font-ui);
-                font-size: 11.5px;
+                font-size: 11px;
                 font-weight: 600;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
                 text-transform: uppercase;
-                letter-spacing: 0.3px;
+                letter-spacing: 0.4px;
             }
 
             .stat-val {
                 font-family: var(--font-mono);
-                font-size: 20px;
+                font-size: 19px;
                 font-weight: 700;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
                 font-feature-settings: 'tnum' 1;
             }
 
@@ -256,12 +256,12 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
             .search-input-wrapper {
                 display: flex;
                 align-items: center;
-                background-color: var(--surface-card, #111622);
-                border: 1px solid var(--border-strong, #606e85);
-                border-radius: var(--radius-md, 10px);
-                padding: 4px 12px;
+                background-color: var(--surface-card, #131126);
+                border: 1px solid var(--hairline, #252140);
+                border-radius: var(--radius-pill, 9999px);
+                padding: 4px 14px;
                 gap: 8px;
-                min-height: var(--touch-target-min, 44px);
+                min-height: 38px;
                 min-width: 260px;
                 box-sizing: border-box;
                 transition:
@@ -270,12 +270,12 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
             }
 
             .search-input-wrapper:focus-within {
-                border-color: var(--primary-border, #e84089);
-                box-shadow: 0 0 0 2px var(--focus-ring, rgba(232, 64, 137, 0.35));
+                border-color: var(--primary-border, #7c4dff);
+                box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.25);
             }
 
             .search-icon {
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #94a3b8);
                 flex-shrink: 0;
                 display: inline-flex;
                 align-items: center;
@@ -287,7 +287,7 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
                 border: none;
                 color: var(--ink, #f8fafc);
                 font-family: var(--font-ui);
-                font-size: 14px;
+                font-size: 13.5px;
                 outline: none;
                 box-shadow: none;
                 width: 100%;
@@ -310,7 +310,7 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
             .markets-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-                gap: 20px;
+                gap: 18px;
             }
 
             /* --- States --- */
@@ -328,8 +328,8 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
             .spinner {
                 width: 36px;
                 height: 36px;
-                border: 3px solid rgba(166, 3, 76, 0.2);
-                border-top-color: var(--primary-border, #e84089);
+                border: 3px solid rgba(124, 77, 255, 0.2);
+                border-top-color: var(--primary, #3600b3);
                 border-radius: 50%;
                 animation: spin 0.8s linear infinite;
             }

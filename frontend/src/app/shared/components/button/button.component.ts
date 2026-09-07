@@ -57,7 +57,7 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             }
 
             button:focus-visible {
-                outline: 2px solid var(--focus-outline, #e84089);
+                outline: 2px solid var(--focus-outline, #7c4dff);
                 outline-offset: 2px;
             }
 
@@ -73,24 +73,24 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
 
             /* --- Sizes (WCAG 2.2 AAA Touch Target: min 44x44px) --- */
             .btn-size-default {
-                min-height: 48px;
+                min-height: 44px;
                 min-width: var(--touch-target-min, 44px);
-                padding: 12px 20px;
-                font-size: 15px;
+                padding: 10px 18px;
+                font-size: 14.5px;
             }
 
             .btn-size-sm {
-                min-height: var(--touch-target-min, 44px);
+                min-height: 38px;
                 min-width: var(--touch-target-min, 44px);
-                padding: 8px 14px;
+                padding: 6px 14px;
                 font-size: 13px;
             }
 
             .btn-size-lg {
-                min-height: 52px;
+                min-height: 48px;
                 min-width: var(--touch-target-min, 44px);
-                padding: 14px 28px;
-                font-size: 16px;
+                padding: 12px 24px;
+                font-size: 15.5px;
             }
 
             .btn-size-icon {
@@ -102,39 +102,39 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             }
 
             .btn-size-pill {
-                min-height: var(--touch-target-min, 44px);
+                min-height: 38px;
                 min-width: var(--touch-target-min, 44px);
-                padding: 10px 18px;
+                padding: 8px 16px;
                 font-size: 13px;
                 border-radius: var(--radius-pill, 9999px);
             }
 
             /* --- Variants --- */
-            /* Primary (Deep Amaranth CTA) */
+            /* Primary (Electric Royal Indigo CTA) */
             .btn-variant-primary {
-                background-color: var(--primary, #a6034c);
+                background-color: var(--primary, #3600b3);
                 color: var(--on-primary, #ffffff);
-                border: 1px solid var(--primary-border, #e84089);
-                box-shadow: var(--shadow-sm);
+                border: 1px solid var(--primary-border, #7c4dff);
+                box-shadow: 0 2px 10px rgba(54, 0, 179, 0.4);
             }
             .btn-variant-primary:hover:not(:disabled) {
-                background-color: var(--primary-hover, #ab034e);
+                background-color: var(--primary-hover, #4e10d8);
                 box-shadow: var(--shadow-glow-primary);
             }
             .btn-variant-primary:active:not(:disabled) {
-                background-color: var(--primary-active, #85023d);
+                background-color: var(--primary-active, #29008a);
             }
 
             /* Secondary (Obsidian Card Surface) */
             .btn-variant-secondary {
-                background-color: var(--surface-card, #111622);
-                color: var(--ink, #f8fafc);
-                border: 1px solid var(--border-strong, #606e85);
+                background-color: var(--surface-card, #131126);
+                color: var(--ink, #f8f7ff);
+                border: 1px solid var(--hairline, #252140);
                 box-shadow: var(--shadow-sm);
             }
             .btn-variant-secondary:hover:not(:disabled) {
-                background-color: var(--surface-card-elevated, #171f30);
-                border-color: var(--ink-secondary, #cbd5e1);
+                background-color: var(--surface-card-elevated, #1a1733);
+                border-color: var(--ink-secondary, #9d97b8);
             }
 
             /* Destructive (Loss / Sell / Cancel) */
@@ -152,47 +152,47 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             /* Outline */
             .btn-variant-outline {
                 background-color: transparent;
-                color: var(--ink-secondary, #cbd5e1);
-                border: 1px solid var(--hairline, #1e2638);
+                color: var(--ink-secondary, #9d97b8);
+                border: 1px solid var(--hairline, #252140);
             }
             .btn-variant-outline:hover:not(:disabled) {
-                background-color: var(--surface-card, #111622);
-                color: var(--ink, #f8fafc);
-                border-color: var(--border-strong, #606e85);
+                background-color: var(--surface-card, #131126);
+                color: var(--ink, #f8f7ff);
+                border-color: var(--border-strong, #3d3766);
             }
 
             /* Ghost */
             .btn-variant-ghost {
                 background-color: transparent;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
                 border: 1px solid transparent;
             }
             .btn-variant-ghost:hover:not(:disabled) {
                 background-color: rgba(255, 255, 255, 0.07);
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #f8f7ff);
             }
 
             /* Faucet (Testnet Claim Pill) */
             .btn-variant-faucet {
-                background-color: rgba(166, 3, 76, 0.22);
-                color: #fbcfe8;
-                border: 1.5px solid var(--primary-border, #e84089);
+                background-color: rgba(54, 0, 179, 0.18);
+                color: #b388ff;
+                border: 1.5px solid rgba(124, 77, 255, 0.4);
                 border-radius: var(--radius-pill, 9999px);
             }
             .btn-variant-faucet:hover:not(:disabled) {
-                background-color: rgba(166, 3, 76, 0.38);
-                border-color: #f472b6;
-                box-shadow: 0 0 12px rgba(232, 64, 137, 0.4);
+                background-color: rgba(54, 0, 179, 0.32);
+                border-color: #7c4dff;
+                box-shadow: 0 0 14px rgba(124, 77, 255, 0.45);
             }
             .btn-variant-faucet:disabled {
-                border-color: var(--border-strong, #606e85);
-                color: var(--muted, #a2b4c9);
+                border-color: var(--hairline, #252140);
+                color: var(--muted, #9d97b8);
             }
 
             /* Link */
             .btn-variant-link {
                 background-color: transparent;
-                color: var(--link, #fda4af);
+                color: var(--link, #7c4dff);
                 border: none;
                 padding: 0;
                 min-height: auto;
@@ -210,64 +210,64 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             }
             .btn-variant-yes.selected,
             .btn-variant-no.selected {
-                color: var(--on-outcome, #07090e);
+                color: #ffffff;
                 font-weight: 700;
             }
 
             .btn-variant-yes {
-                background-color: var(--outcome-yes-subtle, #06281b);
-                color: var(--outcome-yes-text, #34d399);
-                border: 1px solid var(--outcome-yes-border, #10b981);
+                background-color: rgba(0, 220, 130, 0.12);
+                color: var(--outcome-yes, #00dc82);
+                border: 1px solid rgba(0, 220, 130, 0.35);
             }
             .btn-variant-yes:hover:not(:disabled) {
-                background-color: rgba(16, 185, 129, 0.22);
+                background-color: rgba(0, 220, 130, 0.22);
                 box-shadow: var(--shadow-glow-yes);
             }
             .btn-variant-yes.selected {
-                background-color: var(--outcome-yes, #10b981);
-                border-color: var(--outcome-yes, #10b981);
-                box-shadow: 0 0 16px rgba(16, 185, 129, 0.45);
+                background-color: var(--outcome-yes, #00dc82);
+                border-color: var(--outcome-yes, #00dc82);
+                box-shadow: 0 0 16px rgba(0, 220, 130, 0.45);
             }
 
             .btn-variant-no {
-                background-color: var(--outcome-no-subtle, #330814);
-                color: var(--outcome-no-text, #fda4af);
-                border: 1px solid var(--outcome-no-border, #fb7185);
+                background-color: rgba(255, 51, 102, 0.12);
+                color: var(--outcome-no, #ff3366);
+                border: 1px solid rgba(255, 51, 102, 0.35);
             }
             .btn-variant-no:hover:not(:disabled) {
-                background-color: rgba(251, 113, 133, 0.22);
+                background-color: rgba(255, 51, 102, 0.22);
                 box-shadow: var(--shadow-glow-no);
             }
             .btn-variant-no.selected {
-                background-color: var(--outcome-no, #fb7185);
-                border-color: var(--outcome-no, #fb7185);
-                box-shadow: 0 0 16px rgba(251, 113, 133, 0.45);
+                background-color: var(--outcome-no, #ff3366);
+                border-color: var(--outcome-no, #ff3366);
+                box-shadow: 0 0 16px rgba(255, 51, 102, 0.45);
             }
 
             /* Chip (Amount presets & timeframe intervals) */
             .btn-variant-chip {
-                background-color: var(--canvas-subtle, #0c1017);
-                color: var(--ink-secondary, #cbd5e1);
+                background-color: var(--surface-card, #131126);
+                color: var(--ink-secondary, #9d97b8);
                 font-family: var(--font-mono, monospace);
                 font-size: 13px;
                 letter-spacing: 0.1px;
-                border: 1px solid var(--border-strong, #606e85);
+                border: 1px solid var(--hairline, #252140);
                 border-radius: var(--radius-md, 10px);
-                padding: 8px 14px;
-                min-height: var(--touch-target-min, 44px);
+                padding: 6px 12px;
+                min-height: 38px;
                 font-feature-settings: 'tnum' 1;
             }
             .btn-variant-chip:hover:not(:disabled) {
-                background-color: var(--surface-card-elevated, #171f30);
-                border-color: var(--primary-border, #e84089);
-                color: var(--ink, #f8fafc);
+                background-color: var(--surface-card-elevated, #1a1733);
+                border-color: var(--primary-border, #7c4dff);
+                color: var(--ink, #f8f7ff);
             }
             .btn-variant-chip.selected {
-                background-color: rgba(166, 3, 76, 0.25);
-                border-color: var(--primary-border, #e84089);
-                color: #fbcfe8;
+                background-color: rgba(54, 0, 179, 0.25);
+                border-color: #7c4dff;
+                color: #b388ff;
                 font-weight: 700;
-                box-shadow: 0 0 10px rgba(232, 64, 137, 0.3);
+                box-shadow: 0 0 10px rgba(124, 77, 255, 0.35);
             }
 
             /* Full Width */

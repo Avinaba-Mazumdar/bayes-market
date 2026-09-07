@@ -58,32 +58,32 @@ export type BadgeSize = 'default' | 'sm' | 'lg';
             }
 
             /* --- Variants --- */
-            /* Default (Brand Amaranth #a6034c) */
+            /* Default (Brand Electric Royal Indigo #3600b3) */
             .badge-variant-default {
-                background-color: var(--primary, #a6034c);
+                background-color: var(--primary, #3600b3);
                 color: var(--on-primary, #ffffff);
-                border-color: var(--primary-border, #e84089);
+                border-color: var(--primary-border, #7c4dff);
             }
 
             /* Secondary (Elevated Obsidian Surface) */
             .badge-variant-secondary {
-                background-color: var(--surface-card-elevated, #171f30);
-                color: var(--ink-secondary, #cbd5e1);
-                border-color: var(--border-strong, #606e85);
+                background-color: var(--surface-card-elevated, #1a1733);
+                color: var(--ink-secondary, #9d97b8);
+                border-color: var(--hairline, #252140);
             }
 
             /* Destructive (Loss / Danger #be123c) */
             .badge-variant-destructive {
-                background-color: var(--status-loss-bg, #330814);
-                color: var(--status-loss, #fda4af);
-                border-color: var(--status-loss-border, #fb7185);
+                background-color: var(--status-loss-bg, rgba(255, 51, 102, 0.12));
+                color: var(--status-loss, #ffa3be);
+                border-color: var(--status-loss-border, #ff668f);
             }
 
             /* Outline (Transparent hairline) */
             .badge-variant-outline {
                 background-color: transparent;
-                color: var(--ink, #f8fafc);
-                border-color: var(--hairline, #1e2638);
+                color: var(--ink-secondary, #9d97b8);
+                border-color: var(--hairline, #252140);
             }
 
             /* Profit / Success / YES Outcome (Mint #34d399) */

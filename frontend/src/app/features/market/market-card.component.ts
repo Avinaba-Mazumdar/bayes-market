@@ -1,25 +1,27 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideArrowUp, LucideArrowDown, LucideArrowRight } from '@lucide/angular';
+import { LucideArrowRight } from '@lucide/angular';
 import { Market } from '../../core/models/market.model';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
 @Component({
     selector: 'app-market-card',
     standalone: true,
-    imports: [RouterLink, BadgeComponent, LucideArrowUp, LucideArrowDown, LucideArrowRight],
+    imports: [RouterLink, BadgeComponent, LucideArrowRight],
     template: `
         <article class="market-card" [attr.aria-label]="cardAriaLabel()">
             <a [routerLink]="['/markets', market().id]" class="market-card-link">
                 <!-- Header Meta: Category Badge & Status -->
                 <div class="card-meta-row">
-                    @if (market().status === 'resolved') {
-                        <app-badge variant="secondary" size="sm"> RESOLVED: {{ market().winning_outcome || 'SETTLED' }} </app-badge>
-                    } @else {
-                        <app-badge variant="outline" size="sm">
-                            {{ market().category.toUpperCase() }}
-                        </app-badge>
-                    }
+                    <div class="category-group">
+                        @if (market().status === 'resolved') {
+                            <app-badge variant="secondary" size="sm"> RESOLVED: {{ market().winning_outcome || 'SETTLED' }} </app-badge>
+                        } @else {
+                            <app-badge variant="outline" size="sm">
+                                {{ market().category.toUpperCase() }}
+                            </app-badge>
+                        }
+                    </div>
                     <span class="meta-date">
                         {{ market().status === 'resolved' ? 'Settled' : 'Resolves ' + formattedDate() }}
                     </span>
@@ -29,6 +31,17 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 <h3 class="market-title">
                     {{ market().title }}
                 </h3>
+
+                <!-- Polymarket Signature Chance Headline -->
+                <div class="chance-headline-row">
+                    <div class="chance-badge">
+                        <span class="chance-val tabular-nums">{{ yesPct() }}%</span>
+                        <span class="chance-label">chance</span>
+                    </div>
+                    <span class="chance-sub">
+                        {{ yesPct() >= 50 ? 'Favored' : 'Underdog' }}
+                    </span>
+                </div>
 
                 <!-- Probability Split Bar (Visualizing Consensus Curve) -->
                 <div
@@ -45,18 +58,16 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                     </div>
                 </div>
 
-                <!-- Dual Outcome Probability Pills (Dual-Coded Level AAA) -->
+                <!-- Dual Outcome Probability Action Pills (Polymarket Style) -->
                 <div class="pills-row">
                     <div class="pill-badge pill-yes" [attr.aria-label]="'YES implied price: ' + yesPriceCents() + ' cents'">
-                        <svg lucideArrowUp class="pill-glyph" [size]="14" aria-hidden="true"></svg>
+                        <span class="pill-action-label">YES</span>
                         <span class="pill-price tabular-nums">{{ yesPriceCents() }}¢</span>
-                        <span class="pill-label">YES</span>
                     </div>
 
                     <div class="pill-badge pill-no" [attr.aria-label]="'NO implied price: ' + noPriceCents() + ' cents'">
-                        <svg lucideArrowDown class="pill-glyph" [size]="14" aria-hidden="true"></svg>
+                        <span class="pill-action-label">NO</span>
                         <span class="pill-price tabular-nums">{{ noPriceCents() }}¢</span>
-                        <span class="pill-label">NO</span>
                     </div>
                 </div>
 
@@ -81,9 +92,9 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
             }
 
             .market-card {
-                background-color: var(--surface-card, #111622);
-                border: 1px solid var(--hairline, #1e2638);
-                border-radius: var(--radius-xl, 20px);
+                background-color: var(--surface-card, #121926);
+                border: 1px solid var(--hairline, #1e293b);
+                border-radius: var(--radius-lg, 14px);
                 transition:
                     transform 0.15s ease,
                     border-color 0.15s ease,
@@ -96,23 +107,23 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
             .market-card:hover {
                 transform: translateY(-2px);
-                border-color: var(--primary-border, #e84089);
-                box-shadow: var(--shadow-md);
+                border-color: rgba(124, 77, 255, 0.4);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
             }
 
             .market-card-link {
                 display: flex;
                 flex-direction: column;
                 height: 100%;
-                padding: 18px 20px;
+                padding: 16px 18px;
                 text-decoration: none;
                 color: inherit;
-                border-radius: var(--radius-xl, 20px);
+                border-radius: var(--radius-lg, 14px);
                 outline: none;
             }
 
             .market-card-link:focus-visible {
-                outline: 2px solid var(--focus-outline, #e84089);
+                outline: 2px solid var(--focus-outline, #7c4dff);
                 outline-offset: 2px;
             }
 
@@ -121,27 +132,62 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 align-items: center;
                 justify-content: space-between;
                 gap: 8px;
-                margin-bottom: 12px;
+                margin-bottom: 10px;
             }
 
             .meta-date {
                 font-family: var(--font-ui);
-                font-size: 11.5px;
-                color: var(--muted, #a2b4c9);
+                font-size: 11px;
+                color: var(--muted, #9d97b8);
             }
 
             .market-title {
                 font-family: var(--font-ui);
-                font-size: 16px;
-                font-weight: 700;
-                color: var(--ink, #f8fafc);
+                font-size: 15px;
+                font-weight: 600;
+                color: var(--ink, #f8f7ff);
                 line-height: 1.4;
-                margin-bottom: 16px;
+                margin-bottom: 12px;
                 flex: 1;
                 display: -webkit-box;
-                -webkit-line-clamp: 3;
+                -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
                 overflow: hidden;
+            }
+
+            /* Polymarket Chance Headline */
+            .chance-headline-row {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                margin-bottom: 6px;
+            }
+
+            .chance-badge {
+                display: flex;
+                align-items: baseline;
+                gap: 4px;
+            }
+
+            .chance-val {
+                font-family: var(--font-mono);
+                font-size: 20px;
+                font-weight: 800;
+                color: var(--outcome-yes, #00dc82);
+                font-feature-settings: 'tnum' 1;
+            }
+
+            .chance-label {
+                font-family: var(--font-ui);
+                font-size: 12px;
+                font-weight: 500;
+                color: var(--muted, #9d97b8);
+            }
+
+            .chance-sub {
+                font-family: var(--font-ui);
+                font-size: 11px;
+                color: var(--muted, #9d97b8);
             }
 
             .split-bar-container {
@@ -150,92 +196,91 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
             .split-track {
                 width: 100%;
-                height: 7px;
+                height: 5px;
                 border-radius: var(--radius-pill, 9999px);
                 display: flex;
                 overflow: hidden;
-                background-color: var(--canvas-subtle, #0c1017);
-                border: 1px solid var(--hairline, #1e2638);
+                background-color: rgba(255, 51, 102, 0.25);
             }
 
             .split-fill-yes {
-                background-color: var(--outcome-yes, #10b981);
+                background-color: var(--outcome-yes, #00dc82);
                 transition: width 0.3s ease;
             }
 
             .split-fill-no {
-                background-color: var(--outcome-no, #fb7185);
+                background-color: var(--outcome-no, #ff3366);
                 transition: width 0.3s ease;
             }
 
             .pills-row {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 10px;
-                margin-bottom: 14px;
+                gap: 8px;
+                margin-bottom: 12px;
             }
 
             .pill-badge {
                 display: flex;
                 align-items: center;
-                justify-content: center;
-                gap: 6px;
-                padding: 8px 12px;
-                border-radius: var(--radius-md, 10px);
+                justify-content: space-between;
+                padding: 7px 12px;
+                border-radius: var(--radius-sm, 6px);
                 font-family: var(--font-mono);
                 font-weight: 700;
                 font-size: 13px;
-                min-height: var(--touch-target-min, 44px);
+                min-height: 38px;
                 user-select: none;
+                transition:
+                    filter 0.15s ease,
+                    transform 0.15s ease;
+            }
+
+            .pill-badge:hover {
+                filter: brightness(1.15);
             }
 
             .pill-yes {
-                background-color: rgba(16, 185, 129, 0.15);
-                border: 1px solid var(--outcome-yes-border, #10b981);
-                color: var(--outcome-yes-text, #34d399);
+                background-color: rgba(0, 220, 130, 0.12);
+                border: 1px solid rgba(0, 220, 130, 0.35);
+                color: var(--outcome-yes, #00dc82);
             }
 
             .pill-no {
-                background-color: rgba(251, 113, 133, 0.15);
-                border: 1px solid var(--outcome-no-border, #fb7185);
-                color: var(--outcome-no-text, #fda4af);
+                background-color: rgba(255, 51, 102, 0.12);
+                border: 1px solid rgba(255, 51, 102, 0.35);
+                color: var(--outcome-no, #ff3366);
             }
 
-            .pill-glyph {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
+            .pill-action-label {
+                font-family: var(--font-ui);
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: 0.3px;
             }
 
             .pill-price {
-                font-size: 14px;
+                font-size: 13.5px;
                 font-feature-settings: 'tnum' 1;
-            }
-
-            .pill-label {
-                font-family: var(--font-ui);
-                font-size: 11px;
-                opacity: 0.9;
             }
 
             .card-footer {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                border-top: 1px solid var(--hairline, #1e2638);
+                border-top: 1px solid var(--hairline, #252140);
                 padding-top: 10px;
                 font-size: 12px;
             }
 
             .volume-stat {
                 font-family: var(--font-ui);
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
             }
 
             .volume-stat strong {
                 font-family: var(--font-mono);
-                color: var(--ink-secondary, #cbd5e1);
+                color: var(--ink-secondary, #9d97b8);
                 font-weight: 600;
                 font-feature-settings: 'tnum' 1;
             }
@@ -246,7 +291,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 gap: 4px;
                 font-family: var(--font-ui);
                 font-weight: 600;
-                color: var(--primary-border, #e84089);
+                color: var(--primary-border, #7c4dff);
                 transition: transform 0.15s ease;
             }
 

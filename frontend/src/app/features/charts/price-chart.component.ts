@@ -89,8 +89,8 @@ interface ChartPoint {
             }
 
             .price-chart-container {
-                background-color: var(--surface-card, #111622);
-                border: 1px solid var(--hairline, #1e2638);
+                background-color: var(--surface-card, #131126);
+                border: 1px solid var(--hairline, #252140);
                 border-radius: var(--radius-xl, 20px);
                 padding: var(--space-lg, 20px);
                 display: flex;
@@ -117,7 +117,7 @@ interface ChartPoint {
                 font-family: var(--font-ui);
                 font-size: 13px;
                 font-weight: 600;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #9d97b8);
                 letter-spacing: 0.2px;
             }
 
@@ -131,7 +131,7 @@ interface ChartPoint {
                 font-family: var(--font-mono);
                 font-size: 32px;
                 font-weight: 700;
-                color: var(--outcome-yes-text, #34d399);
+                color: var(--outcome-yes, #00dc82);
                 line-height: 1.1;
                 font-feature-settings: 'tnum' 1;
             }
@@ -284,47 +284,47 @@ export class PriceChartComponent implements OnInit, OnDestroy {
             width: el.clientWidth,
             height: el.clientHeight || 360,
             layout: {
-                background: { type: ColorType.Solid, color: '#07090e' },
-                textColor: '#a2b4c9',
+                background: { type: ColorType.Solid, color: '#080711' },
+                textColor: '#9d97b8',
                 fontSize: 12,
                 fontFamily: "'JetBrains Mono', monospace"
             },
             grid: {
-                vertLines: { color: 'rgba(30, 38, 56, 0.45)', style: 1 },
-                horzLines: { color: 'rgba(30, 38, 56, 0.45)', style: 1 }
+                vertLines: { color: 'rgba(37, 33, 64, 0.55)', style: 1 },
+                horzLines: { color: 'rgba(37, 33, 64, 0.55)', style: 1 }
             },
             crosshair: {
                 vertLine: {
-                    color: '#e84089',
+                    color: '#7c4dff',
                     width: 1,
                     style: 2,
-                    labelBackgroundColor: '#a6034c'
+                    labelBackgroundColor: '#3600b3'
                 },
                 horzLine: {
-                    color: '#e84089',
+                    color: '#7c4dff',
                     width: 1,
                     style: 2,
-                    labelBackgroundColor: '#a6034c'
+                    labelBackgroundColor: '#3600b3'
                 }
             },
             rightPriceScale: {
-                borderColor: '#1e2638',
+                borderColor: '#252140',
                 scaleMargins: {
                     top: 0.1,
                     bottom: 0.1
                 }
             },
             timeScale: {
-                borderColor: '#1e2638',
+                borderColor: '#252140',
                 timeVisible: true,
                 secondsVisible: false
             }
         });
 
         this.areaSeries = this.chart.addSeries(AreaSeries, {
-            topColor: 'rgba(52, 211, 153, 0.35)',
-            bottomColor: 'rgba(52, 211, 153, 0.01)',
-            lineColor: '#34d399',
+            topColor: 'rgba(0, 220, 130, 0.35)',
+            bottomColor: 'rgba(0, 220, 130, 0.01)',
+            lineColor: '#00dc82',
             lineWidth: 2,
             priceFormat: {
                 type: 'custom',
