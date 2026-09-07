@@ -25,7 +25,7 @@ Traders and developers can interact with the platform immediately via an **insta
 
 ---
 
-## 2. Tech Stack & Dependency Matrix (September 2026 Standards)
+## 2. Tech Stack & Dependency Matrix
 
 ### 2.1 Package Management & Monorepo Toolchain
 
@@ -40,7 +40,7 @@ Traders and developers can interact with the platform immediately via an **insta
 
 | Category               | Technology / Library          | Version   | Engineering Rationale                                                                                                                 |
 | :--------------------- | :---------------------------- | :-------- | :------------------------------------------------------------------------------------------------------------------------------------ |
-| **Framework**          | **Angular**                   | `^22.1.5` | Current stable major (released September 2026). Zoneless by default, native Signal Forms, Signal inputs/outputs, and streaming SSR.   |
+| **Framework**          | **Angular**                   | `^22.1.5` | Current stable major. Zoneless by default, native Signal Forms, Signal inputs/outputs, and streaming SSR.                             |
 | **Language**           | **TypeScript**                | `^7.0.2`  | Major release powered by the Go-based compiler ("Project Corsa"), delivering 8–12x faster compile times and strict type verification. |
 | **Financial Charting** | `lightweight-charts`          | `^5.2.1`  | High-DPI canvas charting engine (TradingView v5, 60fps hardware accelerated). Zero React/Vue bloat.                                   |
 | **Icons & Micro-UI**   | `@lucide/angular`             | `^1.41.0` | Modern tree-shakeable SVG icon set for Angular.                                                                                       |
@@ -49,16 +49,16 @@ Traders and developers can interact with the platform immediately via an **insta
 
 ### 2.3 Backend Stack (Trading Engine & API)
 
-| Category                     | Technology / Library                 | Version   | Engineering Rationale                                                                                                         |
-| :--------------------------- | :----------------------------------- | :-------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| **Language & Runtime**       | **Go (Golang)**                      | `1.27.1`  | Latest stable release (September 2026). Generic methods, high-performance green-thread scheduler, <18MB scratch Docker image. |
-| **HTTP Routing**             | **Gin (`github.com/gin-gonic/gin`)** | `v1.10.0` | High-performance, battle-tested HTTP framework with built-in JSON binding/validation and native `gorilla/websocket` support.  |
-| **WebSocket Engine**         | `github.com/gorilla/websocket`       | `v1.5.3`  | RFC 6455 implementation with dedicated read/write pumps, ping/pong support, and stable Go ecosystem adoption.                 |
-| **Database Driver**          | `github.com/jackc/pgx/v5`            | `v5.7.1`  | High-performance PostgreSQL connection pool (`pgxpool`) with native binary encoding.                                          |
-| **Arbitrary Precision Math** | `github.com/shopspring/decimal`      | `v1.4.0`  | Exact fixed-point arithmetic. Eliminates IEEE-754 floating-point inaccuracies in financial calculations.                      |
-| **Rate Limiter**             | `golang.org/x/time/rate`             | Latest    | In-memory token-bucket limiter with sub-microsecond latency per IP and Guest UUID.                                            |
-| **Authentication**           | `github.com/golang-jwt/jwt/v5`       | `v5.2.1`  | HMAC-SHA256 signed stateless tokens for ephemeral guest sessions.                                                             |
-| **UUIDs**                    | `github.com/google/uuid`             | `v1.6.0`  | RFC 4122 compliant UUIDv4 identifiers for orders, trades, and markets.                                                        |
+| Category                     | Technology / Library                 | Version   | Engineering Rationale                                                                                                        |
+| :--------------------------- | :----------------------------------- | :-------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| **Language & Runtime**       | **Go (Golang)**                      | `1.27.1`  | Latest stable release. Generic methods, high-performance green-thread scheduler, <18MB scratch Docker image.                 |
+| **HTTP Routing**             | **Gin (`github.com/gin-gonic/gin`)** | `v1.10.0` | High-performance, battle-tested HTTP framework with built-in JSON binding/validation and native `gorilla/websocket` support. |
+| **WebSocket Engine**         | `github.com/gorilla/websocket`       | `v1.5.3`  | RFC 6455 implementation with dedicated read/write pumps, ping/pong support, and stable Go ecosystem adoption.                |
+| **Database Driver**          | `github.com/jackc/pgx/v5`            | `v5.7.1`  | High-performance PostgreSQL connection pool (`pgxpool`) with native binary encoding.                                         |
+| **Arbitrary Precision Math** | `github.com/shopspring/decimal`      | `v1.4.0`  | Exact fixed-point arithmetic. Eliminates IEEE-754 floating-point inaccuracies in financial calculations.                     |
+| **Rate Limiter**             | `golang.org/x/time/rate`             | Latest    | In-memory token-bucket limiter with sub-microsecond latency per IP and Guest UUID.                                           |
+| **Authentication**           | `github.com/golang-jwt/jwt/v5`       | `v5.2.1`  | HMAC-SHA256 signed stateless tokens for ephemeral guest sessions.                                                            |
+| **UUIDs**                    | `github.com/google/uuid`             | `v1.6.0`  | RFC 4122 compliant UUIDv4 identifiers for orders, trades, and markets.                                                       |
 
 ### 2.4 Persistence & Infrastructure
 

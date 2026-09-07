@@ -16,17 +16,24 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
+
+	"github.com/bayesmarket/bayesmarket/internal/transport/ws"
 )
 
 // TradeHandler handles atomic order placements and share cash-out liquidations.
 type TradeHandler struct {
 	pool  *pgxpool.Pool
 	locks *marketLockRegistry
+	hub   *ws.Hub
 }
 
 // NewTradeHandler constructs a TradeHandler.
-func NewTradeHandler(pool *pgxpool.Pool) *TradeHandler {
-	return &TradeHandler{pool: pool, locks: newMarketLockRegistry()}
+func NewTradeHandler(pool *pgxpool.Pool, hubOpt ...*ws.Hub) *TradeHandler {
+	var hub *ws.Hub
+	if len(hubOpt) > 0 {
+		hub = hubOpt[0]
+	}
+	return &TradeHandler{pool: pool, locks: newMarketLockRegistry(), hub: hub}
 }
 
 // PlaceOrderRequest defines the input payload for placing a buy order.
@@ -466,6 +473,35 @@ func (h *TradeHandler) executeOrderTx(
 		return nil, err
 	}
 
+	if h.hub != nil {
+		spotYes, spotNo, _ := amm.CalculateSpotPrices(amm.PoolReserves{
+			ReserveYes: quote.NewReserveYes,
+			ReserveNo:  quote.NewReserveNo,
+		})
+		newTotalVolume := totalVolume.Add(amount)
+		h.hub.BroadcastPriceUpdate(ws.PriceUpdateMessage{
+			MarketID: marketUUID.String(),
+			YesPrice: spotYes.StringFixed(8),
+			NoPrice:  spotNo.StringFixed(8),
+			Reserves: &ws.ReservesPayload{
+				Yes: quote.NewReserveYes.StringFixed(8),
+				No:  quote.NewReserveNo.StringFixed(8),
+			},
+			TotalVolumeUSDC: newTotalVolume.StringFixed(8),
+			Timestamp:       resp.CreatedAt,
+		})
+		h.hub.BroadcastTradeEvent(ws.TradeEventMessage{
+			TradeID:    resp.TradeID,
+			MarketID:   resp.MarketID,
+			TradeType:  "BUY",
+			Outcome:    resp.Outcome,
+			Shares:     resp.SharesFilled,
+			Price:      resp.ExecutionPrice,
+			AmountUSDC: resp.AmountUSDC,
+			Timestamp:  resp.CreatedAt,
+		})
+	}
+
 	return resp, nil
 }
 
@@ -824,6 +860,35 @@ func (h *TradeHandler) executeCashOutTx(
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
+	}
+
+	if h.hub != nil {
+		spotYes, spotNo, _ := amm.CalculateSpotPrices(amm.PoolReserves{
+			ReserveYes: quote.NewReserveYes,
+			ReserveNo:  quote.NewReserveNo,
+		})
+		newTotalVolume := totalVolume.Add(quote.PayoutUSDC)
+		h.hub.BroadcastPriceUpdate(ws.PriceUpdateMessage{
+			MarketID: marketUUID.String(),
+			YesPrice: spotYes.StringFixed(8),
+			NoPrice:  spotNo.StringFixed(8),
+			Reserves: &ws.ReservesPayload{
+				Yes: quote.NewReserveYes.StringFixed(8),
+				No:  quote.NewReserveNo.StringFixed(8),
+			},
+			TotalVolumeUSDC: newTotalVolume.StringFixed(8),
+			Timestamp:       resp.CreatedAt,
+		})
+		h.hub.BroadcastTradeEvent(ws.TradeEventMessage{
+			TradeID:    resp.TradeID,
+			MarketID:   resp.MarketID,
+			TradeType:  "SELL",
+			Outcome:    resp.Outcome,
+			Shares:     resp.SharesSold,
+			Price:      resp.ExecutionPrice,
+			AmountUSDC: resp.PayoutUSDC,
+			Timestamp:  resp.CreatedAt,
+		})
 	}
 
 	return resp, nil

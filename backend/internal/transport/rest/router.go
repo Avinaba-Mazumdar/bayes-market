@@ -6,19 +6,28 @@ import (
 
 	"github.com/bayesmarket/bayesmarket/internal/config"
 	"github.com/bayesmarket/bayesmarket/internal/middleware"
+	"github.com/bayesmarket/bayesmarket/internal/transport/ws"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// SetupRouter constructs and configures the Gin HTTP engine with all REST routes and middleware.
-func SetupRouter(pool *pgxpool.Pool, cfg *config.Config) *gin.Engine {
+// SetupRouter constructs and configures the Gin HTTP engine with all REST routes, WebSocket endpoints, and middleware.
+func SetupRouter(pool *pgxpool.Pool, cfg *config.Config, hubOpt ...*ws.Hub) *gin.Engine {
+	var hub *ws.Hub
+	if len(hubOpt) > 0 && hubOpt[0] != nil {
+		hub = hubOpt[0]
+	}
+
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
 
 	// CORS Middleware
 	router.Use(func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
-		allowedOrigin := cfg.CORSOrigin
+		allowedOrigin := ""
+		if cfg != nil {
+			allowedOrigin = cfg.CORSOrigin
+		}
 		if allowedOrigin == "" || allowedOrigin == "*" || origin == allowedOrigin {
 			c.Header("Access-Control-Allow-Origin", origin)
 		} else {
@@ -42,12 +51,27 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 	publicReadLimiter := middleware.NewPublicReadLimiter()
 	actionLimiter := middleware.NewActionLimiter()
 
+	jwtSecret := ""
+	corsOrigin := "*"
+	if cfg != nil {
+		jwtSecret = cfg.JWTSecret
+		corsOrigin = cfg.CORSOrigin
+	}
+
 	// Handlers
-	authHandler := NewAuthHandler(pool, cfg.JWTSecret)
+	authHandler := NewAuthHandler(pool, jwtSecret)
 	marketHandler := NewMarketHandler(pool)
 	faucetHandler := NewFaucetHandler(pool)
 	portfolioHandler := NewPortfolioHandler(pool)
-	tradeHandler := NewTradeHandler(pool)
+	tradeHandler := NewTradeHandler(pool, hub)
+
+	// WebSocket Endpoints
+	if hub != nil {
+		wsHandler := ws.NewWSHandler(hub, corsOrigin)
+		router.GET("/ws/markets/:id", wsHandler.HandleMarketWS)
+		router.GET("/ws/markets", wsHandler.HandleGlobalWS)
+		router.GET("/ws", wsHandler.HandleGlobalWS)
+	}
 
 	// Health check endpoint (unlimited)
 	router.GET("/healthz", func(c *gin.Context) {

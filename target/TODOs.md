@@ -13,7 +13,7 @@ This document tracks the phased execution plan for **BayesMarket**. It divides t
 - [x] **Phase 3: Fixed-Point Mathematical AMM Engine & Invariant Test Suite**
 - [x] **Phase 4: Backend REST API, Token-Bucket Rate Limiting & Guest Session Management**
 - [x] **Phase 5: Atomic Order Execution Engine & Pessimistic Concurrency Controls**
-- [ ] **Phase 6: Real-Time WebSocket Multiplexer & Live Telemetry Broadcasting**
+- [x] **Phase 6: Real-Time WebSocket Multiplexer & Live Telemetry Broadcasting**
 - [ ] **Phase 7: Frontend Design System, Typography & WCAG 2.2 Level AAA Core Components**
 - [ ] **Phase 8: Interactive Trading Cockpit, Lightweight Charts & Two-Step Order Flow**
 - [ ] **Phase 9: Portfolio Ledger, AMM Liquidation, Oracle Resolution & End-to-End Hardening**
@@ -212,24 +212,24 @@ Implement atomic trade placement, database row-level locking (`SELECT ... FOR UP
 
 Implement the low-latency WebSocket connection broker, non-blocking channel fan-out multiplexer, and real-time streaming subscriptions.
 
-- [ ] **Task 6.1: WebSocket Broker Hub & Connection Lifecycle**
+- [x] **Task 6.1: WebSocket Broker Hub & Connection Lifecycle**
     - Create `backend/internal/transport/ws/hub.go` using Gorilla WebSocket.
     - Implement dedicated per-client read and write pumps with ping/pong keep-alive (30s intervals) and write deadline timeouts.
     - Implement thread-safe client registration and unregistration via Go channels.
 
-- [ ] **Task 6.2: Non-Blocking Fan-Out Broadcast Multiplexer**
+- [x] **Task 6.2: Non-Blocking Fan-Out Broadcast Multiplexer**
     - Implement channel broadcast multiplexer:
         - Use buffered outbound channels per client (`chan []byte`, buffer size 256).
         - Use non-blocking send with `select` + `default` to immediately disconnect slow or stalled network consumers without blocking the central trade execution engine.
 
-- [ ] **Task 6.3: Streaming Telemetry Topics**
+- [x] **Task 6.3: Streaming Telemetry Topics**
     - Define JSON WebSocket broadcast payloads for:
         - `PRICE_UPDATE`: `{ type: "PRICE_UPDATE", market_id: "<uuid>", yes_price: "0.72000000", no_price: "0.28000000", timestamp: "2026-09-07T00:00:00Z" }`
         - `TRADE_EVENT`: `{ type: "TRADE_EVENT", market_id: "<uuid>", outcome: "YES", shares: "138.67403315", price: "0.72111554", trade_id: "<uuid>" }`
         - `MARKET_RESOLVED`: `{ type: "MARKET_RESOLVED", market_id: "<uuid>", winning_outcome: "YES" }`
     - Hook trade execution handler (Phase 5) into `wsHub.Broadcast()` to push live events on every completed trade.
 
-- [ ] **Task 6.4: Frontend Reconnecting WebSocket Service**
+- [x] **Task 6.4: Frontend Reconnecting WebSocket Service**
     - Create `frontend/src/app/core/services/websocket.service.ts`:
         - Auto-reconnect with exponential backoff (`1s`, `2s`, `5s`, `10s`).
         - Expose Angular Signals: `isConnected()`, `lastPriceTick()`, `recentTrades()`.

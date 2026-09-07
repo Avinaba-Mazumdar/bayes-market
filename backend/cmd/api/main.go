@@ -14,6 +14,7 @@ import (
 	"github.com/bayesmarket/bayesmarket/internal/config"
 	"github.com/bayesmarket/bayesmarket/internal/database"
 	"github.com/bayesmarket/bayesmarket/internal/transport/rest"
+	"github.com/bayesmarket/bayesmarket/internal/transport/ws"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -75,7 +76,11 @@ func main() {
 		log.Fatal("[FATAL] Cannot execute seed/migrate: database connection was not established.")
 	}
 
-	router := rest.SetupRouter(dbPool, cfg)
+	// Initialize real-time WebSocket broker hub
+	wsHub := ws.NewHub()
+	go wsHub.Run()
+
+	router := rest.SetupRouter(dbPool, cfg, wsHub)
 
 	srv := &http.Server{
 		Addr:         ":" + port,
@@ -98,6 +103,7 @@ func main() {
 	<-quit
 
 	log.Println("[INFO] Shutting down server gracefully...")
+	wsHub.Stop()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
