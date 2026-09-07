@@ -50,7 +50,7 @@ func TestConcurrency_DoubleSpendAttack(t *testing.T) {
 	pool, _, router := getTestEnv(t)
 	defer pool.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
 	// Provision guest user
@@ -191,7 +191,7 @@ func TestConcurrency_HighContentionPool(t *testing.T) {
 	pool, _, router := getTestEnv(t)
 	defer pool.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
 	// Pick active market

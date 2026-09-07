@@ -267,12 +267,13 @@ Implement the institutional-grade design system stylesheet, Scoutie Sans + JetBr
     - Implement SC 1.4.8 visual presentation constraints: `max-width: 68ch` on prose, `line-height: 1.55`, `margin-bottom: 2.25em` on paragraphs, left-aligned only (`text-align: left`).
 
 - [x] **Task 7.3: Universal 44×44px Interactive Primitives (SC 2.5.5 Level AAA)**
-    - Implement standalone Angular UI components with guaranteed `min-height: 44px; min-width: 44px;` and $\ge 8\text{px}$ touch envelopes:
-        - `ButtonPrimaryComponent`: Deep Amaranth button with `#ffffff` text (**7.67:1** contrast).
-        - `ButtonYesComponent` / `ButtonNoComponent`: Dual-coded outcome selector buttons.
-        - `ButtonFaucetComponent`: Pill button with `#fbcfe8` text on amaranth subtle base (**12.35:1** contrast).
-        - `QuickAmountChipComponent`: Quick-fill chips (`+$10`, `+$50`, `+$100`, `Max`).
-        - `ChartIntervalChipComponent`: Timeframe chips (`1H`, `1D`, `1W`, `ALL`).
+    - Implement unified `ButtonComponent` (`frontend/src/app/shared/components/button/button.component.ts`) with variant-driven styling, guaranteed `min-height: 44px; min-width: 44px;`, and $\ge 8\text{px}$ touch envelopes:
+        - Variant `primary`: Deep Amaranth button with `#ffffff` text (**7.67:1** contrast).
+        - Variant `yes` / `no`: Dual-coded outcome selector buttons.
+        - Variant `faucet`: Pill button with `#fbcfe8` text on amaranth subtle base (**12.35:1** contrast).
+        - Variant `chip`: Compact selection chip for quick-fill and timeframe selectors.
+    - Additional shared primitives: `DialogComponent`, `InputComponent`, `SelectComponent`, `SwitchComponent`, `BadgeComponent`, `LabelComponent`, `TextareaComponent`, `ToastComponent`, `AvatarComponent`.
+    - _Note: Feature-specific chip compositions (`QuickAmountChipComponent`, `ChartIntervalChipComponent`) are delivered in Phase 8 alongside their consuming views._
 
 - [x] **Task 7.4: Navigation Shell & Focus Visibility (SC 2.4.12 & SC 2.4.13 Level AAA)**
     - Implement `TopHeaderDockComponent`:

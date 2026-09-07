@@ -18,12 +18,12 @@ You are a senior quantitative trading systems engineer, distributed systems arch
 ## 0. Current Project Status
 
 - **These `target/` documents represent the absolute source of truth** for the BayesMarket platform.
-- **Current State**: System architecture and UI/UX design specifications are defined but not implemented or validated in code:
+- **Current State**: Phases 1–7 are implemented on disk and validated across the Go backend and Angular frontend. Phases 8–9 (interactive trading cockpit, chart integration, portfolio ledger & E2E resolution) are pending:
     - `target/ARCHITECTURE.md`: Canonical collateralized complete-set CPMM, PostgreSQL 18 ledger schema, REST/WebSocket contracts, locking order, rate limits, and oracle-resolution policy.
     - `target/DESIGN.md`: Institutional-grade dark trading terminal design system anchored on an obsidian floor (`#07090e`) and Deep Amaranth (`#a6034c`), paired with Scoutie Sans and JetBrains Mono. WCAG 2.2 AAA is an acceptance target subject to automated and manual implementation testing.
 - **Core Engineering Baseline**:
     - **Backend**: Go 1.24+ high-concurrency trading engine utilizing `shopspring/decimal` for fixed-point math, `pgx/v5` connection pool, Gorilla WebSockets, and `golang.org/x/time/rate`.
-    - **Frontend**: Zoneless Angular 22 SPA using Angular Signals (`signal`, `computed`, `effect`), `@tradingview/lightweight-charts`, and pure CSS custom properties derived from `DESIGN.md`.
+    - **Frontend**: Zoneless Angular 22 SPA using Angular Signals (`signal`, `computed`, `effect`), `lightweight-charts`, and pure CSS custom properties derived from `DESIGN.md`.
 - **Open-Source Standard**: The codebase is maintained as an open-source, production-ready trading engine. Do not introduce any portfolio, resume, demo pitch, or video presentation references in documentation or code comments.
 - **Honesty & Rigor Rule**: Never claim "zero slippage", "unlimited concurrency", or "instant settlement" unless backed by rigorous mathematical proofs, benchmark outputs, and race-free test suites.
 
@@ -98,7 +98,7 @@ When generating code or proposing modifications for BayesMarket, you MUST strict
 
 - **Framework**: Angular 22 (Zoneless + Standalone Components).
 - **State Management**: Angular Signals (`signal`, `computed`, `effect`) and dedicated Signal Stores. Do NOT introduce heavy NgRx boilerplate or unmanaged RxJS subscriptions.
-- **Charting Engine**: Hardware-accelerated `@tradingview/lightweight-charts` rendering 60fps canvas curves without triggering Angular change detection.
+- **Charting Engine**: Hardware-accelerated `lightweight-charts` rendering 60fps canvas curves without triggering Angular change detection.
 - **Styling**: Vanilla CSS using custom property tokens from `target/DESIGN.md`. Do NOT introduce Tailwind CSS or external component libraries without explicit user instruction.
 - **Dual Typography**:
     - Interface text: **Scoutie Sans**
