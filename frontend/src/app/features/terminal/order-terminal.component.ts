@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, effect, inject, input, output, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, ElementRef, inject, input, output, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideArrowUp, LucideArrowDown } from '@lucide/angular';
 import { ApiService } from '../../core/services/api.service';
@@ -72,6 +72,7 @@ export interface OrderIntent {
                 <div class="input-wrapper">
                     <span class="currency-symbol" aria-hidden="true">$</span>
                     <input
+                        #amountInputEl
                         id="terminal-amount-input"
                         type="number"
                         min="1"
@@ -88,11 +89,12 @@ export interface OrderIntent {
                 <span id="amount-helper-text" class="sr-only"> Enter the amount of USDC you wish to spend on outcome {{ selectedOutcome() }} </span>
             </div>
 
-            <!-- Quick Amount Presets (+10, +50, +100, Max) -->
+            <!-- Quick Amount Presets (+10, +50, +100, Max, Clear) -->
             <div class="quick-chips-row" role="group" aria-label="Quick amount presets">
                 <app-button variant="chip" size="sm" ariaLabel="Add 10 USDC" (btnClick)="addAmount(10)"> +$10 </app-button>
                 <app-button variant="chip" size="sm" ariaLabel="Add 50 USDC" (btnClick)="addAmount(50)"> +$50 </app-button>
                 <app-button variant="chip" size="sm" ariaLabel="Add 100 USDC" (btnClick)="addAmount(100)"> +$100 </app-button>
+                <app-button variant="chip" size="sm" ariaLabel="Set amount to maximum available balance" (btnClick)="onSetMax()"> Max </app-button>
                 <app-button variant="chip" size="sm" ariaLabel="Clear amount" (btnClick)="clearAmount()"> Clear </app-button>
             </div>
 
@@ -465,8 +467,8 @@ export class OrderTerminalComponent {
         const q = this.latestQuote();
         if (!q) return 'secondary';
         const num = Math.abs(parseFloat(q.price_impact_pct));
-        if (num < 1.0) return 'outline';
-        if (num <= 3.0) return 'secondary';
+        if (num < 1.0) return 'profit';
+        if (num <= 3.0) return 'warning';
         return 'destructive';
     });
 
@@ -597,5 +599,15 @@ export class OrderTerminalComponent {
             currentBalance: currentBalStr,
             postTradeBalance: postTradeBalStr
         });
+    }
+
+    readonly amountInputEl = viewChild<ElementRef<HTMLInputElement>>('amountInputEl');
+
+    focusAmountInput(): void {
+        const input = this.amountInputEl()?.nativeElement;
+        if (input) {
+            input.focus();
+            input.select();
+        }
     }
 }

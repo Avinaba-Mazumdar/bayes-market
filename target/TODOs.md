@@ -305,14 +305,14 @@ Implement the institutional-grade design system stylesheet, Scoutie Sans + JetBr
 
 Assemble the TradingView candlestick/probability chart, the real-time Order Execution Terminal, and the mandatory WCAG 2.2 SC 3.3.6 Two-Step Order Confirmation Review Dialog.
 
-- [ ] **Task 8.1: TradingView Lightweight Charts Integration**
+- [x] **Task 8.1: TradingView Lightweight Charts Integration**
     - Create `frontend/src/app/features/charts/price-chart.component.ts`:
         - Wraps `lightweight-charts` inside an Angular Signal component.
         - Renders probability timeline curve ($0\%$ to $100\%$) with hardware-accelerated 60fps canvas.
         - Supports timeframe selector (`1H`, `1D`, `1W`, `ALL`) via 44×44px chips.
         - Updates dynamically from WebSocket `PRICE_UPDATE` events without triggering Angular change-detection cycles.
 
-- [ ] **Task 8.2: Order Execution Terminal & Real-Time Slippage Drawer**
+- [x] **Task 8.2: Order Execution Terminal & Real-Time Slippage Drawer**
     - Create `frontend/src/app/features/terminal/order-terminal.component.ts`:
         - Segmented outcome toggle: `[BUY YES]` vs `[BUY NO]` (dual-coded with `▲` and `▼` glyphs).
         - Numerical USDC amount input with embedded `MAX` chip.
@@ -323,14 +323,14 @@ Assemble the TradingView candlestick/probability chart, the real-time Order Exec
             - Slippage warning badge (Green $< 1.0\%$, Amber $1.0\%–3.0\%$, Crimson $> 3.0\%$).
             - Potential percentage return (`+36.9%`).
 
-- [ ] **Task 8.3: Two-Step Financial Order Confirmation Dialog (SC 3.3.6 Level AAA)**
+- [x] **Task 8.3: Two-Step Financial Order Confirmation Dialog (SC 3.3.6 Level AAA)**
     - Create `frontend/src/app/features/terminal/order-confirm-dialog.component.ts`:
         - Triggered when the user clicks `"Trade $100.00 on YES"`.
         - Traps keyboard focus (`inert` attribute on parent containers) and prevents accidental one-click submissions.
         - Summarizes: Market question, Outcome (`▲ YES`), USDC deposit, Estimated shares received, Avg execution price, Max slippage tolerance, and Post-trade cash balance.
         - Actions: `"Confirm & Place Trade"` (`ButtonPrimary`) and `"Edit Order"` (dismisses dialog and refocuses input).
 
-- [ ] **Task 8.4: Market Discovery Grid & Jargon Glossary Popovers**
+- [x] **Task 8.4: Market Discovery Grid & Jargon Glossary Popovers**
     - Implement `MarketCardComponent` in discovery catalog:
         - Dual probability split bar (72% Green / 28% Red track).
         - High-contrast probability pills (`▲ 72¢ YES` / `▼ 28¢ NO`).

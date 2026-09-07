@@ -155,6 +155,13 @@ export class GlossaryPopoverComponent {
 
     protected readonly terms: GlossaryTerm[] = [
         {
+            term: 'Automated Market Maker (AMM)',
+            definition:
+                'A decentralized system of algorithmic liquidity pools that enables assets to be traded automatically without traditional order books or centralized intermediaries.',
+            plainEnglish:
+                'A computer program that automatically sets prices and holds money so anyone can buy or sell shares instantly without needing a matching buyer.'
+        },
+        {
             term: 'Constant Product Market Maker (CPMM)',
             definition:
                 'An automated liquidity pool governed by the invariant formula x * y = k. Unlike traditional order books with buy/sell queues, a mathematical algorithm quotes instant buy and sell prices continuously.',

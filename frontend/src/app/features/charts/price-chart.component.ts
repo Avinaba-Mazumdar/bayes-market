@@ -233,7 +233,7 @@ export class PriceChartComponent implements OnInit, OnDestroy {
     private resizeObserver: ResizeObserver | null = null;
     private currentData: ChartPoint[] = [];
 
-    protected readonly formattedProbability = computed(() => {
+    readonly formattedProbability = computed(() => {
         const p = this.currentProbability();
         return `${(p * 100).toFixed(1)}%`;
     });

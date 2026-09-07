@@ -70,7 +70,8 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
                         <svg lucideSearch class="search-icon" [size]="16" aria-hidden="true"></svg>
                         <input
                             type="search"
-                            [(ngModel)]="searchQuery"
+                            [ngModel]="searchQuery()"
+                            (ngModelChange)="searchQuery.set($event)"
                             placeholder="Search prediction markets..."
                             class="search-input"
                             aria-label="Search prediction markets by title or keyword"
@@ -381,7 +382,7 @@ export class MarketListComponent implements OnInit {
     readonly markets = signal<Market[]>([]);
     readonly isLoading = signal<boolean>(true);
     readonly selectedCategory = signal<CategoryFilter>('all');
-    searchQuery = '';
+    readonly searchQuery = signal<string>('');
 
     protected readonly categories: { id: CategoryFilter; label: string }[] = [
         { id: 'all', label: 'All Markets' },
@@ -409,7 +410,7 @@ export class MarketListComponent implements OnInit {
 
     protected readonly filteredMarkets = computed(() => {
         const cat = this.selectedCategory();
-        const query = this.searchQuery.trim().toLowerCase();
+        const query = this.searchQuery().trim().toLowerCase();
         let list = this.markets();
 
         if (cat !== 'all') {
@@ -435,7 +436,7 @@ export class MarketListComponent implements OnInit {
 
     resetFilters(): void {
         this.selectedCategory.set('all');
-        this.searchQuery = '';
+        this.searchQuery.set('');
     }
 
     private fetchMarkets(): void {

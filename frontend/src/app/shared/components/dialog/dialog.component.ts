@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, computed, inject, input, model, output, viewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, computed, effect, inject, input, model, output, viewChild } from '@angular/core';
 import { LucideX } from '@lucide/angular';
 
 export type DialogSize = 'sm' | 'default' | 'lg' | 'xl';
@@ -282,10 +282,68 @@ export class DialogComponent {
     readonly closed = output<void>();
 
     protected readonly dialogContentEl = viewChild<ElementRef<HTMLDivElement>>('dialogContent');
+    private previouslyFocusedElement: HTMLElement | null = null;
+    private inertElements: HTMLElement[] = [];
 
     protected readonly contentClass = computed(() => {
         return ['dialog-content', `dialog-size-${this.size()}`].join(' ');
     });
+
+    constructor() {
+        // Effect to manage inert background and focus lifecycle
+        effect(() => {
+            const isOpen = this.open();
+            if (isOpen) {
+                this.onDialogOpen();
+            } else {
+                this.onDialogClose();
+            }
+        });
+    }
+
+    private onDialogOpen(): void {
+        if (typeof document === 'undefined') return;
+
+        this.previouslyFocusedElement = document.activeElement as HTMLElement | null;
+
+        // Apply inert to #app-main-content or background elements
+        const mainContent = document.getElementById('app-main-content');
+        if (mainContent && !mainContent.hasAttribute('inert')) {
+            mainContent.setAttribute('inert', '');
+            this.inertElements.push(mainContent);
+        }
+
+        // Delay slightly for DOM render, then focus dialog or first focusable
+        setTimeout(() => {
+            const content = this.dialogContentEl()?.nativeElement;
+            if (content) {
+                const focusables = this.getFocusableElements(content);
+                if (focusables.length > 0) {
+                    focusables[0].focus();
+                } else {
+                    content.focus();
+                }
+            }
+        }, 16);
+    }
+
+    private onDialogClose(): void {
+        // Remove inert from background elements
+        for (const el of this.inertElements) {
+            el.removeAttribute('inert');
+        }
+        this.inertElements = [];
+
+        // Restore focus
+        if (this.previouslyFocusedElement && typeof this.previouslyFocusedElement.focus === 'function') {
+            try {
+                this.previouslyFocusedElement.focus();
+            } catch {
+                // Element might have unmounted
+            }
+            this.previouslyFocusedElement = null;
+        }
+    }
 
     @HostListener('window:keydown.escape', ['$event'])
     onEscapeKey(event: Event): void {
@@ -293,6 +351,41 @@ export class DialogComponent {
             event.preventDefault();
             this.close();
         }
+    }
+
+    @HostListener('window:keydown', ['$event'])
+    onKeydown(event: KeyboardEvent): void {
+        if (!this.open() || event.key !== 'Tab') return;
+
+        const content = this.dialogContentEl()?.nativeElement;
+        if (!content) return;
+
+        const focusables = this.getFocusableElements(content);
+        if (focusables.length === 0) {
+            event.preventDefault();
+            return;
+        }
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (event.shiftKey) {
+            if (document.activeElement === first || !content.contains(document.activeElement)) {
+                event.preventDefault();
+                last.focus();
+            }
+        } else {
+            if (document.activeElement === last || !content.contains(document.activeElement)) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+    }
+
+    private getFocusableElements(container: HTMLElement): HTMLElement[] {
+        const selector =
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        return Array.from(container.querySelectorAll<HTMLElement>(selector)).filter((el) => el.offsetParent !== null || el.getClientRects().length > 0);
     }
 
     openDialog(): void {

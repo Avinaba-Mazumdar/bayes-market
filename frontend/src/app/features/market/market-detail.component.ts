@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideArrowLeft, LucideArrowUp, LucideArrowDown } from '@lucide/angular';
 import { ApiService } from '../../core/services/api.service';
@@ -132,7 +132,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                     <!-- Right Column: Order Execution Terminal & Two-Step Confirmation Dialog -->
                     <aside class="cockpit-sidebar" aria-label="Trade Execution Sidebar">
                         <div class="sticky-sidebar-wrapper">
-                            <app-order-terminal [market]="market()!" (orderReviewRequested)="onOrderReviewRequested($event)" />
+                            <app-order-terminal #orderTerminal [market]="market()!" (orderReviewRequested)="onOrderReviewRequested($event)" />
                         </div>
                     </aside>
                 </div>
@@ -450,6 +450,8 @@ export class MarketDetailComponent implements OnInit, OnDestroy {
     readonly market = signal<Market | null>(null);
     readonly isLoading = signal<boolean>(true);
 
+    protected readonly orderTerminal = viewChild<OrderTerminalComponent>('orderTerminal');
+
     // Two-step confirmation state
     readonly isConfirmDialogOpen = signal<boolean>(false);
     readonly pendingOrderIntent = signal<OrderIntent | null>(null);
@@ -539,6 +541,19 @@ export class MarketDetailComponent implements OnInit, OnDestroy {
     }
 
     onOrderSuccessfullyPlaced(receipt: OrderResponse): void {
+        const execPrice = parseFloat(receipt.execution_price);
+        if (!isNaN(execPrice) && execPrice > 0) {
+            const isYes = receipt.outcome === 'YES';
+            const priceYes = isYes ? execPrice : Math.max(0, 1 - execPrice);
+            const priceNo = isYes ? Math.max(0, 1 - execPrice) : execPrice;
+            this.wsService.lastPriceTick.set({
+                type: 'PRICE_UPDATE',
+                market_id: this.id(),
+                yes_price: priceYes.toFixed(4),
+                no_price: priceNo.toFixed(4),
+                timestamp: receipt.created_at || new Date().toISOString()
+            });
+        }
         // Re-fetch market to update reserves, spot price, and volume
         this.fetchMarket();
     }
@@ -546,5 +561,6 @@ export class MarketDetailComponent implements OnInit, OnDestroy {
     onOrderDialogDismissed(): void {
         this.isConfirmDialogOpen.set(false);
         this.pendingOrderIntent.set(null);
+        setTimeout(() => this.orderTerminal()?.focusAmountInput(), 16);
     }
 }
