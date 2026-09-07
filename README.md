@@ -46,7 +46,7 @@ flowchart TB
     end
 
     subgraph Storage ["Persistence Layer"]
-        DB[("PostgreSQL 17 Database<br/><i>Atomic Row-Level Locks & Ledger</i>")]
+        DB[("PostgreSQL 18 Database<br/><i>Atomic Row-Level Locks & Ledger</i>")]
     end
 
     %% Client Interactions

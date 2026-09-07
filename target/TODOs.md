@@ -22,7 +22,7 @@ This document tracks the phased execution plan for **BayesMarket**. It divides t
 
 ## Phase 1: Project Scaffolding, Development Tooling & Monorepo Foundation
 
-Establish the monorepo directory layout, initialize Go and Angular workspaces, configure containerized PostgreSQL 17, and set up unified development scripts.
+Establish the monorepo directory layout, initialize Go and Angular workspaces, configure Neon Serverless PostgreSQL 17, and set up unified development scripts.
 
 - [ ] **Task 1.1: Monorepo & Backend Workspace Initialization**
     - Initialize Go 1.24+ module in `backend/` (`go mod init github.com/bayesmarket/bayesmarket`).

@@ -102,7 +102,7 @@ graph TB
         TickerBot["Simulated Market Activity Worker"]
     end
 
-    subgraph PersistenceLayer ["ACID Storage (PostgreSQL 17)"]
+    subgraph PersistenceLayer ["ACID Storage (PostgreSQL 18)"]
         DB[(Neon Serverless Postgres)]
         PoolLock["Row-Level Lock (SELECT FOR UPDATE)"]
     end
@@ -160,7 +160,7 @@ sequenceDiagram
     participant API as Go Gateway (:8080)
     participant Limiter as Token-Bucket Limiter
     participant AMM as AMM Math Engine
-    participant DB as PostgreSQL 17 (Neon)
+    participant DB as PostgreSQL 18 (Neon)
     participant Hub as WebSocket Hub
 
     User->>Client: Clicks "Buy $50 YES"
@@ -413,7 +413,7 @@ export const TradingStore = signalStore(
 
 ---
 
-## 6. Entity Relationship Diagram & Database Schema (PostgreSQL 17)
+## 6. Entity Relationship Diagram & Database Schema (PostgreSQL 18)
 
 ### 6.1 Mermaid Entity-Relationship Diagram (ERD)
 
@@ -515,7 +515,7 @@ erDiagram
 
 ---
 
-### 6.2 PostgreSQL 17 DDL Script
+### 6.2 PostgreSQL 18 DDL Script
 
 ```sql
 -- Enable cryptographic extension for UUID generation
@@ -926,7 +926,7 @@ flowchart TD
     ReqB[Concurrent Trade Request B] --> Gateway
 
     Gateway --> Tier1["Tier 1: In-Memory Mutex per Market<br/>sync.Mutex in Go Hub"]
-    Tier1 -->|Serializes within Node| Tier2["Tier 2: Row-Level Locking in PostgreSQL 17<br/>SELECT ... FOR UPDATE on liquidity_pools"]
+    Tier1 -->|Serializes within Node| Tier2["Tier 2: Row-Level Locking in PostgreSQL 18<br/>SELECT ... FOR UPDATE on liquidity_pools"]
 
     Tier2 --> Step1[Read Fresh Reserves]
     Step1 --> Step2[Compute AMM Math]
@@ -1040,12 +1040,12 @@ _(Cascading foreign keys automatically purge associated positions and faucet cla
 [Render / Fly.io Container] (Go Static Binary, Port 8080)
       │
       ▼ (SSL pgx connection)
-[Neon Serverless Postgres] (PostgreSQL 17)
+[Neon Serverless Postgres] (PostgreSQL 18)
 ```
 
 - **Frontend**: Cloudflare Pages (Free, global CDN edge, zero cold starts).
 - **Backend**: Fly.io / Render (Free container tier running the <18MB multi-stage Go scratch binary).
-- **Database**: Neon Serverless PostgreSQL 17 (Free tier, auto-sleeps when idle, instant resume).
+- **Database**: Neon Serverless PostgreSQL 18 (Free tier, auto-sleeps when idle, instant resume).
 
 ### 12.1 Environment Variables Configuration
 

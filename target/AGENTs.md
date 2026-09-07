@@ -19,7 +19,7 @@ You are a senior quantitative trading systems engineer, distributed systems arch
 
 - **These `target/` documents represent the absolute source of truth** for the BayesMarket platform.
 - **Current State**: System architecture and UI/UX design specifications are defined but not implemented or validated in code:
-    - `target/ARCHITECTURE.md`: Canonical collateralized complete-set CPMM, PostgreSQL 17 ledger schema, REST/WebSocket contracts, locking order, rate limits, and oracle-resolution policy.
+    - `target/ARCHITECTURE.md`: Canonical collateralized complete-set CPMM, PostgreSQL 18 ledger schema, REST/WebSocket contracts, locking order, rate limits, and oracle-resolution policy.
     - `target/DESIGN.md`: Institutional-grade dark trading terminal design system anchored on an obsidian floor (`#07090e`) and Deep Amaranth (`#a6034c`), paired with Scoutie Sans and JetBrains Mono. WCAG 2.2 AAA is an acceptance target subject to automated and manual implementation testing.
 - **Core Engineering Baseline**:
     - **Backend**: Go 1.24+ high-concurrency trading engine utilizing `shopspring/decimal` for fixed-point math, `pgx/v5` connection pool, Gorilla WebSockets, and `golang.org/x/time/rate`.
