@@ -1,9 +1,11 @@
 import { Component, inject } from '@angular/core';
+import { LucideCheck, LucideCircleAlert, LucideTriangleAlert, LucideInfo, LucideBell, LucideX } from '@lucide/angular';
 import { Toast, ToastService } from './toast.service';
 
 @Component({
     selector: 'app-toast-container',
     standalone: true,
+    imports: [LucideCheck, LucideCircleAlert, LucideTriangleAlert, LucideInfo, LucideBell, LucideX],
     template: `
         <div class="toast-viewport" role="region" aria-label="Notifications" aria-live="polite">
             @for (t of toastService.toasts(); track t.id) {
@@ -13,76 +15,19 @@ import { Toast, ToastService } from './toast.service';
                     <div class="toast-icon-box" aria-hidden="true">
                         @switch (t.variant) {
                             @case ('success') {
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2.5"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="toast-icon icon-success"
-                                >
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
+                                <svg lucideCheck class="toast-icon icon-success" [size]="18" [strokeWidth]="2.5" aria-hidden="true"></svg>
                             }
                             @case ('destructive') {
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2.5"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="toast-icon icon-destructive"
-                                >
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                                </svg>
+                                <svg lucideCircleAlert class="toast-icon icon-destructive" [size]="18" [strokeWidth]="2.5" aria-hidden="true"></svg>
                             }
                             @case ('warning') {
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2.5"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="toast-icon icon-warning"
-                                >
-                                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
-                                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                                </svg>
+                                <svg lucideTriangleAlert class="toast-icon icon-warning" [size]="18" [strokeWidth]="2.5" aria-hidden="true"></svg>
                             }
                             @case ('info') {
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2.5"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="toast-icon icon-info"
-                                >
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
+                                <svg lucideInfo class="toast-icon icon-info" [size]="18" [strokeWidth]="2.5" aria-hidden="true"></svg>
                             }
                             @default {
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2.5"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="toast-icon icon-default"
-                                >
-                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                                </svg>
+                                <svg lucideBell class="toast-icon icon-default" [size]="18" [strokeWidth]="2.5" aria-hidden="true"></svg>
                             }
                         }
                     </div>
@@ -101,19 +46,7 @@ import { Toast, ToastService } from './toast.service';
                     }
 
                     <button type="button" class="toast-close-btn" aria-label="Close notification" (click)="toastService.dismiss(t.id)">
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class="close-icon"
-                            aria-hidden="true"
-                        >
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
+                        <svg lucideX class="close-icon" [size]="16" aria-hidden="true"></svg>
                     </button>
                 </div>
             }

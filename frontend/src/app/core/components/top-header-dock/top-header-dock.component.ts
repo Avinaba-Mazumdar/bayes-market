@@ -1,12 +1,14 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { LucidePlay, LucidePause, LucidePlus } from '@lucide/angular';
 import { WebSocketService } from '../../services/websocket.service';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { AuthStore } from '../../../state/auth.store';
 
 @Component({
     selector: 'app-top-header-dock',
     standalone: true,
-    imports: [RouterLink, RouterLinkActive, ButtonComponent],
+    imports: [RouterLink, RouterLinkActive, ButtonComponent, LucidePlay, LucidePause, LucidePlus],
     template: `
         <header class="top-header-dock" role="banner">
             <div class="dock-container">
@@ -64,12 +66,13 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
                         [attr.aria-label]="wsService.isPaused() ? 'Resume live ticker stream' : 'Pause live ticker stream'"
                         [title]="wsService.isPaused() ? 'Stream Paused (SC 2.2.4)' : 'Stream Active (SC 2.2.4)'"
                     >
-                        <span class="toggle-icon" aria-hidden="true">
-                            {{ wsService.isPaused() ? '▶' : '⏸' }}
-                        </span>
-                        <span class="toggle-text">
-                            {{ wsService.isPaused() ? 'Resume' : 'Pause' }}
-                        </span>
+                        @if (wsService.isPaused()) {
+                            <svg lucidePlay class="toggle-icon" [size]="14" aria-hidden="true"></svg>
+                            <span class="toggle-text">Resume</span>
+                        } @else {
+                            <svg lucidePause class="toggle-icon" [size]="14" aria-hidden="true"></svg>
+                            <span class="toggle-text">Pause</span>
+                        }
                     </button>
 
                     <!-- Guest Balance Pill (JetBrains Mono tabular figures) -->
@@ -83,7 +86,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
                         @if (isClaimingFaucet()) {
                             <span>Claiming...</span>
                         } @else {
-                            <span class="faucet-plus" aria-hidden="true">+</span>
+                            <svg lucidePlus class="faucet-plus-icon" [size]="14" aria-hidden="true"></svg>
                             <span>Faucet</span>
                         }
                     </app-button>
@@ -296,30 +299,40 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
                 }
             }
 
-            .faucet-plus {
-                font-size: 15px;
-                font-weight: 700;
-                margin-right: 2px;
+            .toggle-icon {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .faucet-plus-icon {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                margin-right: 4px;
             }
         `
     ]
 })
 export class TopHeaderDockComponent {
     readonly wsService = inject(WebSocketService);
+    readonly authStore = inject(AuthStore);
 
-    readonly userBalance = signal<string>('$1,000.00');
-    readonly isClaimingFaucet = signal<boolean>(false);
+    get userBalance() {
+        return this.authStore.cashBalance;
+    }
+
+    get isClaimingFaucet() {
+        return this.authStore.isClaimingFaucet;
+    }
 
     toggleStreamPause(): void {
         this.wsService.togglePause();
     }
 
     onClaimFaucet(): void {
-        this.isClaimingFaucet.set(true);
-        // Simulate faucet claim interaction (in Phase 8/9 connected to API)
-        setTimeout(() => {
-            this.userBalance.set('$1,500.00');
-            this.isClaimingFaucet.set(false);
-        }, 600);
+        this.authStore.claimFaucet();
     }
 }

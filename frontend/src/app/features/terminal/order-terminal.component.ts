@@ -1,0 +1,601 @@
+import { Component, computed, DestroyRef, effect, inject, input, output, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { LucideArrowUp, LucideArrowDown } from '@lucide/angular';
+import { ApiService } from '../../core/services/api.service';
+import { BuyQuoteResponse, Market } from '../../core/models/market.model';
+import { AuthStore } from '../../state/auth.store';
+import { ButtonComponent } from '../../shared/components/button/button.component';
+import { BadgeComponent } from '../../shared/components/badge/badge.component';
+
+export interface OrderIntent {
+    marketId: string;
+    marketTitle: string;
+    outcome: 'YES' | 'NO';
+    amountUSDC: string;
+    quote: BuyQuoteResponse;
+    maxSlippagePct: string;
+    currentBalance: string;
+    postTradeBalance: string;
+}
+
+@Component({
+    selector: 'app-order-terminal',
+    standalone: true,
+    imports: [FormsModule, ButtonComponent, BadgeComponent, LucideArrowUp, LucideArrowDown],
+    template: `
+        <div class="order-terminal-card" role="region" aria-label="Order Execution Terminal">
+            <!-- Header: Title and Live Available Balance -->
+            <div class="terminal-header">
+                <span class="terminal-title">Trade Outcome</span>
+                <div class="balance-display" aria-label="Available USDC Cash Balance">
+                    <span class="balance-title">Balance:</span>
+                    <span class="balance-num tabular-nums">{{ authStore.cashBalance() }}</span>
+                </div>
+            </div>
+
+            <!-- Segmented Dual-Coded Outcome Selector (WCAG AAA Touch Target >= 44x44px) -->
+            <div class="outcome-toggle-group" role="radiogroup" aria-label="Outcome selection">
+                <app-button
+                    variant="yes"
+                    size="lg"
+                    [fullWidth]="true"
+                    [selected]="selectedOutcome() === 'YES'"
+                    [attr.aria-checked]="selectedOutcome() === 'YES'"
+                    role="radio"
+                    ariaLabel="Select outcome YES at implied probability"
+                    (btnClick)="setOutcome('YES')"
+                >
+                    <svg lucideArrowUp class="outcome-glyph" [size]="16" aria-hidden="true"></svg>
+                    <span class="outcome-text">BUY YES</span>
+                    <span class="outcome-prob tabular-nums">{{ yesPriceCents() }}¢</span>
+                </app-button>
+
+                <app-button
+                    variant="no"
+                    size="lg"
+                    [fullWidth]="true"
+                    [selected]="selectedOutcome() === 'NO'"
+                    [attr.aria-checked]="selectedOutcome() === 'NO'"
+                    role="radio"
+                    ariaLabel="Select outcome NO at implied probability"
+                    (btnClick)="setOutcome('NO')"
+                >
+                    <svg lucideArrowDown class="outcome-glyph" [size]="16" aria-hidden="true"></svg>
+                    <span class="outcome-text">BUY NO</span>
+                    <span class="outcome-prob tabular-nums">{{ noPriceCents() }}¢</span>
+                </app-button>
+            </div>
+
+            <!-- Amount Input Section with Embedded Max -->
+            <div class="input-section">
+                <label for="terminal-amount-input" class="input-label"> Amount (USDC) </label>
+                <div class="input-wrapper">
+                    <span class="currency-symbol" aria-hidden="true">$</span>
+                    <input
+                        id="terminal-amount-input"
+                        type="number"
+                        min="1"
+                        max="1000000"
+                        step="1"
+                        [ngModel]="amountInput()"
+                        (ngModelChange)="onAmountChange($event)"
+                        class="amount-field tabular-nums"
+                        placeholder="0.00"
+                        aria-describedby="amount-helper-text"
+                    />
+                    <app-button variant="chip" size="sm" ariaLabel="Set amount to maximum available balance" (btnClick)="onSetMax()"> MAX </app-button>
+                </div>
+                <span id="amount-helper-text" class="sr-only"> Enter the amount of USDC you wish to spend on outcome {{ selectedOutcome() }} </span>
+            </div>
+
+            <!-- Quick Amount Presets (+10, +50, +100, Max) -->
+            <div class="quick-chips-row" role="group" aria-label="Quick amount presets">
+                <app-button variant="chip" size="sm" ariaLabel="Add 10 USDC" (btnClick)="addAmount(10)"> +$10 </app-button>
+                <app-button variant="chip" size="sm" ariaLabel="Add 50 USDC" (btnClick)="addAmount(50)"> +$50 </app-button>
+                <app-button variant="chip" size="sm" ariaLabel="Add 100 USDC" (btnClick)="addAmount(100)"> +$100 </app-button>
+                <app-button variant="chip" size="sm" ariaLabel="Clear amount" (btnClick)="clearAmount()"> Clear </app-button>
+            </div>
+
+            <!-- Execution Estimate Breakdown (Authoritative CPMM Quote) -->
+            <div class="quote-drawer" [class.loading]="isLoadingQuote()">
+                <div class="quote-row">
+                    <span class="quote-label">Est. Shares Received:</span>
+                    <span class="quote-val tabular-nums shares-highlight">
+                        {{ formattedSharesReceived() }}
+                    </span>
+                </div>
+                <div class="quote-row">
+                    <span class="quote-label">Avg. Execution Price:</span>
+                    <span class="quote-val tabular-nums">
+                        {{ formattedAvgPrice() }}
+                    </span>
+                </div>
+                <div class="quote-row">
+                    <span class="quote-label">Price Impact / Slippage:</span>
+                    <div class="slippage-val-group">
+                        <span class="quote-val tabular-nums">{{ formattedPriceImpact() }}%</span>
+                        <app-badge [variant]="slippageBadgeVariant()" size="sm">
+                            {{ slippageBadgeLabel() }}
+                        </app-badge>
+                    </div>
+                </div>
+                <div class="quote-row total-return-row">
+                    <span class="quote-label">Potential Payout ($1/share):</span>
+                    <div class="return-group">
+                        <span class="return-payout tabular-nums">{{ potentialPayout() }}</span>
+                        <span class="return-pct tabular-nums" [class.positive]="potentialReturnPct() > 0"> (+{{ potentialReturnPct() }}%) </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Primary Trade Action Button (Triggers Two-Step Confirmation Review) -->
+            <div class="action-footer">
+                <app-button
+                    [variant]="selectedOutcome() === 'YES' ? 'yes' : 'no'"
+                    size="lg"
+                    [fullWidth]="true"
+                    [disabled]="isTradeDisabled()"
+                    [ariaLabel]="tradeButtonLabel()"
+                    (btnClick)="onRequestOrderReview()"
+                >
+                    {{ tradeButtonText() }}
+                </app-button>
+
+                @if (validationError()) {
+                    <div class="validation-warning" role="alert">
+                        {{ validationError() }}
+                    </div>
+                }
+            </div>
+        </div>
+    `,
+    styles: [
+        `
+            :host {
+                display: block;
+                width: 100%;
+            }
+
+            .order-terminal-card {
+                background-color: var(--surface-terminal, #0e131d);
+                border: 1px solid var(--border-strong, #606e85);
+                border-radius: var(--radius-xl, 20px);
+                padding: var(--space-lg, 20px);
+                box-shadow: var(--shadow-terminal);
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .terminal-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                border-bottom: 1px solid var(--hairline, #1e2638);
+                padding-bottom: 12px;
+            }
+
+            .terminal-title {
+                font-family: var(--font-ui);
+                font-size: 16px;
+                font-weight: 700;
+                color: var(--ink, #f8fafc);
+                letter-spacing: -0.2px;
+            }
+
+            .balance-display {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                background-color: var(--canvas, #07090e);
+                padding: 4px 10px;
+                border-radius: var(--radius-sm, 6px);
+                border: 1px solid var(--hairline, #1e2638);
+            }
+
+            .balance-title {
+                font-family: var(--font-ui);
+                font-size: 11px;
+                font-weight: 600;
+                color: var(--muted, #a2b4c9);
+            }
+
+            .balance-num {
+                font-family: var(--font-mono);
+                font-size: 13px;
+                font-weight: 700;
+                color: var(--ink, #f8fafc);
+                font-feature-settings: 'tnum' 1;
+            }
+
+            .outcome-toggle-group {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+
+            .outcome-glyph {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                margin-right: 4px;
+            }
+
+            .outcome-text {
+                font-weight: 700;
+                letter-spacing: 0.2px;
+            }
+
+            .outcome-prob {
+                font-family: var(--font-mono);
+                font-size: 12px;
+                opacity: 0.9;
+                margin-left: 6px;
+            }
+
+            .input-section {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .input-label {
+                font-family: var(--font-ui);
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--muted, #a2b4c9);
+            }
+
+            .input-wrapper {
+                display: flex;
+                align-items: center;
+                background-color: var(--canvas, #07090e);
+                border: 1px solid var(--border-strong, #606e85);
+                border-radius: var(--radius-lg, 14px);
+                padding: 4px 8px 4px 14px;
+                gap: 8px;
+                min-height: var(--touch-target-min, 44px);
+                transition: border-color 0.15s ease;
+            }
+
+            .input-wrapper:focus-within {
+                border-color: var(--primary-border, #e84089);
+                box-shadow: 0 0 0 2px var(--focus-ring, rgba(232, 64, 137, 0.35));
+            }
+
+            .currency-symbol {
+                font-family: var(--font-mono);
+                font-size: 18px;
+                font-weight: 700;
+                color: var(--muted, #a2b4c9);
+            }
+
+            .amount-field {
+                flex: 1;
+                background: transparent;
+                border: none;
+                color: var(--ink, #f8fafc);
+                font-family: var(--font-mono);
+                font-size: 20px;
+                font-weight: 700;
+                outline: none;
+                font-feature-settings: 'tnum' 1;
+                min-width: 0;
+            }
+
+            .quick-chips-row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .quote-drawer {
+                background-color: var(--canvas-subtle, #0c1017);
+                border: 1px solid var(--hairline, #1e2638);
+                border-radius: var(--radius-lg, 14px);
+                padding: 14px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                transition: opacity 0.15s ease;
+            }
+
+            .quote-drawer.loading {
+                opacity: 0.6;
+            }
+
+            .quote-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                font-size: 13px;
+            }
+
+            .quote-label {
+                font-family: var(--font-ui);
+                color: var(--muted, #a2b4c9);
+            }
+
+            .quote-val {
+                font-family: var(--font-mono);
+                font-weight: 600;
+                color: var(--ink, #f8fafc);
+                font-feature-settings: 'tnum' 1;
+            }
+
+            .shares-highlight {
+                font-size: 15px;
+                font-weight: 700;
+                color: var(--ink, #f8fafc);
+            }
+
+            .slippage-val-group {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .total-return-row {
+                border-top: 1px solid var(--hairline, #1e2638);
+                padding-top: 10px;
+                margin-top: 2px;
+            }
+
+            .return-group {
+                display: flex;
+                align-items: baseline;
+                gap: 6px;
+            }
+
+            .return-payout {
+                font-family: var(--font-mono);
+                font-size: 15px;
+                font-weight: 700;
+                color: var(--status-profit, #34d399);
+                font-feature-settings: 'tnum' 1;
+            }
+
+            .return-pct {
+                font-family: var(--font-mono);
+                font-size: 12px;
+                font-weight: 600;
+                color: var(--status-profit, #34d399);
+            }
+
+            .action-footer {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                margin-top: 4px;
+            }
+
+            .validation-warning {
+                font-family: var(--font-ui);
+                font-size: 12px;
+                color: var(--status-warning, #fcd34d);
+                text-align: center;
+            }
+
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
+        `
+    ]
+})
+export class OrderTerminalComponent {
+    readonly market = input.required<Market>();
+    readonly orderReviewRequested = output<OrderIntent>();
+
+    protected readonly apiService = inject(ApiService);
+    readonly authStore = inject(AuthStore);
+
+    readonly selectedOutcome = signal<'YES' | 'NO'>('YES');
+    readonly amountInput = signal<string>('50');
+    readonly maxSlippageTolerancePct = signal<string>('1.00');
+
+    readonly latestQuote = signal<BuyQuoteResponse | null>(null);
+    readonly isLoadingQuote = signal<boolean>(false);
+    private quoteDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    protected readonly yesPriceCents = computed(() => {
+        const m = this.market();
+        const p = parseFloat(m?.probability_yes_pct || '50.00');
+        return isNaN(p) ? '50' : Math.round(p).toString();
+    });
+
+    protected readonly noPriceCents = computed(() => {
+        const m = this.market();
+        const p = parseFloat(m?.probability_no_pct || '50.00');
+        return isNaN(p) ? '50' : Math.round(p).toString();
+    });
+
+    protected readonly currentNumericAmount = computed(() => {
+        const parsed = parseFloat(this.amountInput());
+        return isNaN(parsed) ? 0 : parsed;
+    });
+
+    protected readonly validationError = computed(() => {
+        const amt = this.currentNumericAmount();
+        if (amt <= 0) {
+            return 'Enter a valid positive USDC amount';
+        }
+        const balStr = this.authStore.cashBalance().replace(/[$,]/g, '');
+        const balNum = parseFloat(balStr);
+        if (!isNaN(balNum) && amt > balNum) {
+            return `Amount exceeds available cash balance ($${balNum.toFixed(2)})`;
+        }
+        return null;
+    });
+
+    protected readonly isTradeDisabled = computed(() => {
+        return !!this.validationError() || this.isLoadingQuote() || !this.latestQuote();
+    });
+
+    protected readonly formattedSharesReceived = computed(() => {
+        const q = this.latestQuote();
+        if (!q) return '0.00';
+        const num = parseFloat(q.shares_received);
+        return isNaN(num) ? '0.00' : num.toFixed(2);
+    });
+
+    protected readonly formattedAvgPrice = computed(() => {
+        const q = this.latestQuote();
+        if (!q) return '$0.00';
+        const num = parseFloat(q.avg_price);
+        return isNaN(num) ? '$0.00' : `$${num.toFixed(4)}`;
+    });
+
+    protected readonly formattedPriceImpact = computed(() => {
+        const q = this.latestQuote();
+        if (!q) return '0.00';
+        const num = parseFloat(q.price_impact_pct);
+        return isNaN(num) ? '0.00' : Math.abs(num).toFixed(2);
+    });
+
+    protected readonly slippageBadgeVariant = computed(() => {
+        const q = this.latestQuote();
+        if (!q) return 'secondary';
+        const num = Math.abs(parseFloat(q.price_impact_pct));
+        if (num < 1.0) return 'outline';
+        if (num <= 3.0) return 'secondary';
+        return 'destructive';
+    });
+
+    protected readonly slippageBadgeLabel = computed(() => {
+        const q = this.latestQuote();
+        if (!q) return 'Normal';
+        const num = Math.abs(parseFloat(q.price_impact_pct));
+        if (num < 1.0) return 'Minimal';
+        if (num <= 3.0) return 'Moderate';
+        return 'High Impact';
+    });
+
+    protected readonly potentialPayout = computed(() => {
+        const q = this.latestQuote();
+        if (!q) return '$0.00';
+        const shares = parseFloat(q.shares_received);
+        return isNaN(shares) ? '$0.00' : `$${shares.toFixed(2)}`;
+    });
+
+    protected readonly potentialReturnPct = computed(() => {
+        const q = this.latestQuote();
+        const amt = this.currentNumericAmount();
+        if (!q || amt <= 0) return 0;
+        const shares = parseFloat(q.shares_received);
+        if (isNaN(shares)) return 0;
+        const profit = shares - amt;
+        return Math.round((profit / amt) * 100);
+    });
+
+    protected readonly tradeButtonText = computed(() => {
+        const outcome = this.selectedOutcome();
+        const amt = this.currentNumericAmount();
+        return `Trade $${amt.toFixed(2)} on ${outcome}`;
+    });
+
+    protected readonly tradeButtonLabel = computed(() => {
+        return `Review and place trade for $${this.currentNumericAmount().toFixed(2)} USDC on outcome ${this.selectedOutcome()}`;
+    });
+
+    constructor() {
+        // Automatically fetch quote whenever market, outcome, or amount changes
+        effect(() => {
+            const m = this.market();
+            const outcome = this.selectedOutcome();
+            const amt = this.amountInput();
+
+            if (m && m.id && parseFloat(amt) > 0) {
+                this.scheduleQuoteFetch(m.id, outcome, amt);
+            }
+        });
+    }
+
+    setOutcome(outcome: 'YES' | 'NO'): void {
+        this.selectedOutcome.set(outcome);
+    }
+
+    onAmountChange(val: string): void {
+        this.amountInput.set(val);
+    }
+
+    addAmount(addition: number): void {
+        const current = this.currentNumericAmount();
+        this.amountInput.set((current + addition).toString());
+    }
+
+    clearAmount(): void {
+        this.amountInput.set('0');
+    }
+
+    onSetMax(): void {
+        const balStr = this.authStore.cashBalance().replace(/[$,]/g, '');
+        const balNum = parseFloat(balStr);
+        if (!isNaN(balNum) && balNum > 0) {
+            this.amountInput.set(balNum.toFixed(0));
+        }
+    }
+
+    private scheduleQuoteFetch(marketId: string, outcome: 'YES' | 'NO', amountStr: string): void {
+        if (this.quoteDebounceTimer) {
+            clearTimeout(this.quoteDebounceTimer);
+        }
+
+        this.isLoadingQuote.set(true);
+        this.quoteDebounceTimer = setTimeout(() => {
+            const amtNum = parseFloat(amountStr);
+            if (isNaN(amtNum) || amtNum <= 0) {
+                this.isLoadingQuote.set(false);
+                return;
+            }
+
+            this.apiService
+                .getQuote(marketId, {
+                    action: 'BUY',
+                    outcome: outcome,
+                    amount_usdc: amtNum.toFixed(8)
+                })
+                .subscribe({
+                    next: (quote) => {
+                        this.latestQuote.set(quote);
+                        this.isLoadingQuote.set(false);
+                    },
+                    error: (err) => {
+                        console.warn('Quote calculation failed:', err);
+                        this.isLoadingQuote.set(false);
+                    }
+                });
+        }, 200);
+    }
+
+    onRequestOrderReview(): void {
+        const quote = this.latestQuote();
+        const m = this.market();
+        if (!quote || !m || this.isTradeDisabled()) return;
+
+        const currentBalStr = this.authStore.cashBalance();
+        const currentBalNum = parseFloat(currentBalStr.replace(/[$,]/g, ''));
+        const tradeAmt = this.currentNumericAmount();
+        const postBalNum = Math.max(0, currentBalNum - tradeAmt);
+        const postTradeBalStr = `$${postBalNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+        this.orderReviewRequested.emit({
+            marketId: m.id,
+            marketTitle: m.title,
+            outcome: this.selectedOutcome(),
+            amountUSDC: tradeAmt.toFixed(8),
+            quote: quote,
+            maxSlippagePct: this.maxSlippageTolerancePct(),
+            currentBalance: currentBalStr,
+            postTradeBalance: postTradeBalStr
+        });
+    }
+}

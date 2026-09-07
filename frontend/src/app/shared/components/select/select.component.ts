@@ -1,4 +1,5 @@
 import { Component, ElementRef, HostListener, computed, inject, input, model, signal } from '@angular/core';
+import { LucideChevronDown, LucideCheck } from '@lucide/angular';
 
 export interface SelectOption {
     value: string;
@@ -13,6 +14,7 @@ export type SelectVariant = 'default' | 'mono';
 @Component({
     selector: 'app-select',
     standalone: true,
+    imports: [LucideChevronDown, LucideCheck],
     template: `
         <div class="select-container" [class.select-disabled]="disabled()">
             <button
@@ -31,19 +33,7 @@ export type SelectVariant = 'default' | 'mono';
                     {{ selectedOption() ? selectedOption()!.label : placeholder() }}
                 </span>
 
-                <svg
-                    class="chevron-icon"
-                    [class.chevron-open]="isOpen()"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
+                <svg lucideChevronDown class="chevron-icon" [class.chevron-open]="isOpen()" [size]="16" aria-hidden="true"></svg>
             </button>
 
             @if (isOpen()) {
@@ -67,18 +57,7 @@ export type SelectVariant = 'default' | 'mono';
                             </div>
 
                             @if (opt.value === value()) {
-                                <svg
-                                    class="check-icon"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2.5"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    aria-hidden="true"
-                                >
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
+                                <svg lucideCheck class="check-icon" [size]="16" [strokeWidth]="2.5" aria-hidden="true"></svg>
                             }
                         </div>
                     }

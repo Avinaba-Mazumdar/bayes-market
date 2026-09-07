@@ -1,4 +1,5 @@
 import { Component, computed, effect, input, signal } from '@angular/core';
+import { LucideUser } from '@lucide/angular';
 
 export type AvatarSize = 'sm' | 'default' | 'lg' | 'xl';
 export type AvatarShape = 'circle' | 'square';
@@ -7,6 +8,7 @@ export type AvatarStatus = 'online' | 'offline' | 'busy' | 'away';
 @Component({
     selector: 'app-avatar',
     standalone: true,
+    imports: [LucideUser],
     template: `
         <div [class]="containerClass()" [attr.aria-label]="ariaLabelText()">
             @if (showImage()) {
@@ -17,18 +19,7 @@ export type AvatarStatus = 'online' | 'offline' | 'busy' | 'away';
                         {{ initials() }}
                     } @else {
                         <ng-content>
-                            <svg
-                                class="avatar-default-icon"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
+                            <svg lucideUser class="avatar-default-icon" aria-hidden="true"></svg>
                         </ng-content>
                     }
                 </span>

@@ -1,4 +1,5 @@
 import { Component, ElementRef, HostListener, computed, inject, input, model, output, viewChild } from '@angular/core';
+import { LucideX } from '@lucide/angular';
 
 export type DialogSize = 'sm' | 'default' | 'lg' | 'xl';
 export type DialogRole = 'dialog' | 'alertdialog';
@@ -6,6 +7,7 @@ export type DialogRole = 'dialog' | 'alertdialog';
 @Component({
     selector: 'app-dialog',
     standalone: true,
+    imports: [LucideX],
     template: `
         <!-- Optional Projected Trigger Button -->
         <span class="dialog-trigger-wrapper" (click)="openDialog()">
@@ -32,19 +34,7 @@ export type DialogRole = 'dialog' | 'alertdialog';
                         <!-- Close Button (WCAG AAA min 44x44px touch target) -->
                         @if (showCloseButton()) {
                             <button type="button" class="dialog-close-btn" aria-label="Close dialog" (click)="close()">
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="close-icon"
-                                    aria-hidden="true"
-                                >
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
+                                <svg lucideX class="close-icon" [size]="18" aria-hidden="true"></svg>
                             </button>
                         }
 

@@ -1,4 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
+import { LucideLoaderCircle } from '@lucide/angular';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'faucet' | 'link' | 'yes' | 'no' | 'chip';
 export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
@@ -6,6 +7,7 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
 @Component({
     selector: 'app-button',
     standalone: true,
+    imports: [LucideLoaderCircle],
     template: `
         <button
             [type]="type()"
@@ -17,19 +19,7 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             (click)="onClick($event)"
         >
             @if (loading()) {
-                <svg
-                    class="btn-spinner"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                >
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" />
-                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" />
-                </svg>
+                <svg lucideLoaderCircle class="btn-spinner" [size]="16" [strokeWidth]="2.5" aria-hidden="true"></svg>
             }
             <ng-content />
         </button>
