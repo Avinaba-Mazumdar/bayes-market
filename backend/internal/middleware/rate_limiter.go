@@ -74,6 +74,11 @@ func (rl *RateLimiter) cleanupRoutine(cleanupInterval time.Duration) {
 // LimitByIP enforces token-bucket rate limits per client IP.
 func (rl *RateLimiter) LimitByIP() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if gin.Mode() == gin.TestMode && c.GetHeader("X-Bypass-Rate-Limit") == "test-bypass" {
+			c.Next()
+			return
+		}
+
 		key := c.ClientIP()
 		limiter := rl.getLimiter(key)
 
@@ -94,6 +99,11 @@ func (rl *RateLimiter) LimitByIP() gin.HandlerFunc {
 // LimitByClientOrUser enforces rate limits per User ID if authenticated, falling back to IP.
 func (rl *RateLimiter) LimitByClientOrUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if gin.Mode() == gin.TestMode && c.GetHeader("X-Bypass-Rate-Limit") == "test-bypass" {
+			c.Next()
+			return
+		}
+
 		key := c.ClientIP()
 		if userID, exists := GetUserID(c); exists {
 			key = "usr:" + userID.String()

@@ -17,7 +17,7 @@ func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	}
 
 	// Serverless Neon pool sizing & lifecycle defaults
-	config.MaxConns = 10
+	config.MaxConns = 30
 	config.MinConns = 2
 	config.MaxConnLifetime = 1 * time.Hour
 	config.MaxConnIdleTime = 15 * time.Minute

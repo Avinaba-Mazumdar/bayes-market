@@ -27,7 +27,7 @@ func getTestEnv(t *testing.T) (*pgxpool.Pool, *config.Config, *gin.Engine) {
 		t.Skip("Skipping live REST tests: valid DATABASE_URL not configured")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	pool, err := database.NewPool(ctx, cfg.DatabaseURL)

@@ -173,7 +173,7 @@ Implement the RESTful HTTP API layer, guest session issuance, in-memory token-bu
 
 Implement atomic trade placement, database row-level locking (`SELECT ... FOR UPDATE`), position updates, and AMM liquidation handling.
 
-- [ ] **Task 5.1: Atomic Order Execution Pipeline**
+- [x] **Task 5.1: Atomic Order Execution Pipeline**
     - Create `backend/internal/transport/rest/trade_handler.go` handling `POST /api/v1/markets/:id/orders`.
     - Payload validation: `{ outcome: "YES"|"NO", amount_usdc: "100.00000000", max_slippage_pct: "2.00000000" }`.
     - Enforce atomic transaction boundary:
@@ -185,13 +185,13 @@ Implement atomic trade placement, database row-level locking (`SELECT ... FOR UP
         6. Insert a `trades` record with the required `Idempotency-Key`, returning the original receipt on a retry.
         7. Upsert user position in `user_positions` and write balanced immutable `ledger_entries` for cash, collateral, and shares.
 
-- [ ] **Task 5.2: Atomic "Cash Out" Share Liquidation Handler**
+- [x] **Task 5.2: Atomic "Cash Out" Share Liquidation Handler**
     - Implement `POST /api/v1/portfolio/cashout`:
         - Requires bearer authentication and `Idempotency-Key`, and validates user owns sufficient shares of the specified outcome.
         - Inside one serializable transaction, locks user cash balance, user position, market, then liquidity pool in the global lock order.
         - Sells shares through the collateralized complete-set AMM, credits user cash balance, decrements user position, and records trade plus immutable ledger entries.
 
-- [ ] **Task 5.3: Concurrency & Balance Collision Test Suite**
+- [x] **Task 5.3: Concurrency & Balance Collision Test Suite**
     - Create integration test `backend/internal/transport/order_concurrency_test.go`:
         - Spawns 20 concurrent goroutines attempting to spend the same $100 USDC balance simultaneously.
         - Verifies that exactly one trade succeeds and 19 fail with insufficient balance (no double spending).

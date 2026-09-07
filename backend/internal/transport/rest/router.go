@@ -47,6 +47,7 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 	marketHandler := NewMarketHandler(pool)
 	faucetHandler := NewFaucetHandler(pool)
 	portfolioHandler := NewPortfolioHandler(pool)
+	tradeHandler := NewTradeHandler(pool)
 
 	// Health check endpoint (unlimited)
 	router.GET("/healthz", func(c *gin.Context) {
@@ -79,12 +80,17 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 			auth.POST("/guest", actionLimiter.LimitByClientOrUser(), authHandler.HandleGuestAuth)
 		}
 
-		// 2. Markets & Quote discovery
+		// 2. Markets, Quotes & Orders
 		markets := v1.Group("/markets")
 		{
 			markets.GET("", publicReadLimiter.LimitByIP(), marketHandler.HandleGetMarkets)
 			markets.GET("/:id", publicReadLimiter.LimitByIP(), marketHandler.HandleGetMarketByID)
 			markets.POST("/:id/quote", actionLimiter.LimitByClientOrUser(), marketHandler.HandleMarketQuote)
+			markets.POST("/:id/orders",
+				middleware.RequireAuth(cfg.JWTSecret),
+				actionLimiter.LimitByClientOrUser(),
+				tradeHandler.HandlePlaceOrder,
+			)
 		}
 
 		// 3. Faucet claim (Protected)
@@ -94,10 +100,15 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 			faucetHandler.HandleClaimFaucet,
 		)
 
-		// 4. Portfolio read (Protected)
+		// 4. Portfolio read & Cashout (Protected)
 		v1.GET("/portfolio",
 			middleware.RequireAuth(cfg.JWTSecret),
 			portfolioHandler.HandleGetPortfolio,
+		)
+		v1.POST("/portfolio/cashout",
+			middleware.RequireAuth(cfg.JWTSecret),
+			actionLimiter.LimitByClientOrUser(),
+			tradeHandler.HandleCashOut,
 		)
 	}
 
