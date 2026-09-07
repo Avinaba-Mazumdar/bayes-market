@@ -10,9 +10,9 @@ This document tracks the phased execution plan for **BayesMarket**. It divides t
 
 - [x] **Phase 1: Project Scaffolding, Development Tooling & Monorepo Foundation**
 - [x] **Phase 2: Database Schema, Migration Pipeline & Seed Datasets**
-- [ ] **Phase 3: Fixed-Point Mathematical AMM Engine & Invariant Test Suite**
-- [ ] **Phase 4: Backend REST API, Token-Bucket Rate Limiting & Guest Session Management**
-- [ ] **Phase 5: Atomic Order Execution Engine & Pessimistic Concurrency Controls**
+- [x] **Phase 3: Fixed-Point Mathematical AMM Engine & Invariant Test Suite**
+- [x] **Phase 4: Backend REST API, Token-Bucket Rate Limiting & Guest Session Management**
+- [x] **Phase 5: Atomic Order Execution Engine & Pessimistic Concurrency Controls**
 - [ ] **Phase 6: Real-Time WebSocket Multiplexer & Live Telemetry Broadcasting**
 - [ ] **Phase 7: Frontend Design System, Typography & WCAG 2.2 Level AAA Core Components**
 - [ ] **Phase 8: Interactive Trading Cockpit, Lightweight Charts & Two-Step Order Flow**
@@ -26,12 +26,12 @@ Establish the monorepo directory layout, initialize Go and Angular workspaces, c
 
 - [x] **Task 1.1: Monorepo & Backend Workspace Initialization**
     - Initialize Go 1.24+ module in `backend/` (`go mod init github.com/bayesmarket/bayesmarket`).
-    - Install core backend dependencies: `github.com/jackc/pgx/v5`, `github.com/shopspring/decimal`, `github.com/gorilla/websocket`, `github.com/gin-gonic/gin`, `golang.org/x/time/rate`.
+    - Install core backend dependencies: `github.com/jackc/pgx/v5`, `github.com/shopspring/decimal`, `github.com/gin-gonic/gin`, `golang.org/x/time/rate` (`github.com/gorilla/websocket` installed in Phase 6).
     - Establish backend package structure: `cmd/api/`, `internal/amm/`, `internal/database/`, `internal/middleware/`, `internal/transport/`, `internal/models/`.
 
 - [x] **Task 1.2: Frontend Workspace Initialization (Angular 22 Zoneless)**
     - Initialize Angular 22 standalone client in `frontend/` configured for zoneless change detection (`provideExperimentalZonelessChangeDetection()`).
-    - Install frontend dependencies: `@tradingview/lightweight-charts`.
+    - Install frontend dependencies: `lightweight-charts`.
     - Set up directory structure: `src/app/core/`, `src/app/features/`, `src/app/state/`, `src/styles/`.
 
 - [x] **Task 1.3: Neon Database & Environment Configuration**
@@ -192,7 +192,7 @@ Implement atomic trade placement, database row-level locking (`SELECT ... FOR UP
         - Sells shares through the collateralized complete-set AMM, credits user cash balance, decrements user position, and records trade plus immutable ledger entries.
 
 - [x] **Task 5.3: Concurrency & Balance Collision Test Suite**
-    - Create integration test `backend/internal/transport/order_concurrency_test.go`:
+    - Create integration test `backend/internal/transport/rest/order_concurrency_test.go`:
         - Spawns 20 concurrent goroutines attempting to spend the same $100 USDC balance simultaneously.
         - Verifies that exactly one trade succeeds and 19 fail with insufficient balance (no double spending).
         - Spawns 50 concurrent buyers on the same market and verifies final pool reserves match exact sequential math.
@@ -201,8 +201,9 @@ Implement atomic trade placement, database row-level locking (`SELECT ... FOR UP
 
 1. Run the concurrency integration test suite:
     ```bash
-    cd backend && go test -v -race ./internal/transport/order_concurrency_test.go
+    cd backend && go test -v ./internal/transport/rest/order_concurrency_test.go
     ```
+    _(Note: `-race` flag requires a C toolchain like GCC/MinGW or Linux container)_
 2. Check database consistency: Confirm user balance and market reserves in PostgreSQL reflect exact mathematical outcomes with zero negative balances or drift.
 
 ---
@@ -305,7 +306,7 @@ Assemble the TradingView candlestick/probability chart, the real-time Order Exec
 
 - [ ] **Task 8.1: TradingView Lightweight Charts Integration**
     - Create `frontend/src/app/features/charts/price-chart.component.ts`:
-        - Wraps `@tradingview/lightweight-charts` inside an Angular Signal component.
+        - Wraps `lightweight-charts` inside an Angular Signal component.
         - Renders probability timeline curve ($0\%$ to $100\%$) with hardware-accelerated 60fps canvas.
         - Supports timeframe selector (`1H`, `1D`, `1W`, `ALL`) via 44×44px chips.
         - Updates dynamically from WebSocket `PRICE_UPDATE` events without triggering Angular change-detection cycles.

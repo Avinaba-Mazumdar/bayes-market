@@ -97,10 +97,10 @@ func (h *PortfolioHandler) HandleGetPortfolio(c *gin.Context) {
 	defer rows.Close()
 
 	var (
-		positions            []PositionResponse
-		totalPositionsValue  = decimal.Zero
-		totalInvested        = decimal.Zero
-		totalUnrealizedPnL   = decimal.Zero
+		positions           []PositionResponse
+		totalPositionsValue = decimal.Zero
+		totalInvested       = decimal.Zero
+		totalUnrealizedPnL  = decimal.Zero
 	)
 
 	for rows.Next() {

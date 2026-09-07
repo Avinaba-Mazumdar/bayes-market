@@ -20,12 +20,13 @@ import (
 
 // TradeHandler handles atomic order placements and share cash-out liquidations.
 type TradeHandler struct {
-	pool *pgxpool.Pool
+	pool  *pgxpool.Pool
+	locks *marketLockRegistry
 }
 
 // NewTradeHandler constructs a TradeHandler.
 func NewTradeHandler(pool *pgxpool.Pool) *TradeHandler {
-	return &TradeHandler{pool: pool}
+	return &TradeHandler{pool: pool, locks: newMarketLockRegistry()}
 }
 
 // PlaceOrderRequest defines the input payload for placing a buy order.
@@ -107,6 +108,11 @@ func (h *TradeHandler) HandlePlaceOrder(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_market", "message": "Market ID is required"})
 		return
 	}
+
+	// Tier 1: serialize same-market mutations in-process before touching the
+	// database (ARCHITECTURE.md §8.1), preventing SERIALIZABLE abort storms.
+	unlock := h.locks.acquire("market:" + marketIDParam)
+	defer unlock()
 
 	var req PlaceOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -224,7 +230,9 @@ func (h *TradeHandler) executeOrderTx(
 	amount decimal.Decimal,
 	maxSlippage decimal.Decimal,
 ) (*OrderResponse, error) {
-	tx, err := h.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	// SERIALIZABLE isolation per ARCHITECTURE.md §3.3: predicate conflicts on the
+	// locked rows surface as SQLSTATE 40001 and are retried by the caller's loop.
+	tx, err := h.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})
 	if err != nil {
 		return nil, err
 	}
@@ -416,11 +424,11 @@ func (h *TradeHandler) executeOrderTx(
 	positionAccount := "position_" + strings.ToLower(string(outcome))
 	_, err = tx.Exec(ctx, insertLedgerQuery,
 		tradeID, userID, marketUUID,
-		amount.Neg(),           // user cash delta (-amount)
-		amount,                 // pool collateral delta (+amount)
-		positionAccount,        // account name
-		string(outcome),        // asset
-		quote.SharesReceived,   // delta shares (+shares)
+		amount.Neg(),         // user cash delta (-amount)
+		amount,               // pool collateral delta (+amount)
+		positionAccount,      // account name
+		string(outcome),      // asset
+		quote.SharesReceived, // delta shares (+shares)
 	)
 	if err != nil {
 		return nil, err
@@ -494,6 +502,11 @@ func (h *TradeHandler) HandleCashOut(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_market", "message": "market_id is required"})
 		return
 	}
+
+	// Tier 1: serialize same-market mutations in-process before touching the
+	// database (ARCHITECTURE.md §8.1), preventing SERIALIZABLE abort storms.
+	unlock := h.locks.acquire("market:" + marketIDParam)
+	defer unlock()
 
 	outcomeStr := strings.ToUpper(strings.TrimSpace(req.Outcome))
 	if outcomeStr != "YES" && outcomeStr != "NO" {
@@ -590,7 +603,9 @@ func (h *TradeHandler) executeCashOutTx(
 	shares decimal.Decimal,
 	minPayout decimal.Decimal,
 ) (*CashOutResponse, error) {
-	tx, err := h.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	// SERIALIZABLE isolation per ARCHITECTURE.md §3.3: predicate conflicts on the
+	// locked rows surface as SQLSTATE 40001 and are retried by the caller's loop.
+	tx, err := h.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})
 	if err != nil {
 		return nil, err
 	}

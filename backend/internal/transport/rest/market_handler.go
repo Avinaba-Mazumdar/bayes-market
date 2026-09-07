@@ -26,21 +26,21 @@ func NewMarketHandler(pool *pgxpool.Pool) *MarketHandler {
 
 // MarketSummaryResponse details a market and its current implied probabilities.
 type MarketSummaryResponse struct {
-	ID                string            `json:"id"`
-	Slug              string            `json:"slug"`
-	Title             string            `json:"title"`
-	Description       string            `json:"description"`
-	Category          string            `json:"category"`
-	ImageURL          *string           `json:"image_url,omitempty"`
-	ResolutionSource  string            `json:"resolution_source"`
-	ResolutionDate    string            `json:"resolution_date"`
-	Status            string            `json:"status"`
-	ProbabilityYes    string            `json:"probability_yes"`
-	ProbabilityNo     string            `json:"probability_no"`
-	ProbabilityYesPct string            `json:"probability_yes_pct"`
-	ProbabilityNoPct  string            `json:"probability_no_pct"`
-	Reserves          ReservesResponse  `json:"reserves"`
-	CreatedAt         string            `json:"created_at"`
+	ID                string           `json:"id"`
+	Slug              string           `json:"slug"`
+	Title             string           `json:"title"`
+	Description       string           `json:"description"`
+	Category          string           `json:"category"`
+	ImageURL          *string          `json:"image_url,omitempty"`
+	ResolutionSource  string           `json:"resolution_source"`
+	ResolutionDate    string           `json:"resolution_date"`
+	Status            string           `json:"status"`
+	ProbabilityYes    string           `json:"probability_yes"`
+	ProbabilityNo     string           `json:"probability_no"`
+	ProbabilityYesPct string           `json:"probability_yes_pct"`
+	ProbabilityNoPct  string           `json:"probability_no_pct"`
+	Reserves          ReservesResponse `json:"reserves"`
+	CreatedAt         string           `json:"created_at"`
 }
 
 // ReservesResponse holds pool state as canonical decimal strings.
@@ -92,7 +92,7 @@ func (h *MarketHandler) HandleGetMarkets(c *gin.Context) {
 		var (
 			id, slug, title, desc, cat, resSource, status string
 			imgURL                                        *string
-			resDate, createdAt                           time.Time
+			resDate, createdAt                            time.Time
 			rYes, rNo, collateral, volume                 decimal.Decimal
 		)
 
@@ -173,7 +173,7 @@ func (h *MarketHandler) HandleGetMarketByID(c *gin.Context) {
 	var (
 		id, slug, title, desc, cat, resSource, status string
 		imgURL                                        *string
-		resDate, createdAt                           time.Time
+		resDate, createdAt                            time.Time
 		rYes, rNo, collateral, volume                 decimal.Decimal
 	)
 

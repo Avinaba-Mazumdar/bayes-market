@@ -2,8 +2,10 @@ package rest
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bayesmarket/bayesmarket/internal/middleware"
@@ -41,6 +43,22 @@ func (h *FaucetHandler) HandleClaimFaucet(c *gin.Context) {
 	cooldownDuration := 5 * time.Minute
 	faucetGrant := decimal.NewFromInt(500)
 
+	idempotencyKey := strings.TrimSpace(c.GetHeader("Idempotency-Key"))
+
+	// Fast-path idempotency replay: return the stored receipt for a retried claim.
+	if idempotencyKey != "" {
+		var cachedResponse []byte
+		err := h.pool.QueryRow(ctx, `
+			SELECT response
+			FROM idempotency_keys
+			WHERE actor_id = $1 AND operation = 'faucet_claim' AND idempotency_key = $2;
+		`, userID, idempotencyKey).Scan(&cachedResponse)
+		if err == nil && len(cachedResponse) > 0 {
+			c.Data(http.StatusOK, "application/json", cachedResponse)
+			return
+		}
+	}
+
 	// Check recent claim timestamps by user_id or non-loopback IP address
 	queryCooldown := `
 		SELECT claimed_at 
@@ -65,25 +83,50 @@ func (h *FaucetHandler) HandleClaimFaucet(c *gin.Context) {
 		}
 	}
 
-	idempotencyKey := c.GetHeader("Idempotency-Key")
-
 	// Execute atomic claim transaction
-	tx, err := h.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	tx, err := h.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "database_error", "message": "Failed to initiate transaction"})
 		return
 	}
 	defer tx.Rollback(ctx)
 
+	// Lock the user row first (global lock order: user row first) so concurrent
+	// claims for the same account serialize before any cooldown evaluation.
+	var lockedBalance decimal.Decimal
+	lockUserQuery := `SELECT cash_balance FROM users WHERE id = $1 FOR UPDATE;`
+	if err := tx.QueryRow(ctx, lockUserQuery, userID).Scan(&lockedBalance); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "database_error", "message": "Failed to lock user balance"})
+		return
+	}
+
+	// Re-check the cooldown inside the transaction: after acquiring the user row
+	// lock, any claim committed by a concurrent request is now visible, closing
+	// the double-claim race window.
+	var lastClaimedInTx time.Time
+	err = tx.QueryRow(ctx, queryCooldown, userID, clientIP).Scan(&lastClaimedInTx)
+	if err == nil {
+		if elapsed := time.Since(lastClaimedInTx); elapsed < cooldownDuration {
+			remainingSec := int((cooldownDuration - elapsed).Seconds())
+			c.Header("Retry-After", strconv.Itoa(remainingSec))
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error":                      "faucet_cooldown",
+				"message":                    "Faucet cooldown active. Please wait before claiming again.",
+				"cooldown_remaining_seconds": remainingSec,
+			})
+			return
+		}
+	}
+
 	// Update user balance
-	var newCashBalance decimal.Decimal
+	var updatedBalance decimal.Decimal
 	updateQuery := `
 		UPDATE users 
 		SET cash_balance = cash_balance + $1, last_active = NOW()
 		WHERE id = $2
 		RETURNING cash_balance;
 	`
-	err = tx.QueryRow(ctx, updateQuery, faucetGrant, userID).Scan(&newCashBalance)
+	err = tx.QueryRow(ctx, updateQuery, faucetGrant, userID).Scan(&updatedBalance)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "database_error", "message": "Failed to update user cash balance"})
 		return
@@ -112,14 +155,23 @@ func (h *FaucetHandler) HandleClaimFaucet(c *gin.Context) {
 		return
 	}
 
-	// Record idempotency receipt if header provided
+	// Build the authoritative response, then persist it as the idempotency receipt.
+	resp := gin.H{
+		"success":          true,
+		"amount_claimed":   faucetGrant.StringFixed(8),
+		"new_balance":      updatedBalance.StringFixed(8),
+		"cooldown_seconds": 300,
+	}
+
 	if idempotencyKey != "" {
-		insertIdempotency := `
-			INSERT INTO idempotency_keys (actor_id, operation, idempotency_key)
-			VALUES ($1, 'faucet_claim', $2)
-			ON CONFLICT (actor_id, operation, idempotency_key) DO NOTHING;
-		`
-		_, _ = tx.Exec(ctx, insertIdempotency, userID, idempotencyKey)
+		if respBytes, err := json.Marshal(resp); err == nil {
+			insertIdempotency := `
+				INSERT INTO idempotency_keys (actor_id, operation, idempotency_key, response, created_at)
+				VALUES ($1, 'faucet_claim', $2, $3, NOW())
+				ON CONFLICT (actor_id, operation, idempotency_key) DO NOTHING;
+			`
+			_, _ = tx.Exec(ctx, insertIdempotency, userID, idempotencyKey, respBytes)
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -127,10 +179,5 @@ func (h *FaucetHandler) HandleClaimFaucet(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success":          true,
-		"amount_claimed":   faucetGrant.StringFixed(8),
-		"new_balance":      newCashBalance.StringFixed(8),
-		"cooldown_seconds": 300,
-	})
+	c.JSON(http.StatusOK, resp)
 }

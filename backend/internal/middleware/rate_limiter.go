@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -17,15 +17,15 @@ type clientLimiter struct {
 
 // RateLimiter manages in-memory token buckets keyed by IP or User ID.
 type RateLimiter struct {
-	mu           sync.RWMutex
-	clients      map[string]*clientLimiter
-	rateLimit    rate.Limit
-	burst        int
-	retryAfterSec int
+	mu            sync.RWMutex
+	clients       map[string]*clientLimiter
+	rateLimit     rate.Limit
+	burst         int
+	retryAfterSec time.Duration
 }
 
 // NewRateLimiter creates an in-memory token-bucket rate limiter with automatic stale key eviction.
-func NewRateLimiter(r rate.Limit, b int, retryAfterSec int) *RateLimiter {
+func NewRateLimiter(r rate.Limit, b int, retryAfterSec time.Duration) *RateLimiter {
 	rl := &RateLimiter{
 		clients:       make(map[string]*clientLimiter),
 		rateLimit:     r,
@@ -83,11 +83,12 @@ func (rl *RateLimiter) LimitByIP() gin.HandlerFunc {
 		limiter := rl.getLimiter(key)
 
 		if !limiter.Allow() {
-			c.Header("Retry-After", fmt.Sprintf("%d", rl.retryAfterSec))
+			retryAfter := int(rl.retryAfterSec / time.Second)
+			c.Header("Retry-After", strconv.Itoa(retryAfter))
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 				"error":       "rate_limit_exceeded",
 				"message":     "Too many requests. Please slow down.",
-				"retry_after": rl.retryAfterSec,
+				"retry_after": retryAfter,
 			})
 			return
 		}
@@ -111,11 +112,12 @@ func (rl *RateLimiter) LimitByClientOrUser() gin.HandlerFunc {
 
 		limiter := rl.getLimiter(key)
 		if !limiter.Allow() {
-			c.Header("Retry-After", fmt.Sprintf("%d", rl.retryAfterSec))
+			retryAfter := int(rl.retryAfterSec / time.Second)
+			c.Header("Retry-After", strconv.Itoa(retryAfter))
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 				"error":       "rate_limit_exceeded",
 				"message":     "Too many requests. Please slow down.",
-				"retry_after": rl.retryAfterSec,
+				"retry_after": retryAfter,
 			})
 			return
 		}
@@ -127,10 +129,10 @@ func (rl *RateLimiter) LimitByClientOrUser() gin.HandlerFunc {
 // Predefined Rate Limiter Configurations
 // 1. Public Read Limiter: 60 requests/minute per IP (burst 10)
 func NewPublicReadLimiter() *RateLimiter {
-	return NewRateLimiter(rate.Every(1*time.Second), 10, 2)
+	return NewRateLimiter(rate.Every(1*time.Second), 10, 2*time.Second)
 }
 
 // 2. Action / Quote Limiter: 12 requests/minute per User or IP (burst 3)
 func NewActionLimiter() *RateLimiter {
-	return NewRateLimiter(rate.Every(5*time.Second), 3, 5)
+	return NewRateLimiter(rate.Every(5*time.Second), 3, 5*time.Second)
 }

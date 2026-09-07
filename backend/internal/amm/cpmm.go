@@ -229,8 +229,8 @@ func CalculateCompleteSetBuy(depositUSDC decimal.Decimal, outcome Outcome, pool 
 //     - The pool supplies d NO shares: R_NO' = R_NO - d
 //     - The pool absorbs (s - d) YES shares: R_YES' = R_YES + s - d
 //     - Preserving k = R_YES * R_NO:
-//         (R_YES + s - d)(R_NO - d) = k = R_YES * R_NO
-//         d^2 - (R_YES + R_NO + s)d + s*R_NO = 0
+//     (R_YES + s - d)(R_NO - d) = k = R_YES * R_NO
+//     d^2 - (R_YES + R_NO + s)d + s*R_NO = 0
 //     - Let A = R_YES + R_NO + s.
 //     - Quadratic solution: d = (A - sqrt(A^2 - 4*s*R_NO)) / 2
 //  4. For selling NO shares:
