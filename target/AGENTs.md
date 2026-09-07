@@ -83,7 +83,7 @@ When generating code or proposing modifications for BayesMarket, you MUST strict
 
 ### 3. Backend Tech Stack Constraints
 
-- **Language & Runtime**: Go 1.24+ standard library `net/http` or lightweight router (`chi`).
+- **Language & Runtime**: Go 1.24+ using **Gin web framework (`github.com/gin-gonic/gin`)**.
 - **Database Driver**: `jackc/pgx/v5` with connection pooling and explicit transaction timeouts.
 - **WebSockets**: Gorilla WebSocket with dedicated client read/write pumps, heartbeat ping/pong intervals (30s), and non-blocking outbound channels.
 - **Abuse Prevention**: In-memory token-bucket rate limiter (`golang.org/x/time/rate`) enforcing per-IP and per-session burst caps.

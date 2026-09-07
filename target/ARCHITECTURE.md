@@ -49,16 +49,16 @@ Traders and developers can interact with the platform immediately via an **insta
 
 ### 2.3 Backend Stack (Trading Engine & API)
 
-| Category                     | Technology / Library                    | Version  | Engineering Rationale                                                                                                         |
-| :--------------------------- | :-------------------------------------- | :------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| **Language & Runtime**       | **Go (Golang)**                         | `1.27.1` | Latest stable release (September 2026). Generic methods, high-performance green-thread scheduler, <18MB scratch Docker image. |
-| **HTTP Routing**             | `net/http` + `github.com/go-chi/chi/v5` | `v5.1.0` | Zero-allocation HTTP mux with middleware chaining and URL parameter matching.                                                 |
-| **WebSocket Engine**         | `github.com/gorilla/websocket`          | `v1.5.3` | RFC 6455 implementation with dedicated read/write pumps, ping/pong support, and stable Go ecosystem adoption.                 |
-| **Database Driver**          | `github.com/jackc/pgx/v5`               | `v5.7.1` | High-performance PostgreSQL connection pool (`pgxpool`) with native binary encoding.                                          |
-| **Arbitrary Precision Math** | `github.com/shopspring/decimal`         | `v1.4.0` | Exact fixed-point arithmetic. Eliminates IEEE-754 floating-point inaccuracies in financial calculations.                      |
-| **Rate Limiter**             | `golang.org/x/time/rate`                | Latest   | In-memory token-bucket limiter with sub-microsecond latency per IP and Guest UUID.                                            |
-| **Authentication**           | `github.com/golang-jwt/jwt/v5`          | `v5.2.1` | HMAC-SHA256 signed stateless tokens for ephemeral guest sessions.                                                             |
-| **UUIDs**                    | `github.com/google/uuid`                | `v1.6.0` | RFC 4122 compliant UUIDv4 identifiers for orders, trades, and markets.                                                        |
+| Category                     | Technology / Library                 | Version   | Engineering Rationale                                                                                                         |
+| :--------------------------- | :----------------------------------- | :-------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| **Language & Runtime**       | **Go (Golang)**                      | `1.27.1`  | Latest stable release (September 2026). Generic methods, high-performance green-thread scheduler, <18MB scratch Docker image. |
+| **HTTP Routing**             | **Gin (`github.com/gin-gonic/gin`)** | `v1.10.0` | High-performance, battle-tested HTTP framework with built-in JSON binding/validation and native `gorilla/websocket` support.  |
+| **WebSocket Engine**         | `github.com/gorilla/websocket`       | `v1.5.3`  | RFC 6455 implementation with dedicated read/write pumps, ping/pong support, and stable Go ecosystem adoption.                 |
+| **Database Driver**          | `github.com/jackc/pgx/v5`            | `v5.7.1`  | High-performance PostgreSQL connection pool (`pgxpool`) with native binary encoding.                                          |
+| **Arbitrary Precision Math** | `github.com/shopspring/decimal`      | `v1.4.0`  | Exact fixed-point arithmetic. Eliminates IEEE-754 floating-point inaccuracies in financial calculations.                      |
+| **Rate Limiter**             | `golang.org/x/time/rate`             | Latest    | In-memory token-bucket limiter with sub-microsecond latency per IP and Guest UUID.                                            |
+| **Authentication**           | `github.com/golang-jwt/jwt/v5`       | `v5.2.1`  | HMAC-SHA256 signed stateless tokens for ephemeral guest sessions.                                                             |
+| **UUIDs**                    | `github.com/google/uuid`             | `v1.6.0`  | RFC 4122 compliant UUIDv4 identifiers for orders, trades, and markets.                                                        |
 
 ### 2.4 Persistence & Infrastructure
 
@@ -93,7 +93,7 @@ graph TB
         CORS["CORS & Security Headers"]
         RateLimit["Token-Bucket Limiter (IP + Session)"]
         AuthCtx["JWT / Guest Session Context Middleware"]
-        Router["Chi HTTP Mux & WebSocket Upgrader"]
+        Router["Gin HTTP Engine & WebSocket Upgrader"]
     end
 
     subgraph EngineLayer ["Core Trading & Market Domain"]

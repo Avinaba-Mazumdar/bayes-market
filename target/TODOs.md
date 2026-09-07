@@ -26,7 +26,7 @@ Establish the monorepo directory layout, initialize Go and Angular workspaces, c
 
 - [ ] **Task 1.1: Monorepo & Backend Workspace Initialization**
     - Initialize Go 1.24+ module in `backend/` (`go mod init github.com/bayesmarket/bayesmarket`).
-    - Install core backend dependencies: `github.com/jackc/pgx/v5`, `github.com/shopspring/decimal`, `github.com/gorilla/websocket`, `github.com/go-chi/chi/v5`, `golang.org/x/time/rate`.
+    - Install core backend dependencies: `github.com/jackc/pgx/v5`, `github.com/shopspring/decimal`, `github.com/gorilla/websocket`, `github.com/gin-gonic/gin`, `golang.org/x/time/rate`.
     - Establish backend package structure: `cmd/api/`, `internal/amm/`, `internal/database/`, `internal/middleware/`, `internal/transport/`, `internal/models/`.
 
 - [ ] **Task 1.2: Frontend Workspace Initialization (Angular 22 Zoneless)**
