@@ -10,30 +10,45 @@ import (
 
 	"github.com/bayesmarket/bayesmarket/internal/amm"
 	"github.com/bayesmarket/bayesmarket/internal/middleware"
+	"github.com/bayesmarket/bayesmarket/internal/transport/ws"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
-
-	"github.com/bayesmarket/bayesmarket/internal/transport/ws"
 )
+
+// TelemetryBroadcaster defines the contract for broadcasting real-time market telemetry.
+type TelemetryBroadcaster interface {
+	BroadcastPriceUpdate(msg ws.PriceUpdateMessage)
+	BroadcastTradeEvent(msg ws.TradeEventMessage)
+}
+
+// MarketCacheInvalidator defines the contract for invalidating market cache entries.
+type MarketCacheInvalidator interface {
+	Invalidate(key string)
+}
 
 // TradeHandler handles atomic order placements and share cash-out liquidations.
 type TradeHandler struct {
 	pool  *pgxpool.Pool
 	locks *marketLockRegistry
-	hub   *ws.Hub
+	hub   TelemetryBroadcaster
+	cache MarketCacheInvalidator
 }
 
 // NewTradeHandler constructs a TradeHandler.
 func NewTradeHandler(pool *pgxpool.Pool, hubOpt ...*ws.Hub) *TradeHandler {
-	var hub *ws.Hub
-	if len(hubOpt) > 0 {
+	var hub TelemetryBroadcaster
+	if len(hubOpt) > 0 && hubOpt[0] != nil {
 		hub = hubOpt[0]
 	}
 	return &TradeHandler{pool: pool, locks: newMarketLockRegistry(), hub: hub}
+}
+
+// SetCache attaches a cache invalidator instance for event-driven cache invalidation.
+func (h *TradeHandler) SetCache(cache MarketCacheInvalidator) {
+	h.cache = cache
 }
 
 // PlaceOrderRequest defines the input payload for placing a buy order.
@@ -116,8 +131,7 @@ func (h *TradeHandler) HandlePlaceOrder(c *gin.Context) {
 		return
 	}
 
-	// Tier 1: serialize same-market mutations in-process before touching the
-	// database (ARCHITECTURE.md §8.1), preventing SERIALIZABLE abort storms.
+	// In-process lock serialization per market to prevent abort storms under high concurrency
 	unlock := h.locks.acquire("market:" + marketIDParam)
 	defer unlock()
 
@@ -127,77 +141,55 @@ func (h *TradeHandler) HandlePlaceOrder(c *gin.Context) {
 		return
 	}
 
-	outcomeStr := strings.ToUpper(strings.TrimSpace(req.Outcome))
-	if outcomeStr != "YES" && outcomeStr != "NO" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_outcome", "message": "Outcome must be 'YES' or 'NO'"})
-		return
-	}
-	outcome := amm.Outcome(outcomeStr)
-
-	amountStr := strings.TrimSpace(req.AmountUSDC)
-	if amountStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_amount", "message": "amount_usdc is required"})
-		return
-	}
-	amount, err := decimal.NewFromString(amountStr)
-	if err != nil || amount.LessThanOrEqual(decimal.Zero) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_amount", "message": "amount_usdc must be a positive decimal string"})
+	outcome, valErr := ParseOutcome(req.Outcome)
+	if valErr != nil {
+		c.JSON(valErr.StatusCode, gin.H{"error": valErr.ErrorCode, "message": valErr.Message})
 		return
 	}
 
-	maxSlippage := decimal.NewFromFloat(5.0) // default 5%
-	if slippageStr := strings.TrimSpace(req.MaxSlippagePct); slippageStr != "" {
-		parsed, err := decimal.NewFromString(slippageStr)
-		if err != nil || parsed.IsNegative() {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_slippage", "message": "max_slippage_pct must be non-negative"})
-			return
-		}
-		maxSlippage = parsed
-	}
-
-	// 1. Check idempotency receipt outside tx first
-	var cachedResponse []byte
-	checkIdempQuery := `
-		SELECT response 
-		FROM idempotency_keys 
-		WHERE actor_id = $1 AND operation = 'place_order' AND idempotency_key = $2;
-	`
-	err = h.pool.QueryRow(ctx, checkIdempQuery, userID, idempotencyKey).Scan(&cachedResponse)
-	if err == nil && len(cachedResponse) > 0 {
-		c.Data(http.StatusOK, "application/json", cachedResponse)
+	amount, valErr := ParsePositiveDecimal(req.AmountUSDC, "amount_usdc")
+	if valErr != nil {
+		c.JSON(valErr.StatusCode, gin.H{"error": valErr.ErrorCode, "message": valErr.Message})
 		return
 	}
 
-	// Execute with serializable retry loop (up to 25 attempts under heavy concurrent contention)
-	var finalResponse *OrderResponse
-	maxRetries := 25
+	maxSlippage, valErr := ParseSlippagePct(req.MaxSlippagePct, decimal.NewFromFloat(5.0))
+	if valErr != nil {
+		c.JSON(valErr.StatusCode, gin.H{"error": valErr.ErrorCode, "message": valErr.Message})
+		return
+	}
 
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		finalResponse, err = h.executeOrderTx(ctx, userID, idempotencyKey, marketIDParam, outcome, amount, maxSlippage)
-		if err == nil {
-			break
-		}
+	// 1. Fast path: check idempotency receipt outside tx
+	cachedResp, found, err := GetCachedIdempotencyResponse(ctx, h.pool, userID, "place_order", idempotencyKey)
+	if err == nil && found {
+		c.Data(http.StatusOK, "application/json", cachedResp)
+		return
+	}
 
-		// Check if it was an idempotency replay collision during race
-		if errors.Is(err, errIdempotencyReplay) {
-			_ = h.pool.QueryRow(ctx, checkIdempQuery, userID, idempotencyKey).Scan(&cachedResponse)
-			if len(cachedResponse) > 0 {
-				c.Data(http.StatusOK, "application/json", cachedResponse)
+	// 2. Execute with resilient serializable retry loop
+	finalResponse, err := ExecuteSerializableWithRetry(ctx, 25, func() (*OrderResponse, error) {
+		return h.executeOrderTx(ctx, userID, idempotencyKey, marketIDParam, outcome, amount, maxSlippage)
+	})
+
+	if err != nil {
+		if errors.Is(err, ErrIdempotencyReplay) {
+			if cached, ok, _ := GetCachedIdempotencyResponse(ctx, h.pool, userID, "place_order", idempotencyKey); ok {
+				c.Data(http.StatusOK, "application/json", cached)
 				return
 			}
 		}
 
-		// Check for serialization failure (PostgreSQL code 40001) or deadlock (40P01)
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && (pgErr.Code == "40001" || pgErr.Code == "40P01" || pgErr.Code == "55P03") {
-			time.Sleep(time.Duration(20*(attempt+1)) * time.Millisecond)
-			continue
-		}
-
-		// Business errors (insufficient balance, slippage, etc.) should abort immediately
 		var appErr *AppError
 		if errors.As(err, &appErr) {
 			c.JSON(appErr.StatusCode, gin.H{"error": appErr.ErrorCode, "message": appErr.Message})
+			return
+		}
+
+		if IsSerializationOrDeadlock(err) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error":   "concurrency_conflict",
+				"message": "Order transaction experienced contention after retries. Please retry.",
+			})
 			return
 		}
 
@@ -205,27 +197,7 @@ func (h *TradeHandler) HandlePlaceOrder(c *gin.Context) {
 		return
 	}
 
-	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{
-			"error":   "concurrency_conflict",
-			"message": "Order transaction experienced contention after retries. Please retry.",
-		})
-		return
-	}
-
 	c.JSON(http.StatusCreated, finalResponse)
-}
-
-var errIdempotencyReplay = errors.New("idempotency_replay")
-
-type AppError struct {
-	StatusCode int
-	ErrorCode  string
-	Message    string
-}
-
-func (e *AppError) Error() string {
-	return e.Message
 }
 
 func (h *TradeHandler) executeOrderTx(
@@ -237,73 +209,28 @@ func (h *TradeHandler) executeOrderTx(
 	amount decimal.Decimal,
 	maxSlippage decimal.Decimal,
 ) (*OrderResponse, error) {
-	// SERIALIZABLE isolation per ARCHITECTURE.md §3.3: predicate conflicts on the
-	// locked rows surface as SQLSTATE 40001 and are retried by the caller's loop.
 	tx, err := h.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
 
-	// Step 1: Pessimistic Lock on User Row (Hierarchy Level 1)
-	var currentCashBalance decimal.Decimal
-	queryUser := `SELECT cash_balance FROM users WHERE id = $1 FOR UPDATE;`
-	err = tx.QueryRow(ctx, queryUser, userID).Scan(&currentCashBalance)
+	// Step 1: User lock & sufficiency check (Hierarchy Level 1)
+	currentCashBalance, err := lockAndVerifyUserBalance(ctx, tx, userID, amount)
 	if err != nil {
 		return nil, err
 	}
 
-	if currentCashBalance.LessThan(amount) {
-		return nil, &AppError{
-			StatusCode: http.StatusBadRequest,
-			ErrorCode:  "insufficient_balance",
-			Message:    "Insufficient virtual USDC balance to fund order",
-		}
-	}
-
-	// Step 2: Pessimistic Lock on Market Row (Hierarchy Level 2)
-	var marketUUID uuid.UUID
-	var marketStatus string
-	queryMarket := `
-		SELECT id, status 
-		FROM markets 
-		WHERE id::text = $1 OR slug = $1 
-		FOR UPDATE;
-	`
-	err = tx.QueryRow(ctx, queryMarket, marketIDParam).Scan(&marketUUID, &marketStatus)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, &AppError{StatusCode: http.StatusNotFound, ErrorCode: "not_found", Message: "Market not found"}
-		}
-		return nil, err
-	}
-
-	if marketStatus != "active" {
-		return nil, &AppError{
-			StatusCode: http.StatusBadRequest,
-			ErrorCode:  "market_not_active",
-			Message:    "Market is not open for trading",
-		}
-	}
-
-	// Step 3: Pessimistic Lock on Liquidity Pool (Hierarchy Level 3)
-	var rYes, rNo, collateral, totalVolume decimal.Decimal
-	var lockVersion int
-	queryPool := `
-		SELECT reserve_yes, reserve_no, collateral_reserve, total_volume_usdc, lock_version 
-		FROM liquidity_pools 
-		WHERE market_id = $1 
-		FOR UPDATE;
-	`
-	err = tx.QueryRow(ctx, queryPool, marketUUID).Scan(&rYes, &rNo, &collateral, &totalVolume, &lockVersion)
+	// Step 2: Market lock & active check (Hierarchy Level 2)
+	marketUUID, err := lockAndVerifyActiveMarket(ctx, tx, marketIDParam)
 	if err != nil {
 		return nil, err
 	}
 
-	poolReserves := amm.PoolReserves{
-		ReserveYes:        rYes,
-		ReserveNo:         rNo,
-		CollateralReserve: collateral,
+	// Step 3: Liquidity Pool lock (Hierarchy Level 3)
+	poolReserves, totalVolume, err := lockLiquidityPool(ctx, tx, marketUUID)
+	if err != nil {
+		return nil, err
 	}
 
 	// Step 4: Mathematical AMM Execution
@@ -320,128 +247,16 @@ func (h *TradeHandler) executeOrderTx(
 		}
 	}
 
-	// Step 5: Deduct User Cash
-	var newCashBalance decimal.Decimal
-	deductCashQuery := `
-		UPDATE users 
-		SET cash_balance = cash_balance - $1, last_active = NOW() 
-		WHERE id = $2 
-		RETURNING cash_balance;
-	`
-	err = tx.QueryRow(ctx, deductCashQuery, amount, userID).Scan(&newCashBalance)
+	// Step 5: Check existing user position state
+	isNewPos, finalSharesOwned, finalAvgPrice, newInvested, err := computeUpdatedUserPosition(ctx, tx, userID, marketUUID, outcome, quote.SharesReceived, quote.AvgPrice, amount)
 	if err != nil {
 		return nil, err
 	}
 
-	// Step 6: Update Liquidity Pool Virtual Reserves & Collateral
-	updatePoolQuery := `
-		UPDATE liquidity_pools 
-		SET reserve_yes = $1, 
-		    reserve_no = $2, 
-		    collateral_reserve = $3, 
-		    total_volume_usdc = total_volume_usdc + $4, 
-		    lock_version = lock_version + 1, 
-		    updated_at = NOW() 
-		WHERE market_id = $5;
-	`
-	_, err = tx.Exec(ctx, updatePoolQuery, quote.NewReserveYes, quote.NewReserveNo, quote.NewCollateral, amount, marketUUID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Step 7: Insert Trade Record
+	newCashBalance := currentCashBalance.Sub(amount)
 	tradeID := uuid.New()
-	insertTradeQuery := `
-		INSERT INTO trades (
-			id, market_id, user_id, idempotency_key, trade_type, outcome, 
-			amount_usdc, shares_filled, execution_price, price_impact_pct, created_at
-		) VALUES ($1, $2, $3, $4, 'BUY', $5, $6, $7, $8, $9, NOW());
-	`
-	_, err = tx.Exec(ctx, insertTradeQuery,
-		tradeID, marketUUID, userID, idempotencyKey, string(outcome),
-		amount, quote.SharesReceived, quote.AvgPrice, quote.PriceImpactPct,
-	)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.ConstraintName == "uq_trades_user_idempotency" {
-			return nil, errIdempotencyReplay
-		}
-		return nil, err
-	}
-
-	// Step 8: Upsert User Position with Volume-Weighted Average Price
-	var finalSharesOwned, finalAvgPrice decimal.Decimal
-	queryPos := `
-		SELECT shares_owned, avg_buy_price, total_invested_usdc 
-		FROM user_positions 
-		WHERE user_id = $1 AND market_id = $2 AND outcome = $3 
-		FOR UPDATE;
-	`
-	var existingShares, existingAvg, existingInvested decimal.Decimal
-	err = tx.QueryRow(ctx, queryPos, userID, marketUUID, string(outcome)).Scan(&existingShares, &existingAvg, &existingInvested)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			// First purchase of this outcome
-			finalSharesOwned = quote.SharesReceived
-			finalAvgPrice = quote.AvgPrice
-			insertPosQuery := `
-				INSERT INTO user_positions (
-					user_id, market_id, outcome, shares_owned, avg_buy_price, total_invested_usdc, created_at, updated_at
-				) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW());
-			`
-			_, err = tx.Exec(ctx, insertPosQuery, userID, marketUUID, string(outcome), finalSharesOwned, finalAvgPrice, amount)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
-	} else {
-		// Existing position: update shares and weighted average price
-		finalSharesOwned = existingShares.Add(quote.SharesReceived)
-		newInvested := existingInvested.Add(amount)
-		if finalSharesOwned.GreaterThan(decimal.Zero) {
-			finalAvgPrice = newInvested.DivRound(finalSharesOwned, 8)
-		} else {
-			finalAvgPrice = decimal.Zero
-		}
-		updatePosQuery := `
-			UPDATE user_positions 
-			SET shares_owned = $1, avg_buy_price = $2, total_invested_usdc = $3, updated_at = NOW() 
-			WHERE user_id = $4 AND market_id = $5 AND outcome = $6;
-		`
-		_, err = tx.Exec(ctx, updatePosQuery, finalSharesOwned, finalAvgPrice, newInvested, userID, marketUUID, string(outcome))
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Step 9: Immutable Balanced Double-Entry Financial Ledger
-	// 1. User cash debit
-	// 2. Pool collateral credit
-	// 3. User position shares credit
-	insertLedgerQuery := `
-		INSERT INTO ledger_entries (
-			transaction_id, user_id, market_id, account, asset, delta, entry_type, created_at
-		) VALUES 
-		($1, $2, $3, 'user_cash', 'USDC', $4, 'trade', NOW()),
-		($1, $2, $3, 'pool_collateral', 'USDC', $5, 'trade', NOW()),
-		($1, $2, $3, $6, $7, $8, 'trade', NOW());
-	`
 	positionAccount := "position_" + strings.ToLower(string(outcome))
-	_, err = tx.Exec(ctx, insertLedgerQuery,
-		tradeID, userID, marketUUID,
-		amount.Neg(),         // user cash delta (-amount)
-		amount,               // pool collateral delta (+amount)
-		positionAccount,      // account name
-		string(outcome),      // asset
-		quote.SharesReceived, // delta shares (+shares)
-	)
-	if err != nil {
-		return nil, err
-	}
 
-	// Prepare Response
 	resp := &OrderResponse{
 		TradeID:        tradeID.String(),
 		MarketID:       marketUUID.String(),
@@ -458,49 +273,85 @@ func (h *TradeHandler) executeOrderTx(
 		CreatedAt:      time.Now().UTC().Format(time.RFC3339),
 	}
 
-	// Step 10: Store Idempotency Receipt
-	respBytes, err := json.Marshal(resp)
-	if err == nil {
-		insertIdempQuery := `
-			INSERT INTO idempotency_keys (actor_id, operation, idempotency_key, response, created_at)
-			VALUES ($1, 'place_order', $2, $3, NOW())
-			ON CONFLICT (actor_id, operation, idempotency_key) DO NOTHING;
-		`
-		_, _ = tx.Exec(ctx, insertIdempQuery, userID, idempotencyKey, respBytes)
+	respBytes, _ := json.Marshal(resp)
+
+	// Step 6: Pipeline all mutation queries via pgx.Batch
+	batch := &pgx.Batch{}
+
+	// 1. Deduct cash
+	batch.Queue(`
+		UPDATE users 
+		SET cash_balance = cash_balance - $1, last_active = NOW() 
+		WHERE id = $2;
+	`, amount, userID)
+
+	// 2. Update liquidity pool
+	batch.Queue(`
+		UPDATE liquidity_pools 
+		SET reserve_yes = $1, 
+		    reserve_no = $2, 
+		    collateral_reserve = $3, 
+		    total_volume_usdc = total_volume_usdc + $4, 
+		    lock_version = lock_version + 1, 
+		    updated_at = NOW() 
+		WHERE market_id = $5;
+	`, quote.NewReserveYes, quote.NewReserveNo, quote.NewCollateral, amount, marketUUID)
+
+	// 3. Insert trade audit record
+	batch.Queue(`
+		INSERT INTO trades (
+			id, market_id, user_id, idempotency_key, trade_type, outcome, 
+			amount_usdc, shares_filled, execution_price, price_impact_pct, created_at
+		) VALUES ($1, $2, $3, $4, 'BUY', $5, $6, $7, $8, $9, NOW());
+	`, tradeID, marketUUID, userID, idempotencyKey, string(outcome),
+		amount, quote.SharesReceived, quote.AvgPrice, quote.PriceImpactPct,
+	)
+
+	// 4. Upsert user position
+	if isNewPos {
+		batch.Queue(`
+			INSERT INTO user_positions (
+				user_id, market_id, outcome, shares_owned, avg_buy_price, total_invested_usdc, created_at, updated_at
+			) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW());
+		`, userID, marketUUID, string(outcome), finalSharesOwned, finalAvgPrice, amount)
+	} else {
+		batch.Queue(`
+			UPDATE user_positions 
+			SET shares_owned = $1, avg_buy_price = $2, total_invested_usdc = $3, updated_at = NOW() 
+			WHERE user_id = $4 AND market_id = $5 AND outcome = $6;
+		`, finalSharesOwned, finalAvgPrice, newInvested, userID, marketUUID, string(outcome))
+	}
+
+	// 5. Immutable ledger entries (double-entry bookkeeping)
+	batch.Queue(`
+		INSERT INTO ledger_entries (
+			transaction_id, user_id, market_id, account, asset, delta, entry_type, created_at
+		) VALUES 
+		($1, $2, $3, 'user_cash', 'USDC', $4, 'trade', NOW()),
+		($1, $2, $3, 'pool_collateral', 'USDC', $5, 'trade', NOW()),
+		($1, $2, $3, $6, $7, $8, 'trade', NOW());
+	`, tradeID, userID, marketUUID,
+		amount.Neg(),
+		amount,
+		positionAccount,
+		string(outcome),
+		quote.SharesReceived,
+	)
+
+	// 6. Idempotency receipt
+	QueueIdempotencyRecord(batch, userID, "place_order", idempotencyKey, respBytes)
+
+	if err := executeBatchAndCheckIdempotency(ctx, tx, batch); err != nil {
+		return nil, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 
-	if h.hub != nil {
-		spotYes, spotNo, _ := amm.CalculateSpotPrices(amm.PoolReserves{
-			ReserveYes: quote.NewReserveYes,
-			ReserveNo:  quote.NewReserveNo,
-		})
-		newTotalVolume := totalVolume.Add(amount)
-		h.hub.BroadcastPriceUpdate(ws.PriceUpdateMessage{
-			MarketID: marketUUID.String(),
-			YesPrice: spotYes.StringFixed(8),
-			NoPrice:  spotNo.StringFixed(8),
-			Reserves: &ws.ReservesPayload{
-				Yes: quote.NewReserveYes.StringFixed(8),
-				No:  quote.NewReserveNo.StringFixed(8),
-			},
-			TotalVolumeUSDC: newTotalVolume.StringFixed(8),
-			Timestamp:       resp.CreatedAt,
-		})
-		h.hub.BroadcastTradeEvent(ws.TradeEventMessage{
-			TradeID:    resp.TradeID,
-			MarketID:   resp.MarketID,
-			TradeType:  "BUY",
-			Outcome:    resp.Outcome,
-			Shares:     resp.SharesFilled,
-			Price:      resp.ExecutionPrice,
-			AmountUSDC: resp.AmountUSDC,
-			Timestamp:  resp.CreatedAt,
-		})
-	}
+	// Cache invalidation & Telemetry Broadcast
+	h.invalidateMarketCache(marketUUID.String(), marketIDParam)
+	h.broadcastOrderTelemetry(resp, marketUUID, quote.NewReserveYes, quote.NewReserveNo, totalVolume.Add(amount))
 
 	return resp, nil
 }
@@ -539,74 +390,45 @@ func (h *TradeHandler) HandleCashOut(c *gin.Context) {
 		return
 	}
 
-	// Tier 1: serialize same-market mutations in-process before touching the
-	// database (ARCHITECTURE.md §8.1), preventing SERIALIZABLE abort storms.
 	unlock := h.locks.acquire("market:" + marketIDParam)
 	defer unlock()
 
-	outcomeStr := strings.ToUpper(strings.TrimSpace(req.Outcome))
-	if outcomeStr != "YES" && outcomeStr != "NO" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_outcome", "message": "Outcome must be 'YES' or 'NO'"})
-		return
-	}
-	outcome := amm.Outcome(outcomeStr)
-
-	sharesStr := strings.TrimSpace(req.Shares)
-	if sharesStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_shares", "message": "shares is required"})
-		return
-	}
-	shares, err := decimal.NewFromString(sharesStr)
-	if err != nil || shares.LessThanOrEqual(decimal.Zero) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_shares", "message": "shares must be a positive decimal string"})
+	outcome, valErr := ParseOutcome(req.Outcome)
+	if valErr != nil {
+		c.JSON(valErr.StatusCode, gin.H{"error": valErr.ErrorCode, "message": valErr.Message})
 		return
 	}
 
-	minPayout := decimal.Zero
-	if minPayoutStr := strings.TrimSpace(req.MinPayoutUSDC); minPayoutStr != "" {
-		parsed, err := decimal.NewFromString(minPayoutStr)
-		if err != nil || parsed.IsNegative() {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_min_payout", "message": "min_payout_usdc must be non-negative"})
-			return
-		}
-		minPayout = parsed
-	}
-
-	// Check idempotency receipt first
-	var cachedResponse []byte
-	checkIdempQuery := `
-		SELECT response 
-		FROM idempotency_keys 
-		WHERE actor_id = $1 AND operation = 'cashout' AND idempotency_key = $2;
-	`
-	err = h.pool.QueryRow(ctx, checkIdempQuery, userID, idempotencyKey).Scan(&cachedResponse)
-	if err == nil && len(cachedResponse) > 0 {
-		c.Data(http.StatusOK, "application/json", cachedResponse)
+	shares, valErr := ParsePositiveDecimal(req.Shares, "shares")
+	if valErr != nil {
+		c.JSON(valErr.StatusCode, gin.H{"error": valErr.ErrorCode, "message": valErr.Message})
 		return
 	}
 
-	// Serializable transaction with retry loop (up to 25 attempts)
-	var finalResponse *CashOutResponse
-	maxRetries := 25
+	minPayout, valErr := ParseSlippagePct(req.MinPayoutUSDC, decimal.Zero)
+	if valErr != nil {
+		c.JSON(valErr.StatusCode, gin.H{"error": valErr.ErrorCode, "message": valErr.Message})
+		return
+	}
 
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		finalResponse, err = h.executeCashOutTx(ctx, userID, idempotencyKey, marketIDParam, outcome, shares, minPayout)
-		if err == nil {
-			break
-		}
+	// 1. Fast path: check idempotency receipt outside tx
+	cachedResp, found, err := GetCachedIdempotencyResponse(ctx, h.pool, userID, "cashout", idempotencyKey)
+	if err == nil && found {
+		c.Data(http.StatusOK, "application/json", cachedResp)
+		return
+	}
 
-		if errors.Is(err, errIdempotencyReplay) {
-			_ = h.pool.QueryRow(ctx, checkIdempQuery, userID, idempotencyKey).Scan(&cachedResponse)
-			if len(cachedResponse) > 0 {
-				c.Data(http.StatusOK, "application/json", cachedResponse)
+	// 2. Execute with resilient serializable retry loop
+	finalResponse, err := ExecuteSerializableWithRetry(ctx, 25, func() (*CashOutResponse, error) {
+		return h.executeCashOutTx(ctx, userID, idempotencyKey, marketIDParam, outcome, shares, minPayout)
+	})
+
+	if err != nil {
+		if errors.Is(err, ErrIdempotencyReplay) {
+			if cached, ok, _ := GetCachedIdempotencyResponse(ctx, h.pool, userID, "cashout", idempotencyKey); ok {
+				c.Data(http.StatusOK, "application/json", cached)
 				return
 			}
-		}
-
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && (pgErr.Code == "40001" || pgErr.Code == "40P01" || pgErr.Code == "55P03") {
-			time.Sleep(time.Duration(20*(attempt+1)) * time.Millisecond)
-			continue
 		}
 
 		var appErr *AppError
@@ -615,15 +437,15 @@ func (h *TradeHandler) HandleCashOut(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "execution_failed", "message": err.Error()})
-		return
-	}
+		if IsSerializationOrDeadlock(err) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error":   "concurrency_conflict",
+				"message": "Cashout transaction experienced contention after retries. Please retry.",
+			})
+			return
+		}
 
-	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{
-			"error":   "concurrency_conflict",
-			"message": "Cashout transaction experienced contention after retries. Please retry.",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "execution_failed", "message": err.Error()})
 		return
 	}
 
@@ -639,91 +461,38 @@ func (h *TradeHandler) executeCashOutTx(
 	shares decimal.Decimal,
 	minPayout decimal.Decimal,
 ) (*CashOutResponse, error) {
-	// SERIALIZABLE isolation per ARCHITECTURE.md §3.3: predicate conflicts on the
-	// locked rows surface as SQLSTATE 40001 and are retried by the caller's loop.
 	tx, err := h.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
 
-	// Step 1: Pessimistic Lock on User (Hierarchy Level 1)
+	// Step 1: User lock (Hierarchy Level 1)
 	var currentCashBalance decimal.Decimal
-	queryUser := `SELECT cash_balance FROM users WHERE id = $1 FOR UPDATE;`
-	err = tx.QueryRow(ctx, queryUser, userID).Scan(&currentCashBalance)
+	err = tx.QueryRow(ctx, `SELECT cash_balance FROM users WHERE id = $1 FOR UPDATE;`, userID).Scan(&currentCashBalance)
 	if err != nil {
 		return nil, err
 	}
 
-	// Step 2: Lock Market (Hierarchy Level 2)
-	var marketUUID uuid.UUID
-	var marketStatus string
-	queryMarket := `SELECT id, status FROM markets WHERE id::text = $1 OR slug = $1 FOR UPDATE;`
-	err = tx.QueryRow(ctx, queryMarket, marketIDParam).Scan(&marketUUID, &marketStatus)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, &AppError{StatusCode: http.StatusNotFound, ErrorCode: "not_found", Message: "Market not found"}
-		}
-		return nil, err
-	}
-
-	if marketStatus != "active" {
-		return nil, &AppError{
-			StatusCode: http.StatusBadRequest,
-			ErrorCode:  "market_not_active",
-			Message:    "Market is not active for trading",
-		}
-	}
-
-	// Step 3: Lock User Position (Hierarchy Level 3)
-	var ownedShares, avgBuyPrice, totalInvested decimal.Decimal
-	queryPos := `
-		SELECT shares_owned, avg_buy_price, total_invested_usdc 
-		FROM user_positions 
-		WHERE user_id = $1 AND market_id = $2 AND outcome = $3 
-		FOR UPDATE;
-	`
-	err = tx.QueryRow(ctx, queryPos, userID, marketUUID, string(outcome)).Scan(&ownedShares, &avgBuyPrice, &totalInvested)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) || ownedShares.LessThan(shares) {
-			return nil, &AppError{
-				StatusCode: http.StatusBadRequest,
-				ErrorCode:  "insufficient_shares",
-				Message:    "Insufficient outcome shares to liquidate",
-			}
-		}
-		return nil, err
-	}
-
-	if ownedShares.LessThan(shares) {
-		return nil, &AppError{
-			StatusCode: http.StatusBadRequest,
-			ErrorCode:  "insufficient_shares",
-			Message:    "Insufficient outcome shares to liquidate",
-		}
-	}
-
-	// Step 4: Lock Liquidity Pool (Hierarchy Level 4)
-	var rYes, rNo, collateral, totalVolume decimal.Decimal
-	var lockVersion int
-	queryPool := `
-		SELECT reserve_yes, reserve_no, collateral_reserve, total_volume_usdc, lock_version 
-		FROM liquidity_pools 
-		WHERE market_id = $1 
-		FOR UPDATE;
-	`
-	err = tx.QueryRow(ctx, queryPool, marketUUID).Scan(&rYes, &rNo, &collateral, &totalVolume, &lockVersion)
+	// Step 2: Market lock (Hierarchy Level 2)
+	marketUUID, err := lockAndVerifyActiveMarket(ctx, tx, marketIDParam)
 	if err != nil {
 		return nil, err
 	}
 
-	poolReserves := amm.PoolReserves{
-		ReserveYes:        rYes,
-		ReserveNo:         rNo,
-		CollateralReserve: collateral,
+	// Step 3: User Position lock (Hierarchy Level 3)
+	ownedShares, _, totalInvested, err := lockAndVerifyUserPosition(ctx, tx, userID, marketUUID, outcome, shares)
+	if err != nil {
+		return nil, err
 	}
 
-	// Step 5: AMM Sell Calculation
+	// Step 4: Liquidity Pool lock (Hierarchy Level 4)
+	poolReserves, totalVolume, err := lockLiquidityPool(ctx, tx, marketUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 5: AMM Complete Set Sell Calculation
 	quote, err := amm.CalculateCompleteSetSell(shares, outcome, poolReserves)
 	if err != nil {
 		return nil, &AppError{StatusCode: http.StatusBadRequest, ErrorCode: "amm_error", Message: err.Error()}
@@ -737,20 +506,8 @@ func (h *TradeHandler) executeCashOutTx(
 		}
 	}
 
-	// Step 6: Credit User Cash Balance
-	var newCashBalance decimal.Decimal
-	creditCashQuery := `
-		UPDATE users 
-		SET cash_balance = cash_balance + $1, last_active = NOW() 
-		WHERE id = $2 
-		RETURNING cash_balance;
-	`
-	err = tx.QueryRow(ctx, creditCashQuery, quote.PayoutUSDC, userID).Scan(&newCashBalance)
-	if err != nil {
-		return nil, err
-	}
-
-	// Step 7: Decrement User Position
+	// Step 6: Compute remaining shares and weighted invested basis
+	newCashBalance := currentCashBalance.Add(quote.PayoutUSDC)
 	remainingShares := ownedShares.Sub(shares)
 	var remainingInvested decimal.Decimal
 	if ownedShares.GreaterThan(decimal.Zero) {
@@ -760,78 +517,9 @@ func (h *TradeHandler) executeCashOutTx(
 		remainingInvested = decimal.Zero
 	}
 
-	updatePosQuery := `
-		UPDATE user_positions 
-		SET shares_owned = $1, total_invested_usdc = $2, updated_at = NOW() 
-		WHERE user_id = $3 AND market_id = $4 AND outcome = $5;
-	`
-	_, err = tx.Exec(ctx, updatePosQuery, remainingShares, remainingInvested, userID, marketUUID, string(outcome))
-	if err != nil {
-		return nil, err
-	}
-
-	// Step 8: Update Pool Virtual Reserves & Collateral
-	updatePoolQuery := `
-		UPDATE liquidity_pools 
-		SET reserve_yes = $1, 
-		    reserve_no = $2, 
-		    collateral_reserve = $3, 
-		    total_volume_usdc = total_volume_usdc + $4, 
-		    lock_version = lock_version + 1, 
-		    updated_at = NOW() 
-		WHERE market_id = $5;
-	`
-	_, err = tx.Exec(ctx, updatePoolQuery, quote.NewReserveYes, quote.NewReserveNo, quote.NewCollateral, quote.PayoutUSDC, marketUUID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Step 9: Insert Trade Record (SELL)
 	tradeID := uuid.New()
-	insertTradeQuery := `
-		INSERT INTO trades (
-			id, market_id, user_id, idempotency_key, trade_type, outcome, 
-			amount_usdc, shares_filled, execution_price, price_impact_pct, created_at
-		) VALUES ($1, $2, $3, $4, 'SELL', $5, $6, $7, $8, $9, NOW());
-	`
-	_, err = tx.Exec(ctx, insertTradeQuery,
-		tradeID, marketUUID, userID, idempotencyKey, string(outcome),
-		quote.PayoutUSDC, shares, quote.AvgPrice, quote.PriceImpactPct,
-	)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.ConstraintName == "uq_trades_user_idempotency" {
-			return nil, errIdempotencyReplay
-		}
-		return nil, err
-	}
-
-	// Step 10: Immutable Balanced Double-Entry Financial Ledger
-	// 1. Pool collateral debit (-quote.PayoutUSDC)
-	// 2. User cash credit (+quote.PayoutUSDC)
-	// 3. User position shares debit (-shares)
-	insertLedgerQuery := `
-		INSERT INTO ledger_entries (
-			transaction_id, user_id, market_id, account, asset, delta, entry_type, created_at
-		) VALUES 
-		($1, $2, $3, 'pool_collateral', 'USDC', $4, 'trade', NOW()),
-		($1, $2, $3, 'user_cash', 'USDC', $5, 'trade', NOW()),
-		($1, $2, $3, $6, $7, $8, 'trade', NOW());
-	`
 	positionAccount := "position_" + strings.ToLower(string(outcome))
-	_, err = tx.Exec(ctx, insertLedgerQuery,
-		tradeID, userID, marketUUID,
-		quote.PayoutUSDC.Neg(), // pool collateral delta (-payout)
-		quote.PayoutUSDC,       // user cash delta (+payout)
-		positionAccount,        // account
-		string(outcome),        // asset
-		shares.Neg(),           // delta shares (-shares)
-	)
-	if err != nil {
-		return nil, err
-	}
 
-	// Prepare Response
 	resp := &CashOutResponse{
 		TradeID:         tradeID.String(),
 		MarketID:        marketUUID.String(),
@@ -847,49 +535,279 @@ func (h *TradeHandler) executeCashOutTx(
 		CreatedAt:       time.Now().UTC().Format(time.RFC3339),
 	}
 
-	// Store Idempotency Receipt
-	respBytes, err := json.Marshal(resp)
-	if err == nil {
-		insertIdempQuery := `
-			INSERT INTO idempotency_keys (actor_id, operation, idempotency_key, response, created_at)
-			VALUES ($1, 'cashout', $2, $3, NOW())
-			ON CONFLICT (actor_id, operation, idempotency_key) DO NOTHING;
-		`
-		_, _ = tx.Exec(ctx, insertIdempQuery, userID, idempotencyKey, respBytes)
+	respBytes, _ := json.Marshal(resp)
+
+	// Step 7: Pipeline mutations via pgx.Batch
+	batch := &pgx.Batch{}
+
+	// 1. Credit user cash
+	batch.Queue(`
+		UPDATE users 
+		SET cash_balance = cash_balance + $1, last_active = NOW() 
+		WHERE id = $2;
+	`, quote.PayoutUSDC, userID)
+
+	// 2. Decrement user position
+	batch.Queue(`
+		UPDATE user_positions 
+		SET shares_owned = $1, total_invested_usdc = $2, updated_at = NOW() 
+		WHERE user_id = $3 AND market_id = $4 AND outcome = $5;
+	`, remainingShares, remainingInvested, userID, marketUUID, string(outcome))
+
+	// 3. Update liquidity pool
+	batch.Queue(`
+		UPDATE liquidity_pools 
+		SET reserve_yes = $1, 
+		    reserve_no = $2, 
+		    collateral_reserve = $3, 
+		    total_volume_usdc = total_volume_usdc + $4, 
+		    lock_version = lock_version + 1, 
+		    updated_at = NOW() 
+		WHERE market_id = $5;
+	`, quote.NewReserveYes, quote.NewReserveNo, quote.NewCollateral, quote.PayoutUSDC, marketUUID)
+
+	// 4. Insert trade record (SELL)
+	batch.Queue(`
+		INSERT INTO trades (
+			id, market_id, user_id, idempotency_key, trade_type, outcome, 
+			amount_usdc, shares_filled, execution_price, price_impact_pct, created_at
+		) VALUES ($1, $2, $3, $4, 'SELL', $5, $6, $7, $8, $9, NOW());
+	`, tradeID, marketUUID, userID, idempotencyKey, string(outcome),
+		quote.PayoutUSDC, shares, quote.AvgPrice, quote.PriceImpactPct,
+	)
+
+	// 5. Immutable double-entry ledger entries
+	batch.Queue(`
+		INSERT INTO ledger_entries (
+			transaction_id, user_id, market_id, account, asset, delta, entry_type, created_at
+		) VALUES 
+		($1, $2, $3, 'pool_collateral', 'USDC', $4, 'trade', NOW()),
+		($1, $2, $3, 'user_cash', 'USDC', $5, 'trade', NOW()),
+		($1, $2, $3, $6, $7, $8, 'trade', NOW());
+	`, tradeID, userID, marketUUID,
+		quote.PayoutUSDC.Neg(),
+		quote.PayoutUSDC,
+		positionAccount,
+		string(outcome),
+		shares.Neg(),
+	)
+
+	// 6. Store idempotency receipt
+	QueueIdempotencyRecord(batch, userID, "cashout", idempotencyKey, respBytes)
+
+	if err := executeBatchAndCheckIdempotency(ctx, tx, batch); err != nil {
+		return nil, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 
-	if h.hub != nil {
-		spotYes, spotNo, _ := amm.CalculateSpotPrices(amm.PoolReserves{
-			ReserveYes: quote.NewReserveYes,
-			ReserveNo:  quote.NewReserveNo,
-		})
-		newTotalVolume := totalVolume.Add(quote.PayoutUSDC)
-		h.hub.BroadcastPriceUpdate(ws.PriceUpdateMessage{
-			MarketID: marketUUID.String(),
-			YesPrice: spotYes.StringFixed(8),
-			NoPrice:  spotNo.StringFixed(8),
-			Reserves: &ws.ReservesPayload{
-				Yes: quote.NewReserveYes.StringFixed(8),
-				No:  quote.NewReserveNo.StringFixed(8),
-			},
-			TotalVolumeUSDC: newTotalVolume.StringFixed(8),
-			Timestamp:       resp.CreatedAt,
-		})
-		h.hub.BroadcastTradeEvent(ws.TradeEventMessage{
-			TradeID:    resp.TradeID,
-			MarketID:   resp.MarketID,
-			TradeType:  "SELL",
-			Outcome:    resp.Outcome,
-			Shares:     resp.SharesSold,
-			Price:      resp.ExecutionPrice,
-			AmountUSDC: resp.PayoutUSDC,
-			Timestamp:  resp.CreatedAt,
-		})
-	}
+	// Cache invalidation & Telemetry Broadcast
+	h.invalidateMarketCache(marketUUID.String(), marketIDParam)
+	h.broadcastCashOutTelemetry(resp, marketUUID, quote.NewReserveYes, quote.NewReserveNo, totalVolume.Add(quote.PayoutUSDC))
 
 	return resp, nil
+}
+
+// --- Focused Locking & Data Helpers ---
+
+func lockAndVerifyUserBalance(ctx context.Context, tx pgx.Tx, userID uuid.UUID, amount decimal.Decimal) (decimal.Decimal, error) {
+	var balance decimal.Decimal
+	err := tx.QueryRow(ctx, `SELECT cash_balance FROM users WHERE id = $1 FOR UPDATE;`, userID).Scan(&balance)
+	if err != nil {
+		return decimal.Zero, err
+	}
+	if balance.LessThan(amount) {
+		return decimal.Zero, &AppError{
+			StatusCode: http.StatusBadRequest,
+			ErrorCode:  "insufficient_balance",
+			Message:    "Insufficient virtual USDC balance to fund order",
+		}
+	}
+	return balance, nil
+}
+
+func lockAndVerifyActiveMarket(ctx context.Context, tx pgx.Tx, marketIDParam string) (uuid.UUID, error) {
+	var marketUUID uuid.UUID
+	var marketStatus string
+	query := `SELECT id, status FROM markets WHERE id::text = $1 OR slug = $1 FOR UPDATE;`
+	err := tx.QueryRow(ctx, query, marketIDParam).Scan(&marketUUID, &marketStatus)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return uuid.Nil, &AppError{StatusCode: http.StatusNotFound, ErrorCode: "not_found", Message: "Market not found"}
+		}
+		return uuid.Nil, err
+	}
+	if marketStatus != "active" {
+		return uuid.Nil, &AppError{
+			StatusCode: http.StatusBadRequest,
+			ErrorCode:  "market_not_active",
+			Message:    "Market is not open for trading",
+		}
+	}
+	return marketUUID, nil
+}
+
+func lockAndVerifyUserPosition(ctx context.Context, tx pgx.Tx, userID, marketUUID uuid.UUID, outcome amm.Outcome, requiredShares decimal.Decimal) (decimal.Decimal, decimal.Decimal, decimal.Decimal, error) {
+	var ownedShares, avgBuyPrice, totalInvested decimal.Decimal
+	query := `
+		SELECT shares_owned, avg_buy_price, total_invested_usdc 
+		FROM user_positions 
+		WHERE user_id = $1 AND market_id = $2 AND outcome = $3 
+		FOR UPDATE;
+	`
+	err := tx.QueryRow(ctx, query, userID, marketUUID, string(outcome)).Scan(&ownedShares, &avgBuyPrice, &totalInvested)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) || ownedShares.LessThan(requiredShares) {
+			return decimal.Zero, decimal.Zero, decimal.Zero, &AppError{
+				StatusCode: http.StatusBadRequest,
+				ErrorCode:  "insufficient_shares",
+				Message:    "Insufficient outcome shares to liquidate",
+			}
+		}
+		return decimal.Zero, decimal.Zero, decimal.Zero, err
+	}
+	if ownedShares.LessThan(requiredShares) {
+		return decimal.Zero, decimal.Zero, decimal.Zero, &AppError{
+			StatusCode: http.StatusBadRequest,
+			ErrorCode:  "insufficient_shares",
+			Message:    "Insufficient outcome shares to liquidate",
+		}
+	}
+	return ownedShares, avgBuyPrice, totalInvested, nil
+}
+
+func lockLiquidityPool(ctx context.Context, tx pgx.Tx, marketUUID uuid.UUID) (amm.PoolReserves, decimal.Decimal, error) {
+	var rYes, rNo, collateral, totalVolume decimal.Decimal
+	var lockVersion int
+	query := `
+		SELECT reserve_yes, reserve_no, collateral_reserve, total_volume_usdc, lock_version 
+		FROM liquidity_pools 
+		WHERE market_id = $1 
+		FOR UPDATE;
+	`
+	err := tx.QueryRow(ctx, query, marketUUID).Scan(&rYes, &rNo, &collateral, &totalVolume, &lockVersion)
+	if err != nil {
+		return amm.PoolReserves{}, decimal.Zero, err
+	}
+	return amm.PoolReserves{
+		ReserveYes:        rYes,
+		ReserveNo:         rNo,
+		CollateralReserve: collateral,
+	}, totalVolume, nil
+}
+
+func computeUpdatedUserPosition(
+	ctx context.Context,
+	tx pgx.Tx,
+	userID, marketUUID uuid.UUID,
+	outcome amm.Outcome,
+	sharesReceived, avgPrice, amount decimal.Decimal,
+) (bool, decimal.Decimal, decimal.Decimal, decimal.Decimal, error) {
+	var existingShares, existingAvg, existingInvested decimal.Decimal
+	query := `
+		SELECT shares_owned, avg_buy_price, total_invested_usdc 
+		FROM user_positions 
+		WHERE user_id = $1 AND market_id = $2 AND outcome = $3 
+		FOR UPDATE;
+	`
+	err := tx.QueryRow(ctx, query, userID, marketUUID, string(outcome)).Scan(&existingShares, &existingAvg, &existingInvested)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return true, sharesReceived, avgPrice, amount, nil
+		}
+		return false, decimal.Zero, decimal.Zero, decimal.Zero, err
+	}
+
+	finalSharesOwned := existingShares.Add(sharesReceived)
+	newInvested := existingInvested.Add(amount)
+	finalAvgPrice := decimal.Zero
+	if finalSharesOwned.GreaterThan(decimal.Zero) {
+		finalAvgPrice = newInvested.DivRound(finalSharesOwned, 8)
+	}
+
+	return false, finalSharesOwned, finalAvgPrice, newInvested, nil
+}
+
+func executeBatchAndCheckIdempotency(ctx context.Context, tx pgx.Tx, batch *pgx.Batch) error {
+	br := tx.SendBatch(ctx, batch)
+	for i := 0; i < batch.Len(); i++ {
+		if _, err := br.Exec(); err != nil {
+			if IsIdempotencyReplayError(err) {
+				_ = br.Close()
+				return ErrIdempotencyReplay
+			}
+			_ = br.Close()
+			return err
+		}
+	}
+	return br.Close()
+}
+
+func (h *TradeHandler) invalidateMarketCache(keys ...string) {
+	if h.cache == nil {
+		return
+	}
+	for _, key := range keys {
+		if key != "" {
+			h.cache.Invalidate(key)
+		}
+	}
+}
+
+func (h *TradeHandler) broadcastOrderTelemetry(resp *OrderResponse, marketUUID uuid.UUID, rYes, rNo, newTotalVolume decimal.Decimal) {
+	if h.hub == nil {
+		return
+	}
+	spotYes, spotNo, _ := amm.CalculateSpotPrices(amm.PoolReserves{ReserveYes: rYes, ReserveNo: rNo})
+	h.hub.BroadcastPriceUpdate(ws.PriceUpdateMessage{
+		MarketID: marketUUID.String(),
+		YesPrice: spotYes.StringFixed(8),
+		NoPrice:  spotNo.StringFixed(8),
+		Reserves: &ws.ReservesPayload{
+			Yes: rYes.StringFixed(8),
+			No:  rNo.StringFixed(8),
+		},
+		TotalVolumeUSDC: newTotalVolume.StringFixed(8),
+		Timestamp:       resp.CreatedAt,
+	})
+	h.hub.BroadcastTradeEvent(ws.TradeEventMessage{
+		TradeID:    resp.TradeID,
+		MarketID:   resp.MarketID,
+		TradeType:  "BUY",
+		Outcome:    resp.Outcome,
+		Shares:     resp.SharesFilled,
+		Price:      resp.ExecutionPrice,
+		AmountUSDC: resp.AmountUSDC,
+		Timestamp:  resp.CreatedAt,
+	})
+}
+
+func (h *TradeHandler) broadcastCashOutTelemetry(resp *CashOutResponse, marketUUID uuid.UUID, rYes, rNo, newTotalVolume decimal.Decimal) {
+	if h.hub == nil {
+		return
+	}
+	spotYes, spotNo, _ := amm.CalculateSpotPrices(amm.PoolReserves{ReserveYes: rYes, ReserveNo: rNo})
+	h.hub.BroadcastPriceUpdate(ws.PriceUpdateMessage{
+		MarketID: marketUUID.String(),
+		YesPrice: spotYes.StringFixed(8),
+		NoPrice:  spotNo.StringFixed(8),
+		Reserves: &ws.ReservesPayload{
+			Yes: rYes.StringFixed(8),
+			No:  rNo.StringFixed(8),
+		},
+		TotalVolumeUSDC: newTotalVolume.StringFixed(8),
+		Timestamp:       resp.CreatedAt,
+	})
+	h.hub.BroadcastTradeEvent(ws.TradeEventMessage{
+		TradeID:    resp.TradeID,
+		MarketID:   resp.MarketID,
+		TradeType:  "SELL",
+		Outcome:    resp.Outcome,
+		Shares:     resp.SharesSold,
+		Price:      resp.ExecutionPrice,
+		AmountUSDC: resp.PayoutUSDC,
+		Timestamp:  resp.CreatedAt,
+	})
 }

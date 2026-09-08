@@ -1,9 +1,11 @@
-import { Component, computed, effect, inject, input, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, OnDestroy, OnInit, signal, untracked, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { LucideArrowLeft, LucideArrowUp, LucideArrowDown, LucideCheckCircle2 } from '@lucide/angular';
 import { ApiService } from '../../core/services/api.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { Market, OrderResponse } from '../../core/models/market.model';
+import { formatUSDC, formatShares } from '../../core/utils/formatters';
 import { PriceChartComponent } from '../charts/price-chart.component';
 import { OrderIntent, OrderTerminalComponent } from '../terminal/order-terminal.component';
 import { OrderConfirmDialogComponent } from '../terminal/order-confirm-dialog.component';
@@ -514,6 +516,7 @@ export class MarketDetailComponent implements OnInit, OnDestroy {
 
     private readonly apiService = inject(ApiService);
     private readonly wsService = inject(WebSocketService);
+    private readonly destroyRef = inject(DestroyRef);
 
     readonly market = signal<Market | null>(null);
     readonly isLoading = signal<boolean>(true);
@@ -539,17 +542,20 @@ export class MarketDetailComponent implements OnInit, OnDestroy {
     constructor() {
         effect(() => {
             const res = this.wsService.lastMarketResolved();
-            if (res && res.market_id === this.id()) {
-                this.isResolvedBannerVisible.set(true);
-                this.winningOutcome.set(res.winning_outcome);
-                const current = this.market();
-                if (current) {
-                    this.market.set({
-                        ...current,
-                        status: 'resolved',
-                        winning_outcome: res.winning_outcome
-                    });
-                }
+            const targetId = this.id();
+            if (res && res.market_id === targetId) {
+                untracked(() => {
+                    this.isResolvedBannerVisible.set(true);
+                    this.winningOutcome.set(res.winning_outcome);
+                    const current = this.market();
+                    if (current) {
+                        this.market.set({
+                            ...current,
+                            status: 'resolved',
+                            winning_outcome: res.winning_outcome
+                        });
+                    }
+                });
             }
         });
     }
@@ -587,23 +593,19 @@ export class MarketDetailComponent implements OnInit, OnDestroy {
     });
 
     protected readonly formattedCollateral = computed(() => {
-        const c = parseFloat(this.market()?.reserves?.collateral_reserve || '0');
-        return isNaN(c) ? '0.00' : c.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return formatUSDC(this.market()?.reserves?.collateral_reserve).replace('$', '');
     });
 
     protected readonly formattedVolume = computed(() => {
-        const v = parseFloat(this.market()?.reserves?.total_volume_usdc || '0');
-        return isNaN(v) ? '0.00' : v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return formatUSDC(this.market()?.reserves?.total_volume_usdc).replace('$', '');
     });
 
     protected readonly formattedReserveYes = computed(() => {
-        const r = parseFloat(this.market()?.reserves?.reserve_yes || '0');
-        return isNaN(r) ? '0.00' : r.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return formatShares(this.market()?.reserves?.reserve_yes);
     });
 
     protected readonly formattedReserveNo = computed(() => {
-        const r = parseFloat(this.market()?.reserves?.reserve_no || '0');
-        return isNaN(r) ? '0.00' : r.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return formatShares(this.market()?.reserves?.reserve_no);
     });
 
     ngOnInit(): void {
@@ -619,18 +621,21 @@ export class MarketDetailComponent implements OnInit, OnDestroy {
         const marketId = this.id();
         this.isLoading.set(true);
 
-        this.apiService.getMarketById(marketId).subscribe({
-            next: (data) => {
-                this.market.set(data);
-                this.isLoading.set(false);
-                // Connect WebSocket to market topic
-                this.wsService.connect(data.id);
-            },
-            error: (err) => {
-                console.error('Failed to load market:', err);
-                this.isLoading.set(false);
-            }
-        });
+        this.apiService
+            .getMarketById(marketId)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (data) => {
+                    this.market.set(data);
+                    this.isLoading.set(false);
+                    // Connect WebSocket to market topic
+                    this.wsService.connect(data.id);
+                },
+                error: (err) => {
+                    console.error('Failed to load market:', err);
+                    this.isLoading.set(false);
+                }
+            });
     }
 
     onOrderReviewRequested(intent: OrderIntent): void {

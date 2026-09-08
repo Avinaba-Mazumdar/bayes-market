@@ -91,7 +91,7 @@ describe('PortfolioViewComponent', () => {
         cashoutBtn.click();
         fixture.detectChanges();
 
-        expect(component.selectedPosition()).toEqual(mockPortfolioResponse.positions[0]);
+        expect(component.selectedPosition()).toEqual(expect.objectContaining(mockPortfolioResponse.positions[0]));
         expect(component.isCashOutModalOpen()).toBe(true);
     });
 

@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, effect, ElementRef, inject, input, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { Component, computed, DestroyRef, effect, ElementRef, inject, input, NgZone, OnDestroy, OnInit, signal, untracked, viewChild } from '@angular/core';
 import { AreaSeries, ColorType, createChart, IChartApi, ISeriesApi, Time, UTCTimestamp } from 'lightweight-charts';
 import { LucideTrendingUp, LucideTrendingDown } from '@lucide/angular';
 import { WebSocketService } from '../../core/services/websocket.service';
@@ -222,6 +222,7 @@ export class PriceChartComponent implements OnInit, OnDestroy {
 
     private readonly wsService = inject(WebSocketService);
     private readonly destroyRef = inject(DestroyRef);
+    private readonly ngZone = inject(NgZone);
 
     protected readonly timeframes: ChartTimeframe[] = ['1H', '1D', '1W', 'ALL'];
     readonly selectedTimeframe = signal<ChartTimeframe>('1D');
@@ -231,7 +232,12 @@ export class PriceChartComponent implements OnInit, OnDestroy {
     private chart: IChartApi | null = null;
     private areaSeries: ISeriesApi<'Area'> | null = null;
     private resizeObserver: ResizeObserver | null = null;
+    private resizeRafId: number | null = null;
+    private tickRafId: number | null = null;
+    private pendingTick: { prob: number; date: Date } | null = null;
     private currentData: ChartPoint[] = [];
+    private lastWidth = 0;
+    private lastHeight = 0;
 
     readonly formattedProbability = computed(() => {
         const p = this.currentProbability();
@@ -255,7 +261,9 @@ export class PriceChartComponent implements OnInit, OnDestroy {
             if (tick && (!tick.market_id || tick.market_id === activeId)) {
                 const yesPrice = parseFloat(tick.yes_price);
                 if (!isNaN(yesPrice)) {
-                    this.onNewPriceTick(yesPrice, tick.timestamp ? new Date(tick.timestamp) : new Date());
+                    untracked(() => {
+                        this.onNewPriceTick(yesPrice, tick.timestamp ? new Date(tick.timestamp) : new Date());
+                    });
                 }
             }
         });
@@ -280,84 +288,112 @@ export class PriceChartComponent implements OnInit, OnDestroy {
         const el = this.chartContainer()?.nativeElement;
         if (!el) return;
 
-        this.chart = createChart(el, {
-            width: el.clientWidth,
-            height: el.clientHeight || 360,
-            layout: {
-                background: { type: ColorType.Solid, color: '#080711' },
-                textColor: '#9d97b8',
-                fontSize: 12,
-                fontFamily: "'JetBrains Mono', monospace"
-            },
-            grid: {
-                vertLines: { color: 'rgba(37, 33, 64, 0.55)', style: 1 },
-                horzLines: { color: 'rgba(37, 33, 64, 0.55)', style: 1 }
-            },
-            crosshair: {
-                vertLine: {
-                    color: '#7c4dff',
-                    width: 1,
-                    style: 2,
-                    labelBackgroundColor: '#3600b3'
+        this.ngZone.runOutsideAngular(() => {
+            this.chart = createChart(el, {
+                width: el.clientWidth,
+                height: el.clientHeight || 360,
+                layout: {
+                    background: { type: ColorType.Solid, color: '#080711' },
+                    textColor: '#9d97b8',
+                    fontSize: 12,
+                    fontFamily: "'JetBrains Mono', monospace"
                 },
-                horzLine: {
-                    color: '#7c4dff',
-                    width: 1,
-                    style: 2,
-                    labelBackgroundColor: '#3600b3'
+                grid: {
+                    vertLines: { color: 'rgba(37, 33, 64, 0.55)', style: 1 },
+                    horzLines: { color: 'rgba(37, 33, 64, 0.55)', style: 1 }
+                },
+                crosshair: {
+                    vertLine: {
+                        color: '#7c4dff',
+                        width: 1,
+                        style: 2,
+                        labelBackgroundColor: '#3600b3'
+                    },
+                    horzLine: {
+                        color: '#7c4dff',
+                        width: 1,
+                        style: 2,
+                        labelBackgroundColor: '#3600b3'
+                    }
+                },
+                rightPriceScale: {
+                    borderColor: '#252140',
+                    scaleMargins: {
+                        top: 0.1,
+                        bottom: 0.1
+                    }
+                },
+                timeScale: {
+                    borderColor: '#252140',
+                    timeVisible: true,
+                    secondsVisible: false
                 }
-            },
-            rightPriceScale: {
-                borderColor: '#252140',
-                scaleMargins: {
-                    top: 0.1,
-                    bottom: 0.1
+            });
+
+            this.areaSeries = this.chart.addSeries(AreaSeries, {
+                topColor: 'rgba(0, 220, 130, 0.35)',
+                bottomColor: 'rgba(0, 220, 130, 0.01)',
+                lineColor: '#00dc82',
+                lineWidth: 2,
+                priceFormat: {
+                    type: 'custom',
+                    formatter: (price: number) => `${(price * 100).toFixed(1)}%`
                 }
-            },
-            timeScale: {
-                borderColor: '#252140',
-                timeVisible: true,
-                secondsVisible: false
-            }
-        });
+            });
 
-        this.areaSeries = this.chart.addSeries(AreaSeries, {
-            topColor: 'rgba(0, 220, 130, 0.35)',
-            bottomColor: 'rgba(0, 220, 130, 0.01)',
-            lineColor: '#00dc82',
-            lineWidth: 2,
-            priceFormat: {
-                type: 'custom',
-                formatter: (price: number) => `${(price * 100).toFixed(1)}%`
-            }
-        });
+            this.generateDataForTimeframe(this.selectedTimeframe());
 
-        this.generateDataForTimeframe(this.selectedTimeframe());
+            // Responsive ResizeObserver with integer flooring & RAF throttling to eliminate DevTools layout thrashing
+            this.resizeObserver = new ResizeObserver((entries) => {
+                if (!this.chart || !entries[0]) return;
+                const { width, height } = entries[0].contentRect;
+                const w = Math.floor(width);
+                const h = Math.floor(height) || 360;
+                if (w === this.lastWidth && h === this.lastHeight) return;
+                this.lastWidth = w;
+                this.lastHeight = h;
 
-        // Responsive ResizeObserver
-        this.resizeObserver = new ResizeObserver((entries) => {
-            if (!this.chart || !entries[0]) return;
-            const { width, height } = entries[0].contentRect;
-            this.chart.applyOptions({ width, height: height || 360 });
+                if (this.resizeRafId !== null) {
+                    cancelAnimationFrame(this.resizeRafId);
+                }
+                this.resizeRafId = requestAnimationFrame(() => {
+                    this.resizeRafId = null;
+                    if (this.chart) {
+                        this.chart.applyOptions({ width: w, height: h });
+                    }
+                });
+            });
+            this.resizeObserver.observe(el);
         });
-        this.resizeObserver.observe(el);
     }
 
     private teardownChart(): void {
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect();
-            this.resizeObserver = null;
-        }
-        if (this.chart) {
-            this.chart.remove();
-            this.chart = null;
-            this.areaSeries = null;
-        }
+        this.ngZone.runOutsideAngular(() => {
+            if (this.resizeRafId !== null) {
+                cancelAnimationFrame(this.resizeRafId);
+                this.resizeRafId = null;
+            }
+            if (this.tickRafId !== null) {
+                cancelAnimationFrame(this.tickRafId);
+                this.tickRafId = null;
+            }
+            if (this.resizeObserver) {
+                this.resizeObserver.disconnect();
+                this.resizeObserver = null;
+            }
+            if (this.chart) {
+                this.chart.remove();
+                this.chart = null;
+                this.areaSeries = null;
+            }
+        });
     }
 
     selectTimeframe(tf: ChartTimeframe): void {
         this.selectedTimeframe.set(tf);
-        this.generateDataForTimeframe(tf);
+        this.ngZone.runOutsideAngular(() => {
+            this.generateDataForTimeframe(tf);
+        });
     }
 
     private generateDataForTimeframe(tf: ChartTimeframe): void {
@@ -415,16 +451,33 @@ export class PriceChartComponent implements OnInit, OnDestroy {
     }
 
     private onNewPriceTick(newProb: number, date: Date): void {
-        this.currentProbability.set(newProb);
-        const time = Math.floor(date.getTime() / 1000) as UTCTimestamp;
+        if (this.currentProbability() !== newProb) {
+            this.currentProbability.set(newProb);
+        }
+        this.pendingTick = { prob: newProb, date };
+        if (this.tickRafId === null) {
+            this.ngZone.runOutsideAngular(() => {
+                this.tickRafId = requestAnimationFrame(() => {
+                    this.tickRafId = null;
+                    if (!this.pendingTick) return;
+                    const { prob, date: tickDate } = this.pendingTick;
+                    this.pendingTick = null;
 
-        if (this.areaSeries) {
-            const point: ChartPoint = { time, value: newProb };
-            this.areaSeries.update(point as any);
-            if (this.currentData.length > 0) {
-                const first = this.currentData[0].value;
-                this.priceChange.set((newProb - first) * 100);
-            }
+                    const time = Math.floor(tickDate.getTime() / 1000) as UTCTimestamp;
+
+                    if (this.areaSeries) {
+                        const point: ChartPoint = { time, value: prob };
+                        this.areaSeries.update(point as any);
+                        if (this.currentData.length > 0) {
+                            const first = this.currentData[0].value;
+                            const newChange = (prob - first) * 100;
+                            if (Math.abs(this.priceChange() - newChange) > 0.001) {
+                                this.priceChange.set(newChange);
+                            }
+                        }
+                    }
+                });
+            });
         }
     }
 }

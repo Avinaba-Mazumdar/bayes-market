@@ -134,9 +134,13 @@ export class WebSocketService implements OnDestroy {
             }
 
             switch (msg.type) {
-                case 'PRICE_UPDATE':
-                    this.lastPriceTick.set(msg);
+                case 'PRICE_UPDATE': {
+                    const currentTick = this.lastPriceTick();
+                    if (!currentTick || currentTick.yes_price !== msg.yes_price || currentTick.market_id !== msg.market_id) {
+                        this.lastPriceTick.set(msg);
+                    }
                     break;
+                }
 
                 case 'TRADE_EVENT':
                     this.recentTrades.update((prev) => [msg, ...prev.slice(0, this.maxTradesHistory - 1)]);

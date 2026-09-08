@@ -2,6 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { LucideZap, LucideArrowUp, LucideArrowDown } from '@lucide/angular';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { TradeEvent } from '../../core/models/websocket.model';
+import { formatShares, formatPrice, formatTimestamp } from '../../core/utils/formatters';
 
 @Component({
     selector: 'app-activity-feed',
@@ -38,12 +39,12 @@ import { TradeEvent } from '../../core/models/websocket.model';
                                             NO
                                         }
                                     </span>
-                                    <span class="trade-amount tabular-nums"> {{ formatShares(trade.shares) }} shares </span>
+                                    <span class="trade-amount tabular-nums"> {{ trade.formattedShares }} shares </span>
                                 </div>
                                 <div class="trade-details">
-                                    <span class="trade-price tabular-nums"> at {{ '$' + formatPrice(trade.price) }} </span>
+                                    <span class="trade-price tabular-nums"> at {{ '$' + trade.formattedPrice }} </span>
                                     <span class="trade-time tabular-nums">
-                                        {{ formatTime(trade.timestamp) }}
+                                        {{ trade.formattedTime }}
                                     </span>
                                 </div>
                             </article>
@@ -99,27 +100,29 @@ import { TradeEvent } from '../../core/models/websocket.model';
                     opacity: 1;
                 }
                 50% {
-                    opacity: 0.4;
+                    opacity: 0.35;
                 }
             }
 
             .feed-title {
-                margin: 0;
                 font-family: var(--font-ui);
                 font-size: 15px;
                 font-weight: 700;
                 color: var(--ink, #f8fafc);
+                margin: 0;
             }
 
             .feed-count {
                 font-family: var(--font-mono);
-                font-size: 12px;
+                font-size: 11.5px;
+                font-weight: 600;
                 color: var(--muted, #a2b4c9);
             }
 
             .trades-scroll-container {
-                max-height: 280px;
+                max-height: 380px;
                 overflow-y: auto;
+                overscroll-behavior: contain;
             }
 
             .trades-list {
@@ -133,16 +136,17 @@ import { TradeEvent } from '../../core/models/websocket.model';
                 align-items: center;
                 justify-content: space-between;
                 padding: 8px 12px;
-                background-color: var(--canvas-subtle, #0c1017);
+                background-color: var(--canvas-subtle, #0a0d14);
                 border: 1px solid var(--hairline, #1e2638);
                 border-radius: var(--radius-md, 10px);
                 font-size: 13px;
-                transition: border-color 0.15s ease;
+                transition: background-color 0.12s ease;
             }
 
             .trade-item:hover,
             .trade-item:focus-visible {
-                border-color: var(--border-strong, #606e85);
+                background-color: var(--surface-card, #111622);
+                border-color: var(--primary-border, #3b82f6);
                 outline: none;
             }
 
@@ -156,11 +160,11 @@ import { TradeEvent } from '../../core/models/websocket.model';
                 display: inline-flex;
                 align-items: center;
                 gap: 4px;
-                font-family: var(--font-mono);
+                padding: 3px 7px;
+                border-radius: var(--radius-sm, 6px);
                 font-size: 11px;
                 font-weight: 700;
-                padding: 2px 8px;
-                border-radius: var(--radius-sm, 6px);
+                letter-spacing: 0.5px;
             }
 
             .trade-badge-icon {
@@ -168,22 +172,21 @@ import { TradeEvent } from '../../core/models/websocket.model';
             }
 
             .trade-yes {
-                background-color: rgba(16, 185, 129, 0.15);
-                color: var(--outcome-yes-text, #34d399);
-                border: 1px solid rgba(16, 185, 129, 0.3);
+                background-color: rgba(5, 193, 104, 0.12);
+                color: var(--outcome-yes, #05c168);
+                border: 1px solid rgba(5, 193, 104, 0.25);
             }
 
             .trade-no {
-                background-color: rgba(251, 113, 133, 0.15);
-                color: var(--outcome-no-text, #fda4af);
-                border: 1px solid rgba(251, 113, 133, 0.3);
+                background-color: rgba(244, 63, 94, 0.12);
+                color: var(--outcome-no, #f43f5e);
+                border: 1px solid rgba(244, 63, 94, 0.25);
             }
 
             .trade-amount {
                 font-family: var(--font-mono);
                 font-weight: 600;
                 color: var(--ink, #f8fafc);
-                font-feature-settings: 'tnum' 1;
             }
 
             .trade-details {
@@ -194,8 +197,8 @@ import { TradeEvent } from '../../core/models/websocket.model';
 
             .trade-price {
                 font-family: var(--font-mono);
-                color: var(--ink-secondary, #cbd5e1);
-                font-feature-settings: 'tnum' 1;
+                color: var(--muted, #a2b4c9);
+                font-size: 12px;
             }
 
             .trade-time {
@@ -242,23 +245,12 @@ export class ActivityFeedComponent {
     protected readonly filteredTrades = computed(() => {
         const id = this.marketId();
         const trades = this.wsService.recentTrades();
-        if (!id) return trades.slice(0, 15);
-        return trades.filter((t) => !t.market_id || t.market_id === id).slice(0, 15);
+        const list = !id ? trades.slice(0, 15) : trades.filter((t) => !t.market_id || t.market_id === id).slice(0, 15);
+        return list.map((t) => ({
+            ...t,
+            formattedShares: formatShares(t.shares),
+            formattedPrice: formatPrice(t.price, 4).replace('$', ''),
+            formattedTime: formatTimestamp(t.timestamp)
+        }));
     });
-
-    formatShares(raw: string): string {
-        const n = parseFloat(raw);
-        return isNaN(n) ? '0.00' : n.toFixed(2);
-    }
-
-    formatPrice(raw: string): string {
-        const n = parseFloat(raw);
-        return isNaN(n) ? '0.000' : n.toFixed(4);
-    }
-
-    formatTime(raw: string): string {
-        if (!raw) return 'just now';
-        const d = new Date(raw);
-        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    }
 }

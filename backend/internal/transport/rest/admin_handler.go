@@ -73,10 +73,11 @@ func (c *oracleCache) set(marketID, outcome, proof string) {
 
 // AdminHandler manages administrative operations including market resolution and payout distribution.
 type AdminHandler struct {
-	pool  *pgxpool.Pool
-	hub   *ws.Hub
-	locks *marketLockRegistry
-	cache *oracleCache
+	pool        *pgxpool.Pool
+	hub         *ws.Hub
+	locks       *marketLockRegistry
+	cache       *oracleCache
+	marketCache *MarketCache
 }
 
 // NewAdminHandler constructs an AdminHandler.
@@ -87,6 +88,11 @@ func NewAdminHandler(pool *pgxpool.Pool, hub *ws.Hub) *AdminHandler {
 		locks: newMarketLockRegistry(),
 		cache: newOracleCache(),
 	}
+}
+
+// SetMarketCache attaches a MarketCache instance for resolution invalidation.
+func (h *AdminHandler) SetMarketCache(mc *MarketCache) {
+	h.marketCache = mc
 }
 
 // HandleResolveMarket resolves a prediction market, credits winning share holders, and records double-entry ledger audits.
@@ -118,11 +124,12 @@ func (h *AdminHandler) HandleResolveMarket(c *gin.Context) {
 		return
 	}
 
-	winningOutcome := strings.ToUpper(strings.TrimSpace(req.WinningOutcome))
-	if winningOutcome != "YES" && winningOutcome != "NO" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_outcome", "message": "winning_outcome must be either 'YES' or 'NO'"})
+	outcome, valErr := ParseOutcome(req.WinningOutcome)
+	if valErr != nil {
+		c.JSON(valErr.StatusCode, gin.H{"error": valErr.ErrorCode, "message": valErr.Message})
 		return
 	}
+	winningOutcome := string(outcome)
 
 	oracleProof := strings.TrimSpace(req.OracleProof)
 	if oracleProof == "" {
@@ -145,20 +152,11 @@ func (h *AdminHandler) HandleResolveMarket(c *gin.Context) {
 	defer unlock()
 
 	// Check idempotency cache first
-	var cachedResponse []byte
-	checkIdempQuery := `
-		SELECT response
-		FROM idempotency_keys
-		WHERE actor_id = $1 AND operation = 'resolve' AND idempotency_key = $2;
-	`
-	err = h.pool.QueryRow(ctx, checkIdempQuery, actorID, idempotencyKey).Scan(&cachedResponse)
-	if err == nil && len(cachedResponse) > 0 {
-		var resp ResolveMarketResponse
-		if jsonErr := json.Unmarshal(cachedResponse, &resp); jsonErr == nil {
-			c.Header("X-Cache-Lookup", "HIT-IDEMPOTENT")
-			c.JSON(http.StatusOK, resp)
-			return
-		}
+	cachedResp, found, err := GetCachedIdempotencyResponse(ctx, h.pool, actorID, "resolve", idempotencyKey)
+	if err == nil && found {
+		c.Header("X-Cache-Lookup", "HIT-IDEMPOTENT")
+		c.Data(http.StatusOK, "application/json", cachedResp)
+		return
 	}
 
 	// 60-second in-memory oracle cache evaluation
@@ -389,6 +387,10 @@ func (h *AdminHandler) HandleResolveMarket(c *gin.Context) {
 	if err := tx.Commit(ctx); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "database_error", "message": fmt.Sprintf("Failed to commit resolution transaction: %v", err)})
 		return
+	}
+
+	if h.marketCache != nil {
+		h.marketCache.Invalidate(marketID.String())
 	}
 
 	// 8. Cache verified oracle response for 60 seconds

@@ -16,12 +16,24 @@ import (
 
 // MarketHandler handles prediction market discovery and authorative quote requests.
 type MarketHandler struct {
-	pool *pgxpool.Pool
+	pool  *pgxpool.Pool
+	cache *MarketCache
 }
 
 // NewMarketHandler constructs a MarketHandler.
-func NewMarketHandler(pool *pgxpool.Pool) *MarketHandler {
-	return &MarketHandler{pool: pool}
+func NewMarketHandler(pool *pgxpool.Pool, cacheOpt ...*MarketCache) *MarketHandler {
+	var cache *MarketCache
+	if len(cacheOpt) > 0 && cacheOpt[0] != nil {
+		cache = cacheOpt[0]
+	} else {
+		cache = NewMarketCache(5 * time.Second)
+	}
+	return &MarketHandler{pool: pool, cache: cache}
+}
+
+// Cache returns the underlying MarketCache instance.
+func (h *MarketHandler) Cache() *MarketCache {
+	return h.cache
 }
 
 // MarketSummaryResponse details a market and its current implied probabilities.
@@ -63,10 +75,18 @@ type QuoteRequest struct {
 //
 // GET /api/v1/markets
 func (h *MarketHandler) HandleGetMarkets(c *gin.Context) {
+	category := strings.ToLower(strings.TrimSpace(c.Query("category")))
+
+	// Fast path: check in-memory cache
+	if h.cache != nil {
+		if cached, ok := h.cache.GetMarkets(category); ok {
+			c.JSON(http.StatusOK, cached)
+			return
+		}
+	}
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-
-	category := strings.ToLower(strings.TrimSpace(c.Query("category")))
 
 	query := `
 		SELECT m.id, m.slug, m.title, m.description, m.category, m.image_url, 
@@ -118,7 +138,7 @@ func (h *MarketHandler) HandleGetMarkets(c *gin.Context) {
 		pYesPct := pYes.Mul(decimal.NewFromInt(100)).StringFixed(2)
 		pNoPct := pNo.Mul(decimal.NewFromInt(100)).StringFixed(2)
 
-		markets = append(markets, MarketSummaryResponse{
+		summary := MarketSummaryResponse{
 			ID:                id,
 			Slug:              slug,
 			Title:             title,
@@ -139,11 +159,24 @@ func (h *MarketHandler) HandleGetMarkets(c *gin.Context) {
 				TotalVolumeUSDC:   volume.StringFixed(8),
 			},
 			CreatedAt: createdAt.Format(time.RFC3339),
-		})
+		}
+
+		markets = append(markets, summary)
+
+		// Populate single-market cache as well
+		if h.cache != nil {
+			if mUUID, parseErr := uuid.Parse(id); parseErr == nil {
+				h.cache.SetMarket(id, slug, summary, poolReserves, mUUID)
+			}
+		}
 	}
 
 	if markets == nil {
 		markets = []MarketSummaryResponse{}
+	}
+
+	if h.cache != nil {
+		h.cache.SetMarkets(category, markets)
 	}
 
 	c.JSON(http.StatusOK, markets)
@@ -153,14 +186,22 @@ func (h *MarketHandler) HandleGetMarkets(c *gin.Context) {
 //
 // GET /api/v1/markets/:id
 func (h *MarketHandler) HandleGetMarketByID(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
 	param := strings.TrimSpace(c.Param("id"))
 	if param == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_request", "message": "Market identifier is required"})
 		return
 	}
+
+	// Fast path: check in-memory cache
+	if h.cache != nil {
+		if cachedSummary, _, _, ok := h.cache.GetMarket(param); ok && cachedSummary != nil {
+			c.JSON(http.StatusOK, *cachedSummary)
+			return
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 
 	query := `
 		SELECT m.id, m.slug, m.title, m.description, m.category, m.image_url, 
@@ -198,7 +239,7 @@ func (h *MarketHandler) HandleGetMarketByID(c *gin.Context) {
 	}
 	pYes, pNo, _ := amm.CalculateSpotPrices(poolReserves)
 
-	c.JSON(http.StatusOK, MarketSummaryResponse{
+	resp := MarketSummaryResponse{
 		ID:                id,
 		Slug:              slug,
 		Title:             title,
@@ -219,16 +260,21 @@ func (h *MarketHandler) HandleGetMarketByID(c *gin.Context) {
 			TotalVolumeUSDC:   volume.StringFixed(8),
 		},
 		CreatedAt: createdAt.Format(time.RFC3339),
-	})
+	}
+
+	if h.cache != nil {
+		if mUUID, parseErr := uuid.Parse(id); parseErr == nil {
+			h.cache.SetMarket(id, slug, resp, poolReserves, mUUID)
+		}
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
 // HandleMarketQuote computes an authoritative execution quote using the CPMM engine.
 //
 // POST /api/v1/markets/:id/quote
 func (h *MarketHandler) HandleMarketQuote(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
 	marketIDParam := strings.TrimSpace(c.Param("id"))
 	var req QuoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -260,29 +306,49 @@ func (h *MarketHandler) HandleMarketQuote(c *gin.Context) {
 		return
 	}
 
-	// Fetch current market pool reserves
-	query := `
-		SELECT m.id, p.reserve_yes, p.reserve_no, p.collateral_reserve
-		FROM markets m
-		JOIN liquidity_pools p ON p.market_id = m.id
-		WHERE m.id::text = $1 OR m.slug = $1;
-	`
+	// 1. Check in-memory pool reserves first for sub-millisecond calculation
 	var marketUUID uuid.UUID
-	var rYes, rNo, collateral decimal.Decimal
-	err := h.pool.QueryRow(ctx, query, marketIDParam).Scan(&marketUUID, &rYes, &rNo, &collateral)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": "not_found", "message": "Market not found"})
-			return
+	var poolReserves amm.PoolReserves
+	var foundInCache bool
+
+	if h.cache != nil {
+		if _, cachedReserves, cachedUUID, ok := h.cache.GetMarket(marketIDParam); ok && cachedReserves != nil && cachedUUID != nil {
+			marketUUID = *cachedUUID
+			poolReserves = *cachedReserves
+			foundInCache = true
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "database_error", "message": "Failed to fetch market reserves"})
-		return
 	}
 
-	poolReserves := amm.PoolReserves{
-		ReserveYes:        rYes,
-		ReserveNo:         rNo,
-		CollateralReserve: collateral,
+	if !foundInCache {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+		defer cancel()
+
+		query := `
+			SELECT m.id, p.reserve_yes, p.reserve_no, p.collateral_reserve
+			FROM markets m
+			JOIN liquidity_pools p ON p.market_id = m.id
+			WHERE m.id::text = $1 OR m.slug = $1;
+		`
+		var rYes, rNo, collateral decimal.Decimal
+		err := h.pool.QueryRow(ctx, query, marketIDParam).Scan(&marketUUID, &rYes, &rNo, &collateral)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				c.JSON(http.StatusNotFound, gin.H{"error": "not_found", "message": "Market not found"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "database_error", "message": "Failed to fetch market reserves"})
+			return
+		}
+
+		poolReserves = amm.PoolReserves{
+			ReserveYes:        rYes,
+			ReserveNo:         rNo,
+			CollateralReserve: collateral,
+		}
+
+		if h.cache != nil {
+			h.cache.SetMarket(marketUUID.String(), marketIDParam, MarketSummaryResponse{ID: marketUUID.String()}, poolReserves, marketUUID)
+		}
 	}
 
 	if action == "BUY" {

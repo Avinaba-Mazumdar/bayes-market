@@ -88,11 +88,11 @@ export interface UserPosition {
 
 export interface PortfolioResponse {
     user_id?: string;
-    cash_balance?: string;
     cash_balance_usdc?: string;
+    cash_balance?: string;
     positions_value_usdc?: string;
-    total_portfolio_value?: string;
     total_portfolio_value_usdc?: string;
+    total_portfolio_value?: string;
     total_invested_usdc?: string;
     total_unrealized_pnl_usdc?: string;
     total_unrealized_pnl_pct?: string;
@@ -156,4 +156,13 @@ export interface GoogleVerifyRequest {
 export interface AuthResponse {
     token: string;
     user: UserProfile;
+}
+
+export interface FaucetResponse {
+    message: string;
+    amount: string;
+    user: {
+        id: string;
+        cash_balance: string;
+    };
 }

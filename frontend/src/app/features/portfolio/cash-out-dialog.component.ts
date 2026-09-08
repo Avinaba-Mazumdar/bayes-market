@@ -1,4 +1,5 @@
-import { Component, computed, inject, input, model, output, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, model, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LucideArrowUp, LucideArrowDown, LucideAlertCircle } from '@lucide/angular';
 import { ApiService } from '../../core/services/api.service';
 import { AuthStore } from '../../state/auth.store';
@@ -48,7 +49,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
                         <div class="meta-item">
                             <span class="meta-label">Shares to Sell</span>
-                            <span class="shares-amount tabular-nums">{{ formattedShares(pos.shares_owned) }} Shares</span>
+                            <span class="shares-amount tabular-nums">{{ formattedShares() }} Shares</span>
                         </div>
                     </div>
 
@@ -56,7 +57,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                     <div class="financial-table" role="table" aria-label="Liquidation calculation breakdown">
                         <div class="table-row" role="row">
                             <span class="cell-label" role="rowheader">Current Spot Price</span>
-                            <span class="cell-val tabular-nums" role="cell">{{ '$' + formattedPrice(pos.current_price) }}</span>
+                            <span class="cell-val tabular-nums" role="cell">{{ '$' + formattedPrice() }}</span>
                         </div>
 
                         <div class="table-row" role="row">
@@ -283,18 +284,23 @@ export class CashOutDialogComponent {
     private readonly apiService = inject(ApiService);
     private readonly authStore = inject(AuthStore);
     private readonly toastService = inject(ToastService);
+    private readonly destroyRef = inject(DestroyRef);
 
     readonly isExecuting = signal<boolean>(false);
 
-    formattedShares(raw: string): string {
-        const n = parseFloat(raw);
+    protected readonly formattedShares = computed(() => {
+        const pos = this.position();
+        if (!pos) return '0.00';
+        const n = parseFloat(pos.shares_owned);
         return isNaN(n) ? '0.00' : n.toFixed(2);
-    }
+    });
 
-    formattedPrice(raw: string): string {
-        const n = parseFloat(raw);
+    protected readonly formattedPrice = computed(() => {
+        const pos = this.position();
+        if (!pos) return '0.0000';
+        const n = parseFloat(pos.current_price);
         return isNaN(n) ? '0.0000' : n.toFixed(4);
-    }
+    });
 
     protected readonly formattedProceeds = computed(() => {
         const pos = this.position();
@@ -346,6 +352,7 @@ export class CashOutDialogComponent {
                 token,
                 idempotencyKey
             )
+            .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: (receipt) => {
                     this.isExecuting.set(false);

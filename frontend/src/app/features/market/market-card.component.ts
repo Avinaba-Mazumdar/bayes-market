@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideArrowRight } from '@lucide/angular';
 import { Market } from '../../core/models/market.model';
+import { formatUSDC } from '../../core/utils/formatters';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
 @Component({
@@ -330,9 +331,7 @@ export class MarketCardComponent {
 
     protected readonly formattedVolume = computed(() => {
         const raw = this.market().reserves?.total_volume_usdc || '0';
-        const num = parseFloat(raw);
-        if (isNaN(num) || num === 0) return '0.00';
-        return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return formatUSDC(raw).replace('$', '');
     });
 
     protected readonly cardAriaLabel = computed(() => {

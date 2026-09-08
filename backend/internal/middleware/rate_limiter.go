@@ -132,7 +132,12 @@ func NewPublicReadLimiter() *RateLimiter {
 	return NewRateLimiter(rate.Every(1*time.Second), 10, 2*time.Second)
 }
 
-// 2. Action / Quote Limiter: 12 requests/minute per User or IP (burst 3)
+// 2. Action Limiter: 12 mutating requests/minute per User or IP (burst 3)
 func NewActionLimiter() *RateLimiter {
 	return NewRateLimiter(rate.Every(5*time.Second), 3, 5*time.Second)
+}
+
+// 3. Quote Limiter: High-frequency calculation quota for interactive trading terminals (120 requests/minute per IP, burst 20)
+func NewQuoteLimiter() *RateLimiter {
+	return NewRateLimiter(rate.Every(500*time.Millisecond), 20, 1*time.Second)
 }

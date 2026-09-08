@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { LucideUser, LucideCheck, LucideShieldCheck, LucideZap } from '@lucide/angular';
 import { DialogComponent } from '../../shared/components/dialog/dialog.component';
@@ -513,6 +514,7 @@ import { ApiService } from '../../core/services/api.service';
 export class AuthDialogComponent {
     readonly authStore = inject(AuthStore);
     private readonly apiService = inject(ApiService);
+    private readonly destroyRef = inject(DestroyRef);
 
     readonly isRedirecting = signal<boolean>(false);
 
@@ -532,23 +534,26 @@ export class AuthDialogComponent {
         this.isRedirecting.set(true);
 
         // Fetch the Google OAuth authorization URL from backend
-        this.apiService.getGoogleAuthUrl().subscribe({
-            next: (res) => {
-                this.isRedirecting.set(false);
-                if (res.simulated || !res.url) {
-                    // Backend is running in simulated / dev mode without client ID
+        this.apiService
+            .getGoogleAuthUrl()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (res) => {
+                    this.isRedirecting.set(false);
+                    if (res.simulated || !res.url) {
+                        // Backend is running in simulated / dev mode without client ID
+                        this.onDevQuickLogin();
+                    } else {
+                        // Real Google OAuth redirect flow
+                        window.location.href = res.url;
+                    }
+                },
+                error: () => {
+                    this.isRedirecting.set(false);
+                    // Fallback to dev quick login if error or offline
                     this.onDevQuickLogin();
-                } else {
-                    // Real Google OAuth redirect flow
-                    window.location.href = res.url;
                 }
-            },
-            error: () => {
-                this.isRedirecting.set(false);
-                // Fallback to dev quick login if error or offline
-                this.onDevQuickLogin();
-            }
-        });
+            });
     }
 
     onSignOut(): void {

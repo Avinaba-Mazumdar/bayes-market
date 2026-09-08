@@ -6,6 +6,7 @@ import {
     BuyQuoteResponse,
     CashOutRequest,
     CashOutResponse,
+    FaucetResponse,
     GoogleVerifyRequest,
     Market,
     OrderResponse,
@@ -16,25 +17,6 @@ import {
     ResolveMarketResponse,
     UserProfile
 } from '../models/market.model';
-
-export interface GuestAuthResponse {
-    token: string;
-    user: {
-        id: string;
-        cash_balance: string;
-        is_guest: boolean;
-        created_at: string;
-    };
-}
-
-export interface FaucetResponse {
-    message: string;
-    amount: string;
-    user: {
-        id: string;
-        cash_balance: string;
-    };
-}
 
 @Injectable({
     providedIn: 'root'
@@ -54,6 +36,20 @@ export class ApiService {
     }
 
     /**
+     * Helper to construct HttpHeaders with optional Bearer auth and Idempotency-Key.
+     */
+    private buildHeaders(token?: string | null, idempotencyKey?: string): HttpHeaders {
+        let headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+        if (token) {
+            headers = headers.set('Authorization', `Bearer ${token}`);
+        }
+        if (idempotencyKey) {
+            headers = headers.set('Idempotency-Key', idempotencyKey);
+        }
+        return headers;
+    }
+
+    /**
      * Create or retrieve an ephemeral guest trading session.
      */
     createGuestSession(): Observable<AuthResponse> {
@@ -65,10 +61,7 @@ export class ApiService {
      * Optionally passes existing guest token to upgrade session.
      */
     verifyGoogleToken(request: GoogleVerifyRequest, guestToken?: string | null): Observable<AuthResponse> {
-        let headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-        if (guestToken) {
-            headers = headers.set('Authorization', `Bearer ${guestToken}`);
-        }
+        const headers = this.buildHeaders(guestToken);
         return this.http.post<AuthResponse>(`${this.baseUrl}/auth/google/verify`, request, { headers });
     }
 
@@ -83,9 +76,7 @@ export class ApiService {
      * Get the authenticated user's profile and current balances.
      */
     getCurrentUser(token: string): Observable<UserProfile> {
-        const headers = new HttpHeaders({
-            Authorization: `Bearer ${token}`
-        });
+        const headers = this.buildHeaders(token);
         return this.http.get<UserProfile>(`${this.baseUrl}/auth/me`, { headers });
     }
 
@@ -115,11 +106,7 @@ export class ApiService {
      * Place an order with mandatory Bearer authentication and unique Idempotency-Key.
      */
     placeOrder(marketId: string, request: PlaceOrderRequest, token: string, idempotencyKey: string): Observable<OrderResponse> {
-        const headers = new HttpHeaders({
-            Authorization: `Bearer ${token}`,
-            'Idempotency-Key': idempotencyKey,
-            'Content-Type': 'application/json'
-        });
+        const headers = this.buildHeaders(token, idempotencyKey);
         return this.http.post<OrderResponse>(`${this.baseUrl}/markets/${encodeURIComponent(marketId)}/orders`, request, { headers });
     }
 
@@ -127,9 +114,7 @@ export class ApiService {
      * Claim testnet faucet USDC.
      */
     claimFaucet(token: string): Observable<FaucetResponse> {
-        const headers = new HttpHeaders({
-            Authorization: `Bearer ${token}`
-        });
+        const headers = this.buildHeaders(token);
         return this.http.post<FaucetResponse>(`${this.baseUrl}/faucet`, {}, { headers });
     }
 
@@ -137,9 +122,7 @@ export class ApiService {
      * Get portfolio positions and cash balance.
      */
     getPortfolio(token: string): Observable<PortfolioResponse> {
-        const headers = new HttpHeaders({
-            Authorization: `Bearer ${token}`
-        });
+        const headers = this.buildHeaders(token);
         return this.http.get<PortfolioResponse>(`${this.baseUrl}/portfolio`, { headers });
     }
 
@@ -147,11 +130,7 @@ export class ApiService {
      * Liquidate outcome shares back to USDC via AMM pool.
      */
     cashOut(request: CashOutRequest, token: string, idempotencyKey: string): Observable<CashOutResponse> {
-        const headers = new HttpHeaders({
-            Authorization: `Bearer ${token}`,
-            'Idempotency-Key': idempotencyKey,
-            'Content-Type': 'application/json'
-        });
+        const headers = this.buildHeaders(token, idempotencyKey);
         return this.http.post<CashOutResponse>(`${this.baseUrl}/portfolio/cashout`, request, { headers });
     }
 
@@ -159,11 +138,7 @@ export class ApiService {
      * Administratively resolve a prediction market and trigger complete-set payout distribution.
      */
     resolveMarket(marketId: string, request: ResolveMarketRequest, adminToken: string, idempotencyKey: string): Observable<ResolveMarketResponse> {
-        const headers = new HttpHeaders({
-            Authorization: `Bearer ${adminToken}`,
-            'Idempotency-Key': idempotencyKey,
-            'Content-Type': 'application/json'
-        });
+        const headers = this.buildHeaders(adminToken, idempotencyKey);
         return this.http.post<ResolveMarketResponse>(`${this.baseUrl}/admin/markets/${encodeURIComponent(marketId)}/resolve`, request, { headers });
     }
 }

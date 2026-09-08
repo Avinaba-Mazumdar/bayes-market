@@ -1,5 +1,7 @@
-import { Component, computed, DestroyRef, effect, ElementRef, inject, input, output, signal, viewChild } from '@angular/core';
+import { Component, computed, DestroyRef, effect, ElementRef, inject, input, output, signal, untracked, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { LucideArrowUp, LucideArrowDown } from '@lucide/angular';
 import { ApiService } from '../../core/services/api.service';
 import { BuyQuoteResponse, Market } from '../../core/models/market.model';
@@ -418,6 +420,9 @@ export class OrderTerminalComponent {
     readonly latestQuote = signal<BuyQuoteResponse | null>(null);
     readonly isLoadingQuote = signal<boolean>(false);
     private quoteDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+    private inFlightQuoteSub: Subscription | null = null;
+    private quoteCache = new Map<string, { quote: BuyQuoteResponse; timestamp: number }>();
+    private readonly destroyRef = inject(DestroyRef);
 
     protected readonly yesPriceCents = computed(() => {
         const m = this.market();
@@ -520,6 +525,15 @@ export class OrderTerminalComponent {
     });
 
     constructor() {
+        this.destroyRef.onDestroy(() => {
+            if (this.quoteDebounceTimer) {
+                clearTimeout(this.quoteDebounceTimer);
+            }
+            if (this.inFlightQuoteSub) {
+                this.inFlightQuoteSub.unsubscribe();
+            }
+        });
+
         // Automatically fetch quote whenever market, outcome, or amount changes
         effect(() => {
             const m = this.market();
@@ -527,7 +541,9 @@ export class OrderTerminalComponent {
             const amt = this.amountInput();
 
             if (m && m.id && parseFloat(amt) > 0) {
-                this.scheduleQuoteFetch(m.id, outcome, amt);
+                untracked(() => {
+                    this.scheduleQuoteFetch(m.id, outcome, amt);
+                });
             }
         });
     }
@@ -561,32 +577,72 @@ export class OrderTerminalComponent {
         if (this.quoteDebounceTimer) {
             clearTimeout(this.quoteDebounceTimer);
         }
+        if (this.inFlightQuoteSub) {
+            this.inFlightQuoteSub.unsubscribe();
+            this.inFlightQuoteSub = null;
+        }
+
+        const amtNum = parseFloat(amountStr);
+        if (isNaN(amtNum) || amtNum <= 0) {
+            this.isLoadingQuote.set(false);
+            return;
+        }
+
+        // 1. Client-Side Cache Check (5s TTL)
+        const cacheKey = `${marketId}:${outcome}:${amtNum.toFixed(2)}`;
+        const now = Date.now();
+        const cached = this.quoteCache.get(cacheKey);
+        if (cached && now - cached.timestamp < 5000) {
+            this.latestQuote.set(cached.quote);
+            this.isLoadingQuote.set(false);
+            return;
+        }
+
+        // 2. Fast Optimistic Quote for Instant Perceived Responsiveness
+        const m = this.market();
+        const probStr = outcome === 'YES' ? m?.probability_yes : m?.probability_no;
+        const prob = probStr ? parseFloat(probStr) : 0.5;
+        if (prob > 0 && (!this.latestQuote() || this.latestQuote()?.outcome !== outcome)) {
+            const estShares = amtNum / prob;
+            this.latestQuote.set({
+                market_id: marketId,
+                action: 'BUY',
+                outcome: outcome,
+                deposit_usdc: amtNum.toFixed(8),
+                shares_received: estShares.toFixed(8),
+                avg_price: prob.toFixed(8),
+                initial_price: prob.toFixed(8),
+                new_price: prob.toFixed(8),
+                price_impact_pct: '0.00000000',
+                new_reserve_yes: m?.reserves?.reserve_yes || '0',
+                new_reserve_no: m?.reserves?.reserve_no || '0',
+                new_collateral: m?.reserves?.collateral_reserve || '0'
+            });
+        }
 
         this.isLoadingQuote.set(true);
         this.quoteDebounceTimer = setTimeout(() => {
-            const amtNum = parseFloat(amountStr);
-            if (isNaN(amtNum) || amtNum <= 0) {
-                this.isLoadingQuote.set(false);
-                return;
-            }
-
-            this.apiService
+            this.inFlightQuoteSub = this.apiService
                 .getQuote(marketId, {
                     action: 'BUY',
                     outcome: outcome,
                     amount_usdc: amtNum.toFixed(8)
                 })
+                .pipe(takeUntilDestroyed(this.destroyRef))
                 .subscribe({
                     next: (quote) => {
+                        this.quoteCache.set(cacheKey, { quote, timestamp: Date.now() });
                         this.latestQuote.set(quote);
                         this.isLoadingQuote.set(false);
+                        this.inFlightQuoteSub = null;
                     },
                     error: (err) => {
                         console.warn('Quote calculation failed:', err);
                         this.isLoadingQuote.set(false);
+                        this.inFlightQuoteSub = null;
                     }
                 });
-        }, 200);
+        }, 150);
     }
 
     onRequestOrderReview(): void {

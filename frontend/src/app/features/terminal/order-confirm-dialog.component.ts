@@ -1,4 +1,5 @@
-import { Component, computed, inject, input, model, output, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, model, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LucideArrowUp, LucideArrowDown, LucideInfo } from '@lucide/angular';
 import { ApiService } from '../../core/services/api.service';
 import { OrderResponse } from '../../core/models/market.model';
@@ -48,7 +49,7 @@ import { OrderIntent } from './order-terminal.component';
                         </div>
                         <div class="badge-item">
                             <span class="item-label">Order Total</span>
-                            <span class="total-amount tabular-nums">{{ '$' + formattedDeposit(ord.amountUSDC) }} USDC</span>
+                            <span class="total-amount tabular-nums">{{ '$' + formattedDeposit() }} USDC</span>
                         </div>
                     </div>
 
@@ -56,12 +57,12 @@ import { OrderIntent } from './order-terminal.component';
                     <div class="financial-table" role="table" aria-label="Trade execution breakdown">
                         <div class="table-row" role="row">
                             <span class="cell-label" role="rowheader">Est. Shares Received</span>
-                            <span class="cell-val tabular-nums shares-val" role="cell"> {{ formattedShares(ord.quote.shares_received) }} Shares </span>
+                            <span class="cell-val tabular-nums shares-val" role="cell"> {{ formattedShares() }} Shares </span>
                         </div>
                         <div class="table-row" role="row">
                             <span class="cell-label" role="rowheader">Avg. Execution Price</span>
                             <span class="cell-val tabular-nums" role="cell">
-                                {{ '$' + formattedPrice(ord.quote.avg_price) }}
+                                {{ '$' + formattedPrice() }}
                             </span>
                         </div>
                         <div class="table-row" role="row">
@@ -70,7 +71,7 @@ import { OrderIntent } from './order-terminal.component';
                         </div>
                         <div class="table-row" role="row">
                             <span class="cell-label" role="rowheader">Est. Price Impact</span>
-                            <span class="cell-val tabular-nums" role="cell"> {{ formattedImpact(ord.quote.price_impact_pct) }}% </span>
+                            <span class="cell-val tabular-nums" role="cell"> {{ formattedImpact() }}% </span>
                         </div>
                         <div class="table-row balance-preview-row" role="row">
                             <span class="cell-label" role="rowheader">Post-Trade Balance</span>
@@ -279,28 +280,37 @@ export class OrderConfirmDialogComponent {
     protected readonly apiService = inject(ApiService);
     protected readonly authStore = inject(AuthStore);
     protected readonly toastService = inject(ToastService);
+    private readonly destroyRef = inject(DestroyRef);
 
     readonly isExecuting = signal<boolean>(false);
 
-    formattedDeposit(raw: string): string {
-        const n = parseFloat(raw);
+    protected readonly formattedDeposit = computed(() => {
+        const ord = this.intent();
+        if (!ord) return '0.00';
+        const n = parseFloat(ord.amountUSDC);
         return isNaN(n) ? '0.00' : n.toFixed(2);
-    }
+    });
 
-    formattedShares(raw: string): string {
-        const n = parseFloat(raw);
+    protected readonly formattedShares = computed(() => {
+        const ord = this.intent();
+        if (!ord?.quote) return '0.00';
+        const n = parseFloat(ord.quote.shares_received);
         return isNaN(n) ? '0.00' : n.toFixed(2);
-    }
+    });
 
-    formattedPrice(raw: string): string {
-        const n = parseFloat(raw);
+    protected readonly formattedPrice = computed(() => {
+        const ord = this.intent();
+        if (!ord?.quote) return '0.0000';
+        const n = parseFloat(ord.quote.avg_price);
         return isNaN(n) ? '0.0000' : n.toFixed(4);
-    }
+    });
 
-    formattedImpact(raw: string): string {
-        const n = parseFloat(raw);
+    protected readonly formattedImpact = computed(() => {
+        const ord = this.intent();
+        if (!ord?.quote) return '0.00';
+        const n = parseFloat(ord.quote.price_impact_pct);
         return isNaN(n) ? '0.00' : Math.abs(n).toFixed(2);
-    }
+    });
 
     onDismiss(): void {
         if (this.isExecuting()) return;
@@ -329,6 +339,7 @@ export class OrderConfirmDialogComponent {
                 token,
                 idempotencyKey
             )
+            .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: (receipt) => {
                     this.isExecuting.set(false);

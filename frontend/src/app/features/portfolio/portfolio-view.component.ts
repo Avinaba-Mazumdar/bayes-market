@@ -1,9 +1,11 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { LucideBriefcase, LucideArrowUp, LucideArrowDown, LucideDollarSign, LucideTrendingUp, LucideTrendingDown, LucideFolderSearch } from '@lucide/angular';
 import { ApiService } from '../../core/services/api.service';
 import { AuthStore } from '../../state/auth.store';
 import { PortfolioResponse, UserPosition } from '../../core/models/market.model';
+import { formatUSDC, formatShares, formatPrice } from '../../core/utils/formatters';
 import { CashOutDialogComponent } from './cash-out-dialog.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
@@ -152,24 +154,24 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
                                             <!-- Shares Owned -->
                                             <td class="td-num tabular-nums">
-                                                <span class="num-highlight">{{ formatNumber(pos.shares_owned, 2) }}</span>
+                                                <span class="num-highlight">{{ pos.formattedShares }}</span>
                                             </td>
 
                                             <!-- Avg Entry Price -->
-                                            <td class="td-num tabular-nums">{{ '$' + formatNumber(pos.avg_buy_price, 4) }}</td>
+                                            <td class="td-num tabular-nums">{{ '$' + pos.formattedAvgBuyPrice }}</td>
 
                                             <!-- Current Price -->
-                                            <td class="td-num tabular-nums spot-price">{{ '$' + formatNumber(pos.current_price, 4) }}</td>
+                                            <td class="td-num tabular-nums spot-price">{{ '$' + pos.formattedCurrentPrice }}</td>
 
                                             <!-- Current Value -->
                                             <td class="td-num tabular-nums market-value">
-                                                {{ '$' + formatNumber(pos.market_value || pos.current_value_usdc || '0', 2) }}
+                                                {{ '$' + pos.formattedMarketValue }}
                                             </td>
 
                                             <!-- Unrealized P&L -->
                                             <td class="td-num tabular-nums">
-                                                <span class="pnl-tag" [class.profit-tag]="isRowPnLPositive(pos)" [class.loss-tag]="!isRowPnLPositive(pos)">
-                                                    {{ pos.unrealized_pnl_usdc || pos.unrealized_pnl || '$0.00' }}
+                                                <span class="pnl-tag" [class.profit-tag]="pos.isPositivePnL" [class.loss-tag]="!pos.isPositivePnL">
+                                                    {{ pos.formattedPnL }}
                                                     @if (pos.unrealized_pnl_pct) {
                                                         <small>({{ pos.unrealized_pnl_pct }}%)</small>
                                                     }
@@ -580,6 +582,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 })
 export class PortfolioViewComponent implements OnInit {
     private readonly apiService = inject(ApiService);
+    private readonly destroyRef = inject(DestroyRef);
     readonly authStore = inject(AuthStore);
 
     readonly portfolio = signal<PortfolioResponse | null>(null);
@@ -590,21 +593,31 @@ export class PortfolioViewComponent implements OnInit {
     readonly selectedPosition = signal<UserPosition | null>(null);
 
     readonly positions = computed(() => {
-        return this.portfolio()?.positions || [];
+        const raw = this.portfolio()?.positions || [];
+        return raw.map((pos) => {
+            const pnlNum = parseFloat(pos.unrealized_pnl_usdc || '0');
+            return {
+                ...pos,
+                formattedShares: formatShares(pos.shares_owned),
+                formattedAvgBuyPrice: formatPrice(pos.avg_buy_price, 4).replace('$', ''),
+                formattedCurrentPrice: formatPrice(pos.current_price, 4).replace('$', ''),
+                formattedMarketValue: formatUSDC(pos.current_value_usdc).replace('$', ''),
+                formattedPnL: formatUSDC(pos.unrealized_pnl_usdc),
+                isPositivePnL: pnlNum >= 0
+            };
+        });
     });
 
     readonly formattedTotalValue = computed(() => {
         const p = this.portfolio();
-        if (!p) return '0.00';
-        const val = parseFloat(p.total_portfolio_value_usdc || p.total_portfolio_value || '0');
-        return isNaN(val) ? '0.00' : val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return p ? formatUSDC(p.total_portfolio_value_usdc).replace('$', '') : '0.00';
     });
 
     readonly formattedPnL = computed(() => {
         const p = this.portfolio();
         if (!p) return '0.00';
         const pnl = parseFloat(p.total_unrealized_pnl_usdc || '0');
-        return isNaN(pnl) ? '0.00' : Math.abs(pnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return formatUSDC(Math.abs(pnl)).replace('$', '');
     });
 
     readonly formattedPnLPct = computed(() => {
@@ -633,16 +646,19 @@ export class PortfolioViewComponent implements OnInit {
         }
 
         this.isLoading.set(true);
-        this.apiService.getPortfolio(token).subscribe({
-            next: (data) => {
-                this.portfolio.set(data);
-                this.isLoading.set(false);
-            },
-            error: (err) => {
-                console.warn('Failed to load portfolio:', err);
-                this.isLoading.set(false);
-            }
-        });
+        this.apiService
+            .getPortfolio(token)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (data) => {
+                    this.portfolio.set(data);
+                    this.isLoading.set(false);
+                },
+                error: (err) => {
+                    console.warn('Failed to load portfolio:', err);
+                    this.isLoading.set(false);
+                }
+            });
     }
 
     formatNumber(raw: string | undefined, decimals: number): string {
@@ -652,7 +668,7 @@ export class PortfolioViewComponent implements OnInit {
     }
 
     isRowPnLPositive(pos: UserPosition): boolean {
-        const pnl = parseFloat(pos.unrealized_pnl_usdc || pos.unrealized_pnl || '0');
+        const pnl = parseFloat(pos.unrealized_pnl_usdc || '0');
         return pnl >= 0;
     }
 

@@ -17,6 +17,9 @@ type Hub struct {
 	// Registered clients: map[client]bool
 	clients map[*Client]bool
 
+	// Global client subscriptions (marketID == "" or "all"): map[client]bool
+	globalClients map[*Client]bool
+
 	// Market-specific client subscriptions: map[marketID]map[client]bool
 	marketClients map[string]map[*Client]bool
 
@@ -40,6 +43,7 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		clients:       make(map[*Client]bool),
+		globalClients: make(map[*Client]bool),
 		marketClients: make(map[string]map[*Client]bool),
 		broadcast:     make(chan BroadcastPayload, 1024),
 		register:      make(chan *Client),
@@ -58,6 +62,7 @@ func (h *Hub) Run() {
 				close(client.send)
 				delete(h.clients, client)
 			}
+			h.globalClients = make(map[*Client]bool)
 			h.marketClients = make(map[string]map[*Client]bool)
 			h.mu.Unlock()
 			return
@@ -65,7 +70,9 @@ func (h *Hub) Run() {
 		case client := <-h.register:
 			h.mu.Lock()
 			h.clients[client] = true
-			if client.marketID != "" && client.marketID != "all" {
+			if client.marketID == "" || client.marketID == "all" {
+				h.globalClients[client] = true
+			} else {
 				if _, ok := h.marketClients[client.marketID]; !ok {
 					h.marketClients[client.marketID] = make(map[*Client]bool)
 				}
@@ -80,10 +87,7 @@ func (h *Hub) Run() {
 
 		case payload := <-h.broadcast:
 			h.mu.RLock()
-			// Collect target clients:
-			// 1. If MarketID is specified: send to clients subscribed to that market,
-			//    plus global clients (marketID == "" or "all").
-			// 2. If MarketID is empty or "all": send to all clients.
+			// O(K) Fan-out: collect target clients without scanning all connected users
 			targets := make(map[*Client]struct{})
 
 			if payload.MarketID == "" || payload.MarketID == "all" {
@@ -97,11 +101,9 @@ func (h *Hub) Run() {
 						targets[c] = struct{}{}
 					}
 				}
-				// Plus any global subscribers (listening to everything)
-				for c := range h.clients {
-					if c.marketID == "" || c.marketID == "all" {
-						targets[c] = struct{}{}
-					}
+				// Plus global subscribers directly from indexed set
+				for c := range h.globalClients {
+					targets[c] = struct{}{}
 				}
 			}
 			h.mu.RUnlock()
@@ -135,6 +137,7 @@ func (h *Hub) Run() {
 func (h *Hub) removeClient(client *Client) {
 	if _, ok := h.clients[client]; ok {
 		delete(h.clients, client)
+		delete(h.globalClients, client)
 		if client.marketID != "" && client.marketID != "all" {
 			if mClients, exists := h.marketClients[client.marketID]; exists {
 				delete(mClients, client)

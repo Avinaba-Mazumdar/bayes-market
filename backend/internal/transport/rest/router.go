@@ -1,9 +1,11 @@
 package rest
 
 import (
+	"compress/gzip"
 	"fmt"
 	"net/http"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/bayesmarket/bayesmarket/internal/config"
@@ -13,6 +15,44 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type gzipWriter struct {
+	gin.ResponseWriter
+	writer *gzip.Writer
+}
+
+func (g *gzipWriter) Write(data []byte) (int, error) {
+	return g.writer.Write(data)
+}
+
+func (g *gzipWriter) WriteString(s string) (int, error) {
+	return g.writer.Write([]byte(s))
+}
+
+// gzipMiddleware compresses HTTP responses using gzip when supported by the client.
+func gzipMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !strings.HasPrefix(c.Request.URL.Path, "/api/") ||
+			!strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") ||
+			strings.Contains(c.GetHeader("Connection"), "Upgrade") ||
+			strings.HasPrefix(c.Request.URL.Path, "/ws") {
+			c.Next()
+			return
+		}
+
+		gz, err := gzip.NewWriterLevel(c.Writer, gzip.DefaultCompression)
+		if err != nil {
+			c.Next()
+			return
+		}
+		defer gz.Close()
+
+		c.Header("Content-Encoding", "gzip")
+		c.Header("Vary", "Accept-Encoding")
+		c.Writer = &gzipWriter{ResponseWriter: c.Writer, writer: gz}
+		c.Next()
+	}
+}
+
 // SetupRouter constructs and configures the Gin HTTP engine with all REST routes, WebSocket endpoints, and middleware.
 func SetupRouter(pool *pgxpool.Pool, cfg *config.Config, hubOpt ...*ws.Hub) *gin.Engine {
 	var hub *ws.Hub
@@ -21,7 +61,7 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config, hubOpt ...*ws.Hub) *gin
 	}
 
 	router := gin.New()
-	router.Use(gin.Logger(), gin.Recovery())
+	router.Use(gin.Logger(), gin.Recovery(), gzipMiddleware())
 
 	// CORS Middleware
 	router.Use(func(c *gin.Context) {
@@ -52,6 +92,7 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config, hubOpt ...*ws.Hub) *gin
 	// Rate Limiters
 	publicReadLimiter := middleware.NewPublicReadLimiter()
 	actionLimiter := middleware.NewActionLimiter()
+	quoteLimiter := middleware.NewQuoteLimiter()
 
 	jwtSecret := ""
 	corsOrigin := "*"
@@ -60,13 +101,18 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config, hubOpt ...*ws.Hub) *gin
 		corsOrigin = cfg.CORSOrigin
 	}
 
+	// In-memory read-through cache (5-second TTL, event-invalidated on trades/settlements)
+	marketCache := NewMarketCache(5 * time.Second)
+
 	// Handlers
 	authHandler := NewAuthHandler(pool, cfg)
-	marketHandler := NewMarketHandler(pool)
+	marketHandler := NewMarketHandler(pool, marketCache)
 	faucetHandler := NewFaucetHandler(pool)
 	portfolioHandler := NewPortfolioHandler(pool)
 	tradeHandler := NewTradeHandler(pool, hub)
+	tradeHandler.SetCache(marketCache)
 	adminHandler := NewAdminHandler(pool, hub)
+	adminHandler.SetMarketCache(marketCache)
 
 	adminToken := ""
 	if cfg != nil {
@@ -151,7 +197,7 @@ bayesmarket_up 1
 		{
 			markets.GET("", publicReadLimiter.LimitByIP(), marketHandler.HandleGetMarkets)
 			markets.GET("/:id", publicReadLimiter.LimitByIP(), marketHandler.HandleGetMarketByID)
-			markets.POST("/:id/quote", actionLimiter.LimitByClientOrUser(), marketHandler.HandleMarketQuote)
+			markets.POST("/:id/quote", quoteLimiter.LimitByClientOrUser(), marketHandler.HandleMarketQuote)
 			markets.POST("/:id/orders",
 				middleware.RequireAuth(cfg.JWTSecret),
 				actionLimiter.LimitByClientOrUser(),

@@ -1,4 +1,5 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { LucideSearch, LucideSearchX } from '@lucide/angular';
 import { ApiService } from '../../core/services/api.service';
@@ -397,6 +398,7 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
 })
 export class MarketListComponent implements OnInit {
     private readonly apiService = inject(ApiService);
+    private readonly destroyRef = inject(DestroyRef);
 
     readonly markets = signal<Market[]>([]);
     readonly isLoading = signal<boolean>(true);
@@ -460,15 +462,18 @@ export class MarketListComponent implements OnInit {
 
     private fetchMarkets(): void {
         this.isLoading.set(true);
-        this.apiService.getMarkets().subscribe({
-            next: (data) => {
-                this.markets.set(data || []);
-                this.isLoading.set(false);
-            },
-            error: (err) => {
-                console.error('Failed to load markets:', err);
-                this.isLoading.set(false);
-            }
-        });
+        this.apiService
+            .getMarkets()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (data) => {
+                    this.markets.set(data || []);
+                    this.isLoading.set(false);
+                },
+                error: (err) => {
+                    console.error('Failed to load markets:', err);
+                    this.isLoading.set(false);
+                }
+            });
     }
 }

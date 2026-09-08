@@ -291,7 +291,7 @@ export class SelectComponent {
 
     @HostListener('document:click', ['$event'])
     onDocumentClick(event: MouseEvent): void {
-        if (!this.elRef.nativeElement.contains(event.target)) {
+        if (this.isOpen() && !this.elRef.nativeElement.contains(event.target)) {
             this.isOpen.set(false);
         }
     }
