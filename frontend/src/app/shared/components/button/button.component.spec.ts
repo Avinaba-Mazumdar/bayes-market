@@ -93,7 +93,7 @@ describe('ButtonComponent', () => {
     });
 
     it('should dynamically switch variant classes', () => {
-        const variants: ButtonVariant[] = ['secondary', 'destructive', 'outline', 'ghost', 'faucet', 'link', 'yes', 'no', 'chip'];
+        const variants: ButtonVariant[] = ['secondary', 'destructive', 'outline', 'ghost', 'link', 'yes', 'no', 'chip'];
         const btn = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
 
         for (const v of variants) {

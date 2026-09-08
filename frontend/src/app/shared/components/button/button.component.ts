@@ -1,7 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { LucideLoaderCircle } from '@lucide/angular';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'faucet' | 'link' | 'yes' | 'no' | 'chip';
+export type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link' | 'yes' | 'no' | 'chip';
 export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
 
 @Component({
@@ -75,14 +75,14 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             .btn-size-default {
                 min-height: 44px;
                 min-width: var(--touch-target-min, 44px);
-                padding: 10px 18px;
-                font-size: 14.5px;
+                padding: 8px 16px;
+                font-size: 14px;
             }
 
             .btn-size-sm {
-                min-height: 38px;
+                min-height: 36px;
                 min-width: var(--touch-target-min, 44px);
-                padding: 6px 14px;
+                padding: 6px 12px;
                 font-size: 13px;
             }
 
@@ -90,7 +90,7 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
                 min-height: 48px;
                 min-width: var(--touch-target-min, 44px);
                 padding: 12px 24px;
-                font-size: 15.5px;
+                font-size: 15px;
             }
 
             .btn-size-icon {
@@ -134,7 +134,7 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             }
             .btn-variant-secondary:hover:not(:disabled) {
                 background-color: var(--surface-card-elevated, #1a1733);
-                border-color: var(--ink-secondary, #9d97b8);
+                border-color: var(--primary, #3600b3);
             }
 
             /* Destructive (Loss / Sell / Cancel) */
@@ -170,23 +170,6 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             .btn-variant-ghost:hover:not(:disabled) {
                 background-color: rgba(255, 255, 255, 0.07);
                 color: var(--ink, #f8f7ff);
-            }
-
-            /* Faucet (Testnet Claim Pill) */
-            .btn-variant-faucet {
-                background-color: rgba(54, 0, 179, 0.18);
-                color: #b388ff;
-                border: 1.5px solid rgba(124, 77, 255, 0.4);
-                border-radius: var(--radius-pill, 9999px);
-            }
-            .btn-variant-faucet:hover:not(:disabled) {
-                background-color: rgba(54, 0, 179, 0.32);
-                border-color: #7c4dff;
-                box-shadow: 0 0 14px rgba(124, 77, 255, 0.45);
-            }
-            .btn-variant-faucet:disabled {
-                border-color: var(--hairline, #252140);
-                color: var(--muted, #9d97b8);
             }
 
             /* Link */

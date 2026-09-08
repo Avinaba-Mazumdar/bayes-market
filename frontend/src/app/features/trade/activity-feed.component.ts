@@ -4,10 +4,12 @@ import { WebSocketService } from '../../core/services/websocket.service';
 import { TradeEvent } from '../../core/models/websocket.model';
 import { formatShares, formatPrice, formatTimestamp } from '../../core/utils/formatters';
 
+import { BadgeComponent } from '../../shared/components/badge/badge.component';
+
 @Component({
     selector: 'app-activity-feed',
     standalone: true,
-    imports: [LucideZap, LucideArrowUp, LucideArrowDown],
+    imports: [BadgeComponent, LucideZap, LucideArrowUp, LucideArrowDown],
     template: `
         <div class="activity-feed-card" role="region" aria-label="Live Market Trades Feed">
             <div class="feed-header">
@@ -30,7 +32,7 @@ import { formatShares, formatPrice, formatTimestamp } from '../../core/utils/for
                         @for (trade of filteredTrades(); track trade.trade_id || trade.timestamp) {
                             <article class="trade-item" tabindex="0">
                                 <div class="trade-main">
-                                    <span class="trade-badge" [class.trade-yes]="trade.outcome === 'YES'" [class.trade-no]="trade.outcome === 'NO'">
+                                    <app-badge [variant]="trade.outcome === 'YES' ? 'profit' : 'loss'" size="sm">
                                         @if (trade.outcome === 'YES') {
                                             <svg lucideArrowUp class="trade-badge-icon" [size]="12" aria-hidden="true"></svg>
                                             YES
@@ -38,7 +40,7 @@ import { formatShares, formatPrice, formatTimestamp } from '../../core/utils/for
                                             <svg lucideArrowDown class="trade-badge-icon" [size]="12" aria-hidden="true"></svg>
                                             NO
                                         }
-                                    </span>
+                                    </app-badge>
                                     <span class="trade-amount tabular-nums"> {{ trade.formattedShares }} shares </span>
                                 </div>
                                 <div class="trade-details">

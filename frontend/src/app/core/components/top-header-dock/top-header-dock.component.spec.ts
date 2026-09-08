@@ -70,7 +70,7 @@ describe('TopHeaderDockComponent', () => {
 
     it('should render faucet button and handle faucet claims', () => {
         const el = fixture.nativeElement as HTMLElement;
-        const faucetBtn = el.querySelector('app-button[variant="faucet"]') as HTMLElement;
+        const faucetBtn = el.querySelector('app-button[variant="secondary"]') as HTMLElement;
         expect(faucetBtn).toBeTruthy();
         expect(faucetBtn.textContent).toContain('Faucet');
 
@@ -81,7 +81,7 @@ describe('TopHeaderDockComponent', () => {
 
     it('should show Sign In button for guest trader and open auth modal on click', () => {
         const el = fixture.nativeElement as HTMLElement;
-        const signInBtn = el.querySelector('.guest-badge-btn') as HTMLButtonElement;
+        const signInBtn = el.querySelector('.guest-signin-btn button') as HTMLButtonElement;
         expect(signInBtn).toBeTruthy();
         expect(signInBtn.textContent).toContain('Sign In');
 
@@ -103,7 +103,7 @@ describe('TopHeaderDockComponent', () => {
         fixture.detectChanges();
 
         const el = fixture.nativeElement as HTMLElement;
-        expect(el.querySelector('.guest-badge-btn')).toBeNull();
+        expect(el.querySelector('.guest-signin-btn')).toBeNull();
         expect(el.querySelector('.user-profile-dock')).toBeTruthy();
         expect(el.querySelector('.auth-user-name')?.textContent).toContain('Alex Mercer');
 

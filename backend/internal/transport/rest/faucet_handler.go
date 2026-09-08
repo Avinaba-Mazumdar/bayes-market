@@ -159,8 +159,13 @@ func (h *FaucetHandler) HandleClaimFaucet(c *gin.Context) {
 	resp := gin.H{
 		"success":          true,
 		"amount_claimed":   faucetGrant.StringFixed(8),
+		"amount":           faucetGrant.StringFixed(0),
 		"new_balance":      updatedBalance.StringFixed(8),
 		"cooldown_seconds": 300,
+		"user": gin.H{
+			"id":           userID.String(),
+			"cash_balance": updatedBalance.StringFixed(8),
+		},
 	}
 
 	if idempotencyKey != "" {

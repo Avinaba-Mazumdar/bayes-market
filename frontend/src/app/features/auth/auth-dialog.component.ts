@@ -1,16 +1,18 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { LucideUser, LucideCheck, LucideShieldCheck, LucideZap } from '@lucide/angular';
+import { LucideCheck, LucideShieldCheck, LucideZap } from '@lucide/angular';
 import { DialogComponent } from '../../shared/components/dialog/dialog.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
+import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { AuthStore } from '../../state/auth.store';
 import { ApiService } from '../../core/services/api.service';
 
 @Component({
     selector: 'app-auth-dialog',
     standalone: true,
-    imports: [CommonModule, DialogComponent, ButtonComponent, LucideUser, LucideCheck, LucideShieldCheck, LucideZap],
+    imports: [CommonModule, DialogComponent, ButtonComponent, AvatarComponent, BadgeComponent, LucideCheck, LucideShieldCheck, LucideZap],
     template: `
         <app-dialog
             [open]="authStore.isAuthModalOpen()"
@@ -123,20 +125,14 @@ import { ApiService } from '../../core/services/api.service';
                     <!-- Authenticated Profile View -->
                     <div class="profile-card">
                         <div class="profile-header">
-                            @if (authStore.userAvatar()) {
-                                <img [src]="authStore.userAvatar()!" [alt]="authStore.userName()" class="user-avatar" referrerpolicy="no-referrer" />
-                            } @else {
-                                <div class="avatar-placeholder" aria-hidden="true">
-                                    <svg lucideUser [size]="24"></svg>
-                                </div>
-                            }
+                            <app-avatar [src]="authStore.userAvatar() || ''" [alt]="authStore.userName()" size="lg" />
                             <div class="profile-meta">
                                 <h3 class="profile-name">{{ authStore.userName() }}</h3>
                                 <p class="profile-email">{{ authStore.userEmail() || 'Google Authenticated User' }}</p>
-                                <span class="provider-badge">
+                                <app-badge class="provider-badge" variant="profit" size="sm">
                                     <svg lucideCheck class="badge-icon" [size]="12" aria-hidden="true"></svg>
                                     Google Verified
-                                </span>
+                                </app-badge>
                             </div>
                         </div>
 

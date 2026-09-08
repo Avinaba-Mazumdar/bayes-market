@@ -8,6 +8,8 @@ import { BuyQuoteResponse, Market } from '../../core/models/market.model';
 import { AuthStore } from '../../state/auth.store';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
+import { InputComponent } from '../../shared/components/input/input.component';
+import { LabelComponent } from '../../shared/components/label/label.component';
 
 export interface OrderIntent {
     marketId: string;
@@ -23,7 +25,7 @@ export interface OrderIntent {
 @Component({
     selector: 'app-order-terminal',
     standalone: true,
-    imports: [FormsModule, ButtonComponent, BadgeComponent, LucideArrowUp, LucideArrowDown],
+    imports: [FormsModule, ButtonComponent, BadgeComponent, InputComponent, LabelComponent, LucideArrowUp, LucideArrowDown],
     template: `
         <div class="order-terminal-card" role="region" aria-label="Order Execution Terminal">
             <!-- Header: Title and Live Available Balance -->
@@ -70,24 +72,20 @@ export interface OrderIntent {
 
             <!-- Amount Input Section with Embedded Max -->
             <div class="input-section">
-                <label for="terminal-amount-input" class="input-label"> Amount (USDC) </label>
-                <div class="input-wrapper">
-                    <span class="currency-symbol" aria-hidden="true">$</span>
-                    <input
-                        #amountInputEl
-                        id="terminal-amount-input"
-                        type="number"
-                        min="1"
-                        max="1000000"
-                        step="1"
-                        [ngModel]="amountInput()"
-                        (ngModelChange)="onAmountChange($event)"
-                        class="amount-field tabular-nums"
-                        placeholder="0.00"
-                        aria-describedby="amount-helper-text"
-                    />
-                    <app-button variant="chip" size="sm" ariaLabel="Set amount to maximum available balance" (btnClick)="onSetMax()"> MAX </app-button>
-                </div>
+                <app-label htmlFor="terminal-amount-input" size="default">Amount (USDC)</app-label>
+                <app-input
+                    id="terminal-amount-input"
+                    type="number"
+                    variant="mono"
+                    size="default"
+                    [value]="amountInput()"
+                    (valueChange)="onAmountChange($event)"
+                    placeholder="0.00"
+                    ariaLabel="Amount in USDC"
+                >
+                    <span prefix class="currency-symbol" aria-hidden="true">$</span>
+                    <app-button suffix variant="chip" size="sm" ariaLabel="Set amount to maximum available balance" (btnClick)="onSetMax()"> MAX </app-button>
+                </app-input>
                 <span id="amount-helper-text" class="sr-only"> Enter the amount of USDC you wish to spend on outcome {{ selectedOutcome() }} </span>
             </div>
 
@@ -552,8 +550,8 @@ export class OrderTerminalComponent {
         this.selectedOutcome.set(outcome);
     }
 
-    onAmountChange(val: string): void {
-        this.amountInput.set(val);
+    onAmountChange(val: string | number): void {
+        this.amountInput.set(val !== '' && val !== null && val !== undefined ? val.toString() : '');
     }
 
     addAmount(addition: number): void {
@@ -668,13 +666,13 @@ export class OrderTerminalComponent {
         });
     }
 
-    readonly amountInputEl = viewChild<ElementRef<HTMLInputElement>>('amountInputEl');
-
     focusAmountInput(): void {
-        const input = this.amountInputEl()?.nativeElement;
+        const input = document.getElementById('terminal-amount-input') as HTMLInputElement | null;
         if (input) {
             input.focus();
-            input.select();
+            if (typeof input.select === 'function') {
+                input.select();
+            }
         }
     }
 }

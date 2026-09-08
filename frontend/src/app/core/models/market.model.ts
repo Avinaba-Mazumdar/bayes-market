@@ -159,10 +159,14 @@ export interface AuthResponse {
 }
 
 export interface FaucetResponse {
-    message: string;
-    amount: string;
-    user: {
-        id: string;
-        cash_balance: string;
+    success?: boolean;
+    amount_claimed?: string;
+    new_balance?: string;
+    cooldown_seconds?: number;
+    amount?: string;
+    user?: {
+        id?: string;
+        cash_balance?: string;
     };
+    message?: string;
 }

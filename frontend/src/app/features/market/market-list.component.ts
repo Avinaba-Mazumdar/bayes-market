@@ -7,13 +7,14 @@ import { Market } from '../../core/models/market.model';
 import { MarketCardComponent } from './market-card.component';
 import { GlossaryPopoverComponent } from './glossary-popover.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { InputComponent } from '../../shared/components/input/input.component';
 
 export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
 
 @Component({
     selector: 'app-market-list',
     standalone: true,
-    imports: [FormsModule, MarketCardComponent, GlossaryPopoverComponent, ButtonComponent, LucideSearch, LucideSearchX],
+    imports: [FormsModule, MarketCardComponent, GlossaryPopoverComponent, ButtonComponent, InputComponent, LucideSearch, LucideSearchX],
     template: `
         <div class="market-catalog-container">
             <!-- Hero Banner: Platform Mission & Market Stats -->
@@ -67,16 +68,17 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
 
                 <!-- Right Tools: Search Bar & Glossary Trigger -->
                 <div class="filter-tools-right">
-                    <div class="search-input-wrapper">
-                        <svg lucideSearch class="search-icon" [size]="16" aria-hidden="true"></svg>
-                        <input
+                    <div class="search-input-container">
+                        <app-input
                             type="search"
-                            [ngModel]="searchQuery()"
-                            (ngModelChange)="searchQuery.set($event)"
+                            size="sm"
+                            [value]="searchQuery()"
+                            (valueChange)="searchQuery.set($event.toString())"
                             placeholder="Search prediction markets..."
-                            class="search-input"
-                            aria-label="Search prediction markets by title or keyword"
-                        />
+                            ariaLabel="Search prediction markets by title or keyword"
+                        >
+                            <svg prefix lucideSearch class="search-icon" [size]="16" aria-hidden="true"></svg>
+                        </app-input>
                     </div>
                     <app-glossary-popover />
                 </div>

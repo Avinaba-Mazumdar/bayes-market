@@ -151,4 +151,38 @@ describe('DialogComponent', () => {
             expect(content.classList.contains(`dialog-size-${s}`)).toBe(true);
         }
     });
+
+    it('should NOT set inert on #app-main-content if mainContent contains the dialog', () => {
+        const mockMain = document.createElement('main');
+        mockMain.id = 'app-main-content';
+        document.body.appendChild(mockMain);
+        mockMain.appendChild(fixture.nativeElement);
+
+        try {
+            host.isOpen.set(true);
+            fixture.detectChanges();
+
+            expect(mockMain.hasAttribute('inert')).toBe(false);
+        } finally {
+            mockMain.remove();
+        }
+    });
+
+    it('should set inert on #app-main-content if mainContent does NOT contain the dialog', () => {
+        const mockMain = document.createElement('main');
+        mockMain.id = 'app-main-content';
+        document.body.appendChild(mockMain);
+
+        try {
+            host.isOpen.set(true);
+            fixture.detectChanges();
+
+            expect(mockMain.hasAttribute('inert')).toBe(true);
+            host.isOpen.set(false);
+            fixture.detectChanges();
+            expect(mockMain.hasAttribute('inert')).toBe(false);
+        } finally {
+            mockMain.remove();
+        }
+    });
 });

@@ -1,14 +1,16 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucidePlus, LucideLogIn, LucideLogOut, LucideUser } from '@lucide/angular';
+import { LucidePlus, LucideLogIn, LucideLogOut } from '@lucide/angular';
 import { WebSocketService } from '../../services/websocket.service';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { BadgeComponent } from '../../../shared/components/badge/badge.component';
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 import { AuthStore } from '../../../state/auth.store';
 
 @Component({
     selector: 'app-top-header-dock',
     standalone: true,
-    imports: [RouterLink, RouterLinkActive, ButtonComponent, LucidePlus, LucideLogIn, LucideLogOut, LucideUser],
+    imports: [RouterLink, RouterLinkActive, ButtonComponent, BadgeComponent, AvatarComponent, LucidePlus, LucideLogIn, LucideLogOut],
     template: `
         <header class="top-header-dock" role="banner">
             <div class="dock-container">
@@ -32,14 +34,20 @@ import { AuthStore } from '../../../state/auth.store';
 
                 <!-- Right: Balance, Faucet, Auth -->
                 <div class="dock-right">
-                    <!-- Guest Balance Pill (JetBrains Mono tabular figures) -->
-                    <div class="balance-pill" aria-label="Current cash balance">
+                    <!-- Guest Balance Badge (JetBrains Mono tabular figures) -->
+                    <app-badge variant="outline" size="sm" class="balance-badge" aria-label="Current cash balance">
                         <span class="balance-label">USDC</span>
                         <span class="balance-amount tabular-nums">{{ userBalance() }}</span>
-                    </div>
+                    </app-badge>
 
                     <!-- Faucet Button -->
-                    <app-button variant="faucet" size="pill" [loading]="isClaimingFaucet()" ariaLabel="Claim testnet faucet USDC" (btnClick)="onClaimFaucet()">
+                    <app-button
+                        variant="secondary"
+                        size="default"
+                        [loading]="isClaimingFaucet()"
+                        ariaLabel="Claim testnet faucet USDC"
+                        (btnClick)="onClaimFaucet()"
+                    >
                         @if (isClaimingFaucet()) {
                             <span>Claiming...</span>
                         } @else {
@@ -50,17 +58,17 @@ import { AuthStore } from '../../../state/auth.store';
 
                     <!-- Auth State & Sign In / Profile -->
                     @if (authStore.isGuest()) {
-                        <button
-                            type="button"
-                            class="auth-action-btn guest-badge-btn"
-                            (click)="authStore.openAuthModal()"
-                            aria-label="Guest session active. Click to sign in or connect account."
+                        <app-button
+                            variant="primary"
+                            size="default"
+                            class="guest-signin-btn"
+                            ariaLabel="Guest session active. Click to sign in or connect account."
                             title="Guest Trader (Click to Sign In with Google)"
+                            (btnClick)="authStore.openAuthModal()"
                         >
-                            <span class="guest-indicator-dot" aria-hidden="true"></span>
                             <span class="auth-btn-text">Sign In</span>
                             <svg lucideLogIn class="auth-icon" [size]="14" aria-hidden="true"></svg>
-                        </button>
+                        </app-button>
                     } @else {
                         <div class="user-profile-dock">
                             <button
@@ -70,11 +78,7 @@ import { AuthStore } from '../../../state/auth.store';
                                 [attr.aria-label]="'Trading as ' + authStore.userName() + '. Click for account details.'"
                                 [title]="'Logged in as ' + authStore.userName()"
                             >
-                                @if (authStore.userAvatar()) {
-                                    <img [src]="authStore.userAvatar()!" [alt]="authStore.userName()" class="header-avatar" referrerpolicy="no-referrer" />
-                                } @else {
-                                    <svg lucideUser class="auth-icon" [size]="14" aria-hidden="true"></svg>
-                                }
+                                <app-avatar [src]="authStore.userAvatar() || ''" [alt]="authStore.userName()" size="sm" />
                                 <span class="auth-user-name">{{ authStore.userName() }}</span>
                             </button>
                             <button
@@ -186,9 +190,11 @@ import { AuthStore } from '../../../state/auth.store';
                 color: #ffffff;
                 border: 1px solid var(--hairline, #252140);
             }
-            .balance-pill {
+            .balance-badge {
                 display: inline-flex;
                 align-items: center;
+            }
+            .balance-badge ::ng-deep .badge {
                 gap: 8px;
                 min-height: 38px;
                 padding: 6px 14px;
@@ -205,7 +211,6 @@ import { AuthStore } from '../../../state/auth.store';
             }
             .balance-amount {
                 font-family: var(--font-mono);
-                font-size: 14px;
                 font-weight: 700;
                 color: var(--ink, #f8f7ff);
                 font-feature-settings: 'tnum' 1;
@@ -235,6 +240,11 @@ import { AuthStore } from '../../../state/auth.store';
             }
 
             /* Auth Styles */
+            .guest-signin-btn {
+                display: inline-flex;
+                align-items: center;
+            }
+
             .auth-action-btn {
                 display: inline-flex;
                 align-items: center;
@@ -250,26 +260,6 @@ import { AuthStore } from '../../../state/auth.store';
                     background-color 0.15s ease,
                     border-color 0.15s ease,
                     color 0.15s ease;
-            }
-
-            .guest-badge-btn {
-                background-color: rgba(54, 0, 179, 0.14);
-                border: 1px solid rgba(124, 77, 255, 0.35);
-                color: #b388ff;
-            }
-
-            .guest-badge-btn:hover {
-                background-color: rgba(54, 0, 179, 0.25);
-                border-color: #7c4dff;
-                color: #ffffff;
-            }
-
-            .guest-indicator-dot {
-                width: 7px;
-                height: 7px;
-                border-radius: 50%;
-                background-color: #7c4dff;
-                box-shadow: 0 0 6px rgba(124, 77, 255, 0.6);
             }
 
             .user-profile-dock {

@@ -204,10 +204,22 @@ export class AuthStore {
         this.isClaimingFaucet.set(true);
         this.apiService.claimFaucet(token).subscribe({
             next: (res) => {
-                const formatted = this.formatBalance(res.user.cash_balance);
+                const rawBalance = res.new_balance ?? res.user?.cash_balance ?? '0';
+                const formatted = this.formatBalance(rawBalance);
                 this.updateBalance(formatted);
+
+                const currentUser = this.user();
+                if (currentUser) {
+                    const updatedProfile = { ...currentUser, cash_balance: rawBalance };
+                    this.user.set(updatedProfile);
+                    if (typeof window !== 'undefined' && window.localStorage) {
+                        localStorage.setItem(USER_PROFILE_STORAGE_KEY, JSON.stringify(updatedProfile));
+                    }
+                }
+
                 this.isClaimingFaucet.set(false);
-                this.toastService.success('Faucet Claimed', `+$${res.amount} USDC credited to your balance`);
+                const claimedAmount = res.amount_claimed ? Math.round(parseFloat(res.amount_claimed)).toString() : (res.amount ?? '500');
+                this.toastService.success('Faucet Claimed', `+$${claimedAmount} USDC credited to your balance`);
             },
             error: (err) => {
                 this.isClaimingFaucet.set(false);

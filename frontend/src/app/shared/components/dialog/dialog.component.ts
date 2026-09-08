@@ -282,6 +282,7 @@ export class DialogComponent {
 
     readonly closed = output<void>();
 
+    private readonly hostEl = inject(ElementRef<HTMLElement>);
     protected readonly dialogContentEl = viewChild<ElementRef<HTMLDivElement>>('dialogContent');
     private previouslyFocusedElement: HTMLElement | null = null;
     private inertElements: HTMLElement[] = [];
@@ -307,11 +308,20 @@ export class DialogComponent {
 
         this.previouslyFocusedElement = document.activeElement as HTMLElement | null;
 
-        // Apply inert to #app-main-content or background elements
+        // Apply inert to #app-main-content ONLY if the dialog is outside of it (e.g. root modals)
+        // If the dialog is rendered inside #app-main-content, setting inert on mainContent would
+        // render the dialog itself completely inert and unclickable!
         const mainContent = document.getElementById('app-main-content');
-        if (mainContent && !mainContent.hasAttribute('inert')) {
+        if (mainContent && !mainContent.contains(this.hostEl.nativeElement) && !mainContent.hasAttribute('inert')) {
             mainContent.setAttribute('inert', '');
             this.inertElements.push(mainContent);
+        }
+
+        // Apply inert to header dock when dialog is open
+        const topHeader = document.querySelector('app-top-header-dock');
+        if (topHeader && !topHeader.contains(this.hostEl.nativeElement) && !topHeader.hasAttribute('inert')) {
+            topHeader.setAttribute('inert', '');
+            this.inertElements.push(topHeader as HTMLElement);
         }
 
         // Delay slightly for DOM render, then focus dialog or first focusable
