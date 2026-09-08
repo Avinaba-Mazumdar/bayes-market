@@ -35,7 +35,14 @@ describe('TopHeaderDockComponent', () => {
                     created_at: '2026-01-01T00:00:00Z'
                 })
             ),
-            getGoogleAuthUrl: vi.fn().mockReturnValue(of({ url: '', simulated: true }))
+            getGoogleAuthUrl: vi.fn().mockReturnValue(of({ url: '', simulated: true })),
+            claimFaucet: vi.fn().mockReturnValue(
+                of({
+                    success: true,
+                    amount: '500',
+                    user: { id: 'u-1', cash_balance: '1500.00' }
+                })
+            )
         };
 
         await TestBed.configureTestingModule({
