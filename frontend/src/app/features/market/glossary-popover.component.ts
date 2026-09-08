@@ -89,7 +89,7 @@ interface GlossaryTerm {
                 font-family: var(--font-ui);
                 font-size: 15px;
                 font-weight: 700;
-                color: var(--primary, #4f46e5);
+                color: var(--primary-text, #4338ca);
                 margin-bottom: 8px;
             }
 
@@ -136,9 +136,10 @@ interface GlossaryTerm {
             .term-plain {
                 font-family: var(--font-ui);
                 font-size: 12.5px;
-                color: var(--status-info, #7dd3fc);
+                color: var(--status-info, #075985);
                 margin: 0;
-                background-color: rgba(56, 189, 248, 0.08);
+                background-color: var(--status-info-bg, #f0f9ff);
+                border: 1px solid var(--status-info-border, #0284c7);
                 padding: 6px 10px;
                 border-radius: var(--radius-sm, 6px);
                 line-height: 1.45;
@@ -146,7 +147,7 @@ interface GlossaryTerm {
 
             .plain-label {
                 font-weight: 700;
-                color: var(--ink, #f8fafc);
+                color: var(--ink, #0f172a);
             }
         `
     ]

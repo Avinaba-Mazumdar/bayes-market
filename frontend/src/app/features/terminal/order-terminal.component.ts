@@ -379,7 +379,7 @@ export interface OrderIntent {
                 font-family: var(--font-mono);
                 font-size: 15px;
                 font-weight: 700;
-                color: var(--outcome-yes, #00dc82);
+                color: var(--outcome-yes-text, #065f46);
                 font-feature-settings: 'tnum' 1;
             }
 
@@ -387,7 +387,7 @@ export interface OrderIntent {
                 font-family: var(--font-mono);
                 font-size: 12px;
                 font-weight: 600;
-                color: var(--outcome-yes, #00dc82);
+                color: var(--outcome-yes-text, #065f46);
             }
 
             .action-footer {

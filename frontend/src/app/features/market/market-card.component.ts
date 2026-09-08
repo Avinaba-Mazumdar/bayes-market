@@ -175,7 +175,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 font-family: var(--font-mono);
                 font-size: 20px;
                 font-weight: 800;
-                color: var(--outcome-yes, #00dc82);
+                color: var(--outcome-yes-text, #065f46);
                 font-feature-settings: 'tnum' 1;
             }
 
@@ -202,16 +202,16 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 border-radius: var(--radius-pill, 9999px);
                 display: flex;
                 overflow: hidden;
-                background-color: rgba(255, 51, 102, 0.25);
+                background-color: var(--outcome-no-subtle, rgba(159, 18, 57, 0.25));
             }
 
             .split-fill-yes {
-                background-color: var(--outcome-yes, #00dc82);
+                background-color: var(--outcome-yes, #065f46);
                 transition: width 0.3s ease;
             }
 
             .split-fill-no {
-                background-color: var(--outcome-no, #ff3366);
+                background-color: var(--outcome-no, #9f1239);
                 transition: width 0.3s ease;
             }
 
@@ -243,15 +243,15 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
             }
 
             .pill-yes {
-                background-color: rgba(0, 220, 130, 0.12);
-                border: 1px solid rgba(0, 220, 130, 0.35);
-                color: var(--outcome-yes, #00dc82);
+                background-color: var(--outcome-yes-subtle, rgba(6, 95, 70, 0.09));
+                border: 1px solid var(--outcome-yes-border, rgba(6, 95, 70, 0.35));
+                color: var(--outcome-yes-text, #065f46);
             }
 
             .pill-no {
-                background-color: rgba(255, 51, 102, 0.12);
-                border: 1px solid rgba(255, 51, 102, 0.35);
-                color: var(--outcome-no, #ff3366);
+                background-color: var(--outcome-no-subtle, rgba(159, 18, 57, 0.09));
+                border: 1px solid var(--outcome-no-border, rgba(159, 18, 57, 0.35));
+                color: var(--outcome-no-text, #9f1239);
             }
 
             .pill-action-label {

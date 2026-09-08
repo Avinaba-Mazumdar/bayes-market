@@ -171,13 +171,13 @@ import { ApiService } from '../../core/services/api.service';
                 align-items: flex-start;
                 gap: 12px;
                 padding: 12px 16px;
-                background-color: rgba(56, 189, 248, 0.08);
-                border: 1px solid rgba(56, 189, 248, 0.25);
+                background-color: var(--status-info-bg, #f0f9ff);
+                border: 1px solid var(--status-info-border, #0284c7);
                 border-radius: var(--radius-md, 10px);
             }
 
             .banner-icon {
-                color: #38bdf8;
+                color: var(--status-info, #075985);
                 flex-shrink: 0;
                 margin-top: 2px;
             }
@@ -192,26 +192,27 @@ import { ApiService } from '../../core/services/api.service';
                 font-family: var(--font-ui);
                 font-size: 13px;
                 font-weight: 700;
-                color: var(--accent, #00d4ff);
+                color: var(--status-info, #075985);
             }
 
             .banner-desc {
                 font-family: var(--font-ui);
                 font-size: 12px;
-                color: var(--ink-secondary, #9d97b8);
+                color: var(--body, #334155);
                 line-height: 1.4;
             }
 
             .auth-card {
-                background-color: var(--canvas-subtle, #0e0c1c);
-                border: 1px solid var(--border-subtle, #252140);
+                background-color: var(--canvas-subtle, #f1f5f9);
+                border: 1px solid var(--hairline, #cbd5e1);
                 border-radius: var(--radius-lg, 14px);
                 overflow: hidden;
             }
 
             .auth-card.primary-auth {
-                border-color: rgba(124, 77, 255, 0.35);
-                background: linear-gradient(180deg, rgba(26, 23, 51, 0.6) 0%, rgba(14, 12, 28, 0.9) 100%);
+                border-color: var(--primary-border, #4338ca);
+                background-color: var(--surface-card, #ffffff);
+                box-shadow: var(--shadow-sm);
             }
 
             .auth-card-body {
@@ -431,8 +432,9 @@ import { ApiService } from '../../core/services/api.service';
                 font-family: var(--font-mono);
                 font-size: 11px;
                 font-weight: 600;
-                color: #34d399;
-                background-color: rgba(52, 211, 153, 0.1);
+                color: var(--status-profit, #065f46);
+                background-color: var(--status-profit-bg, #ecfdf5);
+                border: 1px solid var(--status-profit-border, #059669);
                 padding: 2px 8px;
                 border-radius: 9999px;
                 width: fit-content;
@@ -472,7 +474,7 @@ import { ApiService } from '../../core/services/api.service';
             }
 
             .stat-val.highlight {
-                color: #38bdf8;
+                color: var(--accent, #075985);
             }
 
             .profile-actions {

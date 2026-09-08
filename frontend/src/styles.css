@@ -9,8 +9,8 @@
 }
 
 html {
-    background-color: var(--canvas, #080711);
-    color: var(--ink, #f8f7ff);
+    background-color: var(--canvas, #f8f9fc);
+    color: var(--ink, #0f172a);
     font-family: var(--font-ui);
     font-size: 16px;
     line-height: 1.55;
@@ -23,8 +23,8 @@ html {
 
 body {
     min-height: 100vh;
-    background-color: var(--canvas, #080711);
-    color: var(--ink, #f8f7ff);
+    background-color: var(--canvas, #f8f9fc);
+    color: var(--ink, #0f172a);
     overflow-x: hidden;
     font-family: var(--font-ui);
     transition:
@@ -50,7 +50,7 @@ h4,
 h5,
 h6 {
     font-family: var(--font-ui);
-    color: var(--ink, #f8f7ff);
+    color: var(--ink, #0f172a);
     text-align: left;
     font-weight: 700;
 }
@@ -64,9 +64,9 @@ h6 {
 
 /* Universal Accessible Focus Outlines (WCAG SC 2.4.12 & SC 2.4.13 Level AAA) */
 :focus-visible {
-    outline: 2px solid var(--focus-outline, #7c4dff);
+    outline: 2px solid var(--focus-outline, #3730a3);
     outline-offset: 2px;
-    box-shadow: 0 0 0 4px var(--focus-ring, rgba(124, 77, 255, 0.4));
+    box-shadow: 0 0 0 4px var(--focus-ring, rgba(55, 48, 163, 0.35));
 }
 
 /* Custom Sleek Polymarket Scrollbars */
@@ -78,11 +78,11 @@ h6 {
     background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: var(--hairline, #252140);
+    background: var(--hairline, #cbd5e1);
     border-radius: var(--radius-pill, 9999px);
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--border-strong, #3d3766);
+    background: var(--border-strong, #64748b);
 }
 
 /* Suppress inner input/textarea focus outlines and box-shadows when enclosed in custom focus-within wrappers */

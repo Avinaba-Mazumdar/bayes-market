@@ -93,8 +93,8 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 width: 8px;
                 height: 8px;
                 border-radius: 50%;
-                background-color: #10b981;
-                box-shadow: 0 0 8px #10b981;
+                background-color: var(--outcome-yes, #065f46);
+                box-shadow: 0 0 8px var(--outcome-yes-glow, rgba(6, 95, 70, 0.4));
                 will-change: opacity;
                 animation: pulseLive 2.5s ease-in-out infinite;
             }
@@ -178,15 +178,15 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
             }
 
             .trade-yes {
-                background-color: rgba(5, 193, 104, 0.12);
-                color: var(--outcome-yes, #05c168);
-                border: 1px solid rgba(5, 193, 104, 0.25);
+                background-color: var(--outcome-yes-subtle, rgba(6, 95, 70, 0.09));
+                color: var(--outcome-yes-text, #065f46);
+                border: 1px solid var(--outcome-yes-border, rgba(6, 95, 70, 0.35));
             }
 
             .trade-no {
-                background-color: rgba(244, 63, 94, 0.12);
-                color: var(--outcome-no, #f43f5e);
-                border: 1px solid rgba(244, 63, 94, 0.25);
+                background-color: var(--outcome-no-subtle, rgba(159, 18, 57, 0.09));
+                color: var(--outcome-no-text, #9f1239);
+                border: 1px solid var(--outcome-no-border, rgba(159, 18, 57, 0.35));
             }
 
             .trade-amount {

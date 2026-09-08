@@ -302,16 +302,16 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
             }
 
             .metric-glyph.info {
-                color: var(--accent, #00d4ff);
+                color: var(--status-info, #075985);
             }
             .metric-glyph.primary {
-                color: var(--primary-border, #7c4dff);
+                color: var(--primary-text, #4338ca);
             }
             .metric-glyph.profit {
-                color: var(--outcome-yes, #00dc82);
+                color: var(--status-profit, #065f46);
             }
             .metric-glyph.loss {
-                color: var(--outcome-no, #ff3366);
+                color: var(--status-loss, #9f1239);
             }
 
             .active-count-badge {
@@ -342,11 +342,11 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
             }
 
             .profit-text {
-                color: var(--outcome-yes, #00dc82);
+                color: var(--status-profit, #065f46);
             }
 
             .loss-text {
-                color: var(--outcome-no, #ff3366);
+                color: var(--status-loss, #9f1239);
             }
 
             .pnl-pct-pill {
@@ -358,13 +358,15 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
             }
 
             .profit-pill {
-                background-color: rgba(0, 220, 130, 0.12);
-                color: var(--outcome-yes, #00dc82);
+                background-color: var(--status-profit-bg, #ecfdf5);
+                color: var(--status-profit, #065f46);
+                border: 1px solid var(--status-profit-border, #059669);
             }
 
             .loss-pill {
-                background-color: rgba(255, 51, 102, 0.12);
-                color: var(--outcome-no, #ff3366);
+                background-color: var(--status-loss-bg, #fff1f2);
+                color: var(--status-loss, #9f1239);
+                border: 1px solid var(--status-loss-border, #e11d48);
             }
 
             .metric-desc {
@@ -506,13 +508,15 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
             }
 
             .profit-tag {
-                background-color: rgba(52, 211, 153, 0.1);
-                color: var(--status-profit, #34d399);
+                background-color: var(--status-profit-bg, #ecfdf5);
+                color: var(--status-profit, #065f46);
+                border: 1px solid var(--status-profit-border, #059669);
             }
 
             .loss-tag {
-                background-color: rgba(244, 63, 94, 0.1);
-                color: var(--status-loss, #fda4af);
+                background-color: var(--status-loss-bg, #fff1f2);
+                color: var(--status-loss, #9f1239);
+                border: 1px solid var(--status-loss-border, #e11d48);
             }
 
             .empty-positions-box {

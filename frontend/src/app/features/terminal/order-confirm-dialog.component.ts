@@ -227,18 +227,18 @@ import { OrderIntent } from './order-terminal.component';
             }
 
             .shares-val {
-                color: var(--status-profit, #00dc82);
+                color: var(--status-profit, #065f46);
                 font-weight: 700;
             }
 
             .balance-preview-row {
                 margin-top: 4px;
                 padding-top: 12px;
-                border-top: 1px dashed var(--hairline, #252140);
+                border-top: 1px dashed var(--hairline, #cbd5e1);
             }
 
             .balance-preview {
-                color: var(--status-info, #00d4ff);
+                color: var(--status-info, #075985);
                 font-weight: 700;
             }
 
@@ -246,13 +246,13 @@ import { OrderIntent } from './order-terminal.component';
                 display: flex;
                 align-items: flex-start;
                 gap: 8px;
-                background-color: rgba(0, 212, 255, 0.08);
-                border: 1px solid rgba(0, 212, 255, 0.25);
+                background-color: var(--status-info-bg, #f0f9ff);
+                border: 1px solid var(--status-info-border, #0284c7);
                 border-radius: var(--radius-md, 10px);
                 padding: 10px 12px;
                 font-family: var(--font-ui);
                 font-size: 12px;
-                color: var(--status-info, #00d4ff);
+                color: var(--status-info, #075985);
                 line-height: 1.45;
             }
 

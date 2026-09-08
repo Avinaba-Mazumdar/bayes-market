@@ -135,7 +135,7 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             }
             .btn-variant-secondary:hover:not(:disabled) {
                 background-color: var(--surface-card-elevated, #1a1733);
-                border-color: var(--primary, #3600b3);
+                border-color: var(--primary-border, #7c4dff);
             }
 
             /* Destructive (Loss / Sell / Cancel) */
@@ -192,40 +192,69 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             .btn-variant-no {
                 border-radius: var(--radius-md, 10px);
             }
-            .btn-variant-yes.selected,
-            .btn-variant-no.selected {
-                color: #ffffff;
-                font-weight: 700;
-            }
 
-            .btn-variant-yes {
-                background-color: var(--outcome-yes-subtle, rgba(0, 220, 130, 0.12));
-                color: var(--outcome-yes, #00dc82);
-                border: 1px solid var(--outcome-yes-border, rgba(0, 220, 130, 0.35));
+            /* --- Unselected Outcome Buttons --- */
+            .btn-variant-yes:not(.selected) {
+                background-color: var(--outcome-yes-subtle, rgba(6, 95, 70, 0.09));
+                color: var(--outcome-yes-text, #065f46);
+                border: 1px solid var(--outcome-yes-border, rgba(6, 95, 70, 0.35));
             }
-            .btn-variant-yes:hover:not(:disabled) {
-                background-color: var(--outcome-yes-subtle, rgba(0, 220, 130, 0.22));
+            .btn-variant-yes:not(.selected):hover:not(:disabled) {
+                background-color: var(--outcome-yes-subtle, rgba(6, 95, 70, 0.16));
+                color: var(--outcome-yes-text, #065f46);
+                border-color: var(--outcome-yes-border, rgba(6, 95, 70, 0.5));
                 box-shadow: var(--shadow-glow-yes);
             }
-            .btn-variant-yes.selected {
-                background-color: var(--outcome-yes, #00dc82);
-                border-color: var(--outcome-yes, #00dc82);
-                box-shadow: 0 0 16px var(--outcome-yes-glow, rgba(0, 220, 130, 0.45));
-            }
 
-            .btn-variant-no {
-                background-color: var(--outcome-no-subtle, rgba(255, 51, 102, 0.12));
-                color: var(--outcome-no, #ff3366);
-                border: 1px solid var(--outcome-no-border, rgba(255, 51, 102, 0.35));
+            .btn-variant-no:not(.selected) {
+                background-color: var(--outcome-no-subtle, rgba(159, 18, 57, 0.09));
+                color: var(--outcome-no-text, #9f1239);
+                border: 1px solid var(--outcome-no-border, rgba(159, 18, 57, 0.35));
             }
-            .btn-variant-no:hover:not(:disabled) {
-                background-color: var(--outcome-no-subtle, rgba(255, 51, 102, 0.22));
+            .btn-variant-no:not(.selected):hover:not(:disabled) {
+                background-color: var(--outcome-no-subtle, rgba(159, 18, 57, 0.16));
+                color: var(--outcome-no-text, #9f1239);
+                border-color: var(--outcome-no-border, rgba(159, 18, 57, 0.5));
                 box-shadow: var(--shadow-glow-no);
             }
+
+            /* --- Selected Outcome Buttons (Solid High-Contrast CTA) --- */
+            .btn-variant-yes.selected {
+                background-color: var(--outcome-yes-solid, #065f46);
+                color: var(--outcome-yes-solid-text, #ffffff);
+                border: 1px solid var(--outcome-yes-solid, #065f46);
+                font-weight: 700;
+                box-shadow: 0 0 16px var(--outcome-yes-glow, rgba(6, 95, 70, 0.45));
+            }
+            .btn-variant-yes.selected:hover:not(:disabled) {
+                background-color: var(--outcome-yes-solid-hover, #044e39);
+                border-color: var(--outcome-yes-solid-hover, #044e39);
+                color: var(--outcome-yes-solid-text, #ffffff);
+                box-shadow: 0 0 20px var(--outcome-yes-glow, rgba(6, 95, 70, 0.55));
+            }
+            .btn-variant-yes.selected:active:not(:disabled) {
+                background-color: var(--outcome-yes-solid-hover, #044e39);
+                border-color: var(--outcome-yes-solid-hover, #044e39);
+                color: var(--outcome-yes-solid-text, #ffffff);
+            }
+
             .btn-variant-no.selected {
-                background-color: var(--outcome-no, #ff3366);
-                border-color: var(--outcome-no, #ff3366);
-                box-shadow: 0 0 16px var(--outcome-no-glow, rgba(255, 51, 102, 0.45));
+                background-color: var(--outcome-no-solid, #9f1239);
+                color: var(--outcome-no-solid-text, #ffffff);
+                border: 1px solid var(--outcome-no-solid, #9f1239);
+                font-weight: 700;
+                box-shadow: 0 0 16px var(--outcome-no-glow, rgba(159, 18, 57, 0.45));
+            }
+            .btn-variant-no.selected:hover:not(:disabled) {
+                background-color: var(--outcome-no-solid-hover, #881337);
+                border-color: var(--outcome-no-solid-hover, #881337);
+                color: var(--outcome-no-solid-text, #ffffff);
+                box-shadow: 0 0 20px var(--outcome-no-glow, rgba(159, 18, 57, 0.55));
+            }
+            .btn-variant-no.selected:active:not(:disabled) {
+                background-color: var(--outcome-no-solid-hover, #881337);
+                border-color: var(--outcome-no-solid-hover, #881337);
+                color: var(--outcome-no-solid-text, #ffffff);
             }
 
             /* Chip (Amount presets & timeframe intervals) */
@@ -249,9 +278,14 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             .btn-variant-chip.selected {
                 background-color: var(--primary-subtle, rgba(54, 0, 179, 0.25));
                 border-color: var(--primary-border, #7c4dff);
-                color: var(--primary, #b388ff);
+                color: var(--primary-text, #4338ca);
                 font-weight: 700;
                 box-shadow: 0 0 10px var(--primary-glow, rgba(124, 77, 255, 0.35));
+            }
+            .btn-variant-chip.selected:hover:not(:disabled) {
+                background-color: var(--primary-subtle, rgba(54, 0, 179, 0.35));
+                border-color: var(--primary-border, #7c4dff);
+                color: var(--primary-text, #4338ca);
             }
 
             /* Full Width */

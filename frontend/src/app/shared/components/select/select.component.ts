@@ -204,12 +204,12 @@ export type SelectVariant = 'default' | 'mono';
             }
 
             .select-option.focused {
-                background-color: rgba(255, 255, 255, 0.08);
+                background-color: var(--primary-subtle, rgba(67, 56, 202, 0.08));
             }
 
             .select-option.selected {
-                background-color: rgba(166, 3, 76, 0.2);
-                color: #fbcfe8;
+                background-color: var(--primary-subtle, rgba(67, 56, 202, 0.12));
+                color: var(--primary-text, #4338ca);
                 font-weight: 600;
             }
 
@@ -233,14 +233,14 @@ export type SelectVariant = 'default' | 'mono';
 
             .option-desc {
                 font-size: 11px;
-                color: var(--muted, #a2b4c9);
+                color: var(--muted, #3b4861);
             }
 
             .check-icon {
                 width: 16px;
                 height: 16px;
                 flex-shrink: 0;
-                color: var(--primary-border, #e84089);
+                color: var(--primary-text, #4338ca);
             }
 
             /* --- Error Message --- */

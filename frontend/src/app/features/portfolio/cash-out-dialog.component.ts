@@ -226,37 +226,37 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
             .highlight-val {
                 font-size: 15px;
-                color: var(--status-profit, #00dc82);
+                color: var(--status-profit, #065f46);
             }
 
             .profit-val {
-                color: var(--status-profit, #00dc82);
+                color: var(--status-profit, #065f46);
             }
 
             .loss-val {
-                color: var(--status-loss, #ff3366);
+                color: var(--status-loss, #9f1239);
             }
 
             .balance-preview-row {
-                background-color: rgba(0, 212, 255, 0.04);
+                background-color: var(--status-info-bg, #f0f9ff);
             }
 
             .balance-preview {
                 font-size: 14.5px;
-                color: var(--status-info, #00d4ff);
+                color: var(--status-info, #075985);
             }
 
             .amm-notice {
                 display: flex;
                 align-items: flex-start;
                 gap: 8px;
-                background-color: rgba(54, 0, 179, 0.12);
-                border: 1px solid rgba(124, 77, 255, 0.3);
+                background-color: var(--primary-subtle, rgba(67, 56, 202, 0.08));
+                border: 1px solid var(--primary-border, #4338ca);
                 border-radius: var(--radius-md, 10px);
                 padding: 10px 12px;
                 font-family: var(--font-ui);
                 font-size: 12px;
-                color: var(--primary-border, #7c4dff);
+                color: var(--primary-text, #4338ca);
                 line-height: 1.45;
             }
 

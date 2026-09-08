@@ -148,7 +148,7 @@ interface ChartPoint {
                 font-family: var(--font-mono);
                 font-size: 32px;
                 font-weight: 700;
-                color: var(--outcome-yes, #00dc82);
+                color: var(--outcome-yes-text, #065f46);
                 line-height: 1.1;
                 font-feature-settings: 'tnum' 1;
             }
@@ -317,46 +317,46 @@ export class PriceChartComponent implements OnInit, OnDestroy {
                 autoSize: true,
                 layout: {
                     background: { type: ColorType.Solid, color: isDark ? '#080711' : '#ffffff' },
-                    textColor: isDark ? '#9d97b8' : '#64748b',
+                    textColor: isDark ? '#b8b3d4' : '#334155',
                     fontSize: 12,
                     fontFamily: "'JetBrains Mono', monospace"
                 },
                 grid: {
-                    vertLines: { color: isDark ? 'rgba(37, 33, 64, 0.55)' : 'rgba(226, 232, 240, 0.8)', style: 1 },
-                    horzLines: { color: isDark ? 'rgba(37, 33, 64, 0.55)' : 'rgba(226, 232, 240, 0.8)', style: 1 }
+                    vertLines: { color: isDark ? 'rgba(37, 33, 64, 0.55)' : 'rgba(203, 213, 225, 0.65)', style: 1 },
+                    horzLines: { color: isDark ? 'rgba(37, 33, 64, 0.55)' : 'rgba(203, 213, 225, 0.65)', style: 1 }
                 },
                 crosshair: {
                     vertLine: {
-                        color: isDark ? '#7c4dff' : '#6366f1',
+                        color: isDark ? '#c4b5fd' : '#4338ca',
                         width: 1,
                         style: 2,
-                        labelBackgroundColor: isDark ? '#3600b3' : '#4f46e5'
+                        labelBackgroundColor: isDark ? '#3600b3' : '#4338ca'
                     },
                     horzLine: {
-                        color: isDark ? '#7c4dff' : '#6366f1',
+                        color: isDark ? '#c4b5fd' : '#4338ca',
                         width: 1,
                         style: 2,
-                        labelBackgroundColor: isDark ? '#3600b3' : '#4f46e5'
+                        labelBackgroundColor: isDark ? '#3600b3' : '#4338ca'
                     }
                 },
                 rightPriceScale: {
-                    borderColor: isDark ? '#252140' : '#e2e8f0',
+                    borderColor: isDark ? '#352f5e' : '#cbd5e1',
                     scaleMargins: {
                         top: 0.1,
                         bottom: 0.1
                     }
                 },
                 timeScale: {
-                    borderColor: isDark ? '#252140' : '#e2e8f0',
+                    borderColor: isDark ? '#352f5e' : '#cbd5e1',
                     timeVisible: true,
                     secondsVisible: false
                 }
             });
 
             this.areaSeries = this.chart.addSeries(AreaSeries, {
-                topColor: isDark ? 'rgba(0, 220, 130, 0.35)' : 'rgba(5, 150, 105, 0.28)',
-                bottomColor: isDark ? 'rgba(0, 220, 130, 0.01)' : 'rgba(5, 150, 105, 0.01)',
-                lineColor: isDark ? '#00dc82' : '#059669',
+                topColor: isDark ? 'rgba(0, 220, 130, 0.35)' : 'rgba(6, 95, 70, 0.22)',
+                bottomColor: isDark ? 'rgba(0, 220, 130, 0.01)' : 'rgba(6, 95, 70, 0.01)',
+                lineColor: isDark ? '#00dc82' : '#065f46',
                 lineWidth: 2,
                 priceFormat: {
                     type: 'custom',
@@ -375,34 +375,34 @@ export class PriceChartComponent implements OnInit, OnDestroy {
             this.chart?.applyOptions({
                 layout: {
                     background: { type: ColorType.Solid, color: isDark ? '#080711' : '#ffffff' },
-                    textColor: isDark ? '#9d97b8' : '#64748b'
+                    textColor: isDark ? '#b8b3d4' : '#334155'
                 },
                 grid: {
-                    vertLines: { color: isDark ? 'rgba(37, 33, 64, 0.55)' : 'rgba(226, 232, 240, 0.8)', style: 1 },
-                    horzLines: { color: isDark ? 'rgba(37, 33, 64, 0.55)' : 'rgba(226, 232, 240, 0.8)', style: 1 }
+                    vertLines: { color: isDark ? 'rgba(37, 33, 64, 0.55)' : 'rgba(203, 213, 225, 0.65)', style: 1 },
+                    horzLines: { color: isDark ? 'rgba(37, 33, 64, 0.55)' : 'rgba(203, 213, 225, 0.65)', style: 1 }
                 },
                 crosshair: {
                     vertLine: {
-                        color: isDark ? '#7c4dff' : '#6366f1',
-                        labelBackgroundColor: isDark ? '#3600b3' : '#4f46e5'
+                        color: isDark ? '#c4b5fd' : '#4338ca',
+                        labelBackgroundColor: isDark ? '#3600b3' : '#4338ca'
                     },
                     horzLine: {
-                        color: isDark ? '#7c4dff' : '#6366f1',
-                        labelBackgroundColor: isDark ? '#3600b3' : '#4f46e5'
+                        color: isDark ? '#c4b5fd' : '#4338ca',
+                        labelBackgroundColor: isDark ? '#3600b3' : '#4338ca'
                     }
                 },
                 rightPriceScale: {
-                    borderColor: isDark ? '#252140' : '#e2e8f0'
+                    borderColor: isDark ? '#352f5e' : '#cbd5e1'
                 },
                 timeScale: {
-                    borderColor: isDark ? '#252140' : '#e2e8f0'
+                    borderColor: isDark ? '#352f5e' : '#cbd5e1'
                 }
             });
 
             this.areaSeries?.applyOptions({
-                topColor: isDark ? 'rgba(0, 220, 130, 0.35)' : 'rgba(5, 150, 105, 0.28)',
-                bottomColor: isDark ? 'rgba(0, 220, 130, 0.01)' : 'rgba(5, 150, 105, 0.01)',
-                lineColor: isDark ? '#00dc82' : '#059669'
+                topColor: isDark ? 'rgba(0, 220, 130, 0.35)' : 'rgba(6, 95, 70, 0.22)',
+                bottomColor: isDark ? 'rgba(0, 220, 130, 0.01)' : 'rgba(6, 95, 70, 0.01)',
+                lineColor: isDark ? '#00dc82' : '#065f46'
             });
         });
     }

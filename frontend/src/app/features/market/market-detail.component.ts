@@ -250,14 +250,14 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 align-items: flex-start;
                 gap: 16px;
                 padding: 18px 24px;
-                background: linear-gradient(135deg, rgba(5, 193, 104, 0.12) 0%, rgba(56, 189, 248, 0.08) 100%);
-                border: 1px solid var(--outcome-yes, #05c168);
+                background-color: var(--status-profit-bg, #ecfdf5);
+                border: 1px solid var(--status-profit-border, #059669);
                 border-radius: var(--radius-lg, 14px);
-                box-shadow: 0 4px 20px rgba(5, 193, 104, 0.15);
+                box-shadow: var(--shadow-sm);
             }
 
             .banner-badge-icon {
-                color: var(--outcome-yes, #05c168);
+                color: var(--status-profit, #065f46);
                 flex-shrink: 0;
                 display: flex;
                 align-items: center;
@@ -340,15 +340,15 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             }
 
             .spot-yes {
-                background-color: rgba(0, 220, 130, 0.12);
-                border: 1.5px solid rgba(0, 220, 130, 0.35);
-                color: var(--outcome-yes, #00dc82);
+                background-color: var(--outcome-yes-subtle, rgba(6, 95, 70, 0.09));
+                border: 1.5px solid var(--outcome-yes-border, rgba(6, 95, 70, 0.35));
+                color: var(--outcome-yes-text, #065f46);
             }
 
             .spot-no {
-                background-color: rgba(255, 51, 102, 0.12);
-                border: 1.5px solid rgba(255, 51, 102, 0.35);
-                color: var(--outcome-no, #ff3366);
+                background-color: var(--outcome-no-subtle, rgba(159, 18, 57, 0.09));
+                border: 1.5px solid var(--outcome-no-border, rgba(159, 18, 57, 0.35));
+                color: var(--outcome-no-text, #9f1239);
             }
 
             .spot-glyph {

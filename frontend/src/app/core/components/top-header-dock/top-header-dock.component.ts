@@ -294,11 +294,11 @@ import { AuthStore } from '../../../state/auth.store';
             }
 
             .sun-icon {
-                color: #f59e0b;
+                color: var(--status-warning, #78350f);
             }
 
             .moon-icon {
-                color: var(--primary, #4f46e5);
+                color: var(--primary-text, #4338ca);
             }
 
             /* Auth Styles */
@@ -375,9 +375,9 @@ import { AuthStore } from '../../../state/auth.store';
             }
 
             .signout-quick-btn:hover {
-                background-color: rgba(244, 63, 94, 0.12);
-                border-color: rgba(244, 63, 94, 0.4);
-                color: #fda4af;
+                background-color: var(--status-loss-bg, #fff1f2);
+                border-color: var(--status-loss-border, #e11d48);
+                color: var(--status-loss, #9f1239);
             }
         `
     ]
