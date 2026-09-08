@@ -72,6 +72,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 display: flex;
                 flex-direction: column;
                 gap: 14px;
+                contain: layout style paint;
             }
 
             .feed-header {
@@ -127,6 +128,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 max-height: 380px;
                 overflow-y: auto;
                 overscroll-behavior: contain;
+                contain: layout style;
             }
 
             .trades-list {

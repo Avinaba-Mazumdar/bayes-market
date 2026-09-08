@@ -295,6 +295,7 @@ export class PriceChartComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         this.teardownChart();
+        this.currentData = [];
     }
 
     private initChart(): void {
@@ -363,10 +364,14 @@ export class PriceChartComponent implements OnInit, OnDestroy {
                 cancelAnimationFrame(this.tickRafId);
                 this.tickRafId = null;
             }
+            this.pendingTick = null;
+            if (this.areaSeries) {
+                this.areaSeries.setData([]);
+                this.areaSeries = null;
+            }
             if (this.chart) {
                 this.chart.remove();
                 this.chart = null;
-                this.areaSeries = null;
             }
         });
     }

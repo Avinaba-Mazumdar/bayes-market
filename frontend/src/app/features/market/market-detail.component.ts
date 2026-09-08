@@ -385,10 +385,12 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 flex-direction: column;
                 gap: 24px;
                 min-width: 0;
+                contain: layout style;
             }
 
             .cockpit-sidebar {
                 min-width: 0;
+                contain: layout style;
             }
 
             .sticky-sidebar-wrapper {
@@ -627,8 +629,11 @@ export class MarketDetailComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        // Leave market channel
         this.wsService.disconnect();
+        this.wsService.clearTrades();
+        this.wsService.lastPriceTick.set(null);
+        this.market.set(null);
+        this.pendingOrderIntent.set(null);
     }
 
     private fetchMarket(): void {

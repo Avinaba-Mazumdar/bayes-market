@@ -104,14 +104,10 @@ import { AuthStore } from '../../../state/auth.store';
                 position: sticky;
                 top: 0;
                 z-index: 1000;
-                transform: translateZ(0);
-                will-change: transform;
             }
             .top-header-dock {
                 height: 60px;
-                background-color: var(--surface-glass, rgba(19, 17, 38, 0.88));
-                backdrop-filter: blur(16px);
-                -webkit-backdrop-filter: blur(16px);
+                background-color: var(--surface-glass, rgba(19, 17, 38, 0.97));
                 border-bottom: 1px solid var(--hairline, #252140);
                 display: flex;
                 align-items: center;
@@ -328,9 +324,8 @@ export class TopHeaderDockComponent implements OnInit {
     readonly authStore = inject(AuthStore);
 
     ngOnInit(): void {
-        if (!this.wsService.isConnected() && this.wsService.connectionStatus() === 'disconnected') {
-            this.wsService.connect();
-        }
+        // WebSocket connections are managed by individual pages (market-detail, market-list)
+        // to avoid duplicate connections and unnecessary reconnection churn.
     }
 
     get userBalance() {

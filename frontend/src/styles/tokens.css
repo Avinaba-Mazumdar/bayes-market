@@ -168,7 +168,7 @@
     --space-section: 48px;
 
     /* Typography Families */
-    --font-ui: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-ui: 'Scoutie Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 
     /* Minimum Accessible Touch Envelope (WCAG SC 2.5.5 Level AAA: >= 44x44px) */

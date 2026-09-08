@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { LucideSearch, LucideSearchX } from '@lucide/angular';
@@ -8,6 +8,7 @@ import { MarketCardComponent } from './market-card.component';
 import { GlossaryPopoverComponent } from './glossary-popover.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { InputComponent } from '../../shared/components/input/input.component';
+import { WebSocketService } from '../../core/services/websocket.service';
 
 export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
 
@@ -399,9 +400,10 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
         `
     ]
 })
-export class MarketListComponent implements OnInit {
+export class MarketListComponent implements OnInit, OnDestroy {
     private readonly apiService = inject(ApiService);
     private readonly destroyRef = inject(DestroyRef);
+    private readonly wsService = inject(WebSocketService);
 
     readonly markets = signal<Market[]>([]);
     readonly isLoading = signal<boolean>(true);
@@ -452,6 +454,12 @@ export class MarketListComponent implements OnInit {
 
     ngOnInit(): void {
         this.fetchMarkets();
+        // Connect to global WS stream for live price updates on the listing page
+        this.wsService.connect();
+    }
+
+    ngOnDestroy(): void {
+        this.wsService.disconnect();
     }
 
     setCategory(cat: CategoryFilter): void {
