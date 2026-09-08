@@ -1,4 +1,4 @@
-import { Component, computed, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 
 export type SwitchSize = 'sm' | 'default' | 'lg';
 export type SwitchColor = 'primary' | 'yes';
@@ -6,6 +6,7 @@ export type SwitchColor = 'primary' | 'yes';
 @Component({
     selector: 'app-switch',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <button
             type="button"

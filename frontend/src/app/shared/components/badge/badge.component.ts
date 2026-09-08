@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'profit' | 'loss' | 'warning' | 'info' | 'resolved';
 
@@ -7,6 +7,7 @@ export type BadgeSize = 'default' | 'sm' | 'lg';
 @Component({
     selector: 'app-badge',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <span [class]="badgeClass()">
             <ng-content />

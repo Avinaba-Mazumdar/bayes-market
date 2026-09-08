@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { LucideLoaderCircle } from '@lucide/angular';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link' | 'yes' | 'no' | 'chip';
@@ -7,6 +7,7 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
 @Component({
     selector: 'app-button',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [LucideLoaderCircle],
     template: `
         <button

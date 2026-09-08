@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideArrowRight } from '@lucide/angular';
 import { Market } from '../../core/models/market.model';
@@ -8,6 +8,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 @Component({
     selector: 'app-market-card',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [RouterLink, BadgeComponent, LucideArrowRight],
     template: `
         <article class="market-card" [attr.aria-label]="cardAriaLabel()">

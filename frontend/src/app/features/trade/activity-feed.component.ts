@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { LucideZap, LucideArrowUp, LucideArrowDown } from '@lucide/angular';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { TradeEvent } from '../../core/models/websocket.model';
@@ -9,6 +9,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 @Component({
     selector: 'app-activity-feed',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [BadgeComponent, LucideZap, LucideArrowUp, LucideArrowDown],
     template: `
         <div class="activity-feed-card" role="region" aria-label="Live Market Trades Feed">
@@ -93,7 +94,8 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                 border-radius: 50%;
                 background-color: #10b981;
                 box-shadow: 0 0 8px #10b981;
-                animation: pulseLive 2s infinite;
+                will-change: opacity;
+                animation: pulseLive 2.5s ease-in-out infinite;
             }
 
             @keyframes pulseLive {
@@ -102,7 +104,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
                     opacity: 1;
                 }
                 50% {
-                    opacity: 0.35;
+                    opacity: 0.4;
                 }
             }
 

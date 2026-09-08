@@ -1,4 +1,19 @@
-import { Component, computed, DestroyRef, effect, ElementRef, inject, input, NgZone, OnDestroy, OnInit, signal, untracked, viewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    DestroyRef,
+    effect,
+    ElementRef,
+    inject,
+    input,
+    NgZone,
+    OnDestroy,
+    OnInit,
+    signal,
+    untracked,
+    viewChild
+} from '@angular/core';
 import { AreaSeries, ColorType, createChart, IChartApi, ISeriesApi, Time, UTCTimestamp } from 'lightweight-charts';
 import { LucideTrendingUp, LucideTrendingDown } from '@lucide/angular';
 import { WebSocketService } from '../../core/services/websocket.service';
@@ -14,6 +29,7 @@ interface ChartPoint {
 @Component({
     selector: 'app-price-chart',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ButtonComponent, LucideTrendingUp, LucideTrendingDown],
     template: `
         <div class="price-chart-container" role="region" [attr.aria-label]="chartAriaLabel()">
@@ -186,6 +202,7 @@ interface ChartPoint {
                 border-radius: var(--radius-lg, 14px);
                 background-color: var(--canvas, #07090e);
                 border: 1px solid var(--hairline, #1e2638);
+                contain: layout paint size;
             }
 
             .sr-only {
@@ -231,13 +248,9 @@ export class PriceChartComponent implements OnInit, OnDestroy {
 
     private chart: IChartApi | null = null;
     private areaSeries: ISeriesApi<'Area'> | null = null;
-    private resizeObserver: ResizeObserver | null = null;
-    private resizeRafId: number | null = null;
     private tickRafId: number | null = null;
     private pendingTick: { prob: number; date: Date } | null = null;
     private currentData: ChartPoint[] = [];
-    private lastWidth = 0;
-    private lastHeight = 0;
 
     readonly formattedProbability = computed(() => {
         const p = this.currentProbability();
@@ -290,8 +303,7 @@ export class PriceChartComponent implements OnInit, OnDestroy {
 
         this.ngZone.runOutsideAngular(() => {
             this.chart = createChart(el, {
-                width: el.clientWidth,
-                height: el.clientHeight || 360,
+                autoSize: true,
                 layout: {
                     background: { type: ColorType.Solid, color: '#080711' },
                     textColor: '#9d97b8',
@@ -342,44 +354,14 @@ export class PriceChartComponent implements OnInit, OnDestroy {
             });
 
             this.generateDataForTimeframe(this.selectedTimeframe());
-
-            // Responsive ResizeObserver with integer flooring & RAF throttling to eliminate DevTools layout thrashing
-            this.resizeObserver = new ResizeObserver((entries) => {
-                if (!this.chart || !entries[0]) return;
-                const { width, height } = entries[0].contentRect;
-                const w = Math.floor(width);
-                const h = Math.floor(height) || 360;
-                if (w === this.lastWidth && h === this.lastHeight) return;
-                this.lastWidth = w;
-                this.lastHeight = h;
-
-                if (this.resizeRafId !== null) {
-                    cancelAnimationFrame(this.resizeRafId);
-                }
-                this.resizeRafId = requestAnimationFrame(() => {
-                    this.resizeRafId = null;
-                    if (this.chart) {
-                        this.chart.applyOptions({ width: w, height: h });
-                    }
-                });
-            });
-            this.resizeObserver.observe(el);
         });
     }
 
     private teardownChart(): void {
         this.ngZone.runOutsideAngular(() => {
-            if (this.resizeRafId !== null) {
-                cancelAnimationFrame(this.resizeRafId);
-                this.resizeRafId = null;
-            }
             if (this.tickRafId !== null) {
                 cancelAnimationFrame(this.tickRafId);
                 this.tickRafId = null;
-            }
-            if (this.resizeObserver) {
-                this.resizeObserver.disconnect();
-                this.resizeObserver = null;
             }
             if (this.chart) {
                 this.chart.remove();

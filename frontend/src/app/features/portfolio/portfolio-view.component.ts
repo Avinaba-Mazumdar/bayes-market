@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { LucideBriefcase, LucideArrowUp, LucideArrowDown, LucideDollarSign, LucideTrendingUp, LucideTrendingDown, LucideFolderSearch } from '@lucide/angular';
@@ -13,6 +13,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 @Component({
     selector: 'app-portfolio-view',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         RouterLink,
         CashOutDialogComponent,

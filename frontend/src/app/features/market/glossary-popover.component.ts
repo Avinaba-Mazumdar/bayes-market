@@ -1,4 +1,4 @@
-import { Component, model, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, model, signal } from '@angular/core';
 import { LucideBookOpen } from '@lucide/angular';
 import { DialogComponent } from '../../shared/components/dialog/dialog.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
@@ -12,6 +12,7 @@ interface GlossaryTerm {
 @Component({
     selector: 'app-glossary-popover',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [DialogComponent, ButtonComponent, LucideBookOpen],
     template: `
         <app-button variant="ghost" size="sm" ariaLabel="Open Prediction Market Trading Glossary" (btnClick)="open()">

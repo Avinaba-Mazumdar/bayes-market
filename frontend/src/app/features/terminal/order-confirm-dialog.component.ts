@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, input, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, model, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LucideArrowUp, LucideArrowDown, LucideInfo } from '@lucide/angular';
 import { ApiService } from '../../core/services/api.service';
@@ -13,6 +13,7 @@ import { OrderIntent } from './order-terminal.component';
 @Component({
     selector: 'app-order-confirm-dialog',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [DialogComponent, ButtonComponent, BadgeComponent, LucideArrowUp, LucideArrowDown, LucideInfo],
     template: `
         <app-dialog

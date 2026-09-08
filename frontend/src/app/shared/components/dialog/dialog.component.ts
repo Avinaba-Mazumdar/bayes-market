@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, computed, effect, inject, input, model, output, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, computed, effect, inject, input, model, output, viewChild } from '@angular/core';
 import { LucideX } from '@lucide/angular';
 
 export type DialogSize = 'sm' | 'default' | 'lg' | 'xl';
@@ -7,6 +7,7 @@ export type DialogRole = 'dialog' | 'alertdialog';
 @Component({
     selector: 'app-dialog',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [LucideX],
     template: `
         <!-- Optional Projected Trigger Button -->

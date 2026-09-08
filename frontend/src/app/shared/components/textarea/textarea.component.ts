@@ -1,4 +1,4 @@
-import { Component, computed, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 
 export type TextareaSize = 'sm' | 'default' | 'lg';
 export type TextareaVariant = 'default' | 'mono';
@@ -6,6 +6,7 @@ export type TextareaVariant = 'default' | 'mono';
 @Component({
     selector: 'app-textarea',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div [class]="wrapperClass()">
             <textarea

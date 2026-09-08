@@ -1,4 +1,17 @@
-import { Component, computed, DestroyRef, effect, ElementRef, inject, input, output, signal, untracked, viewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    DestroyRef,
+    effect,
+    ElementRef,
+    inject,
+    input,
+    output,
+    signal,
+    untracked,
+    viewChild
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -25,6 +38,7 @@ export interface OrderIntent {
 @Component({
     selector: 'app-order-terminal',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [FormsModule, ButtonComponent, BadgeComponent, InputComponent, LabelComponent, LucideArrowUp, LucideArrowDown],
     template: `
         <div class="order-terminal-card" role="region" aria-label="Order Execution Terminal">

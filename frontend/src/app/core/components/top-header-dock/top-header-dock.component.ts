@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LucidePlus, LucideLogIn, LucideLogOut } from '@lucide/angular';
 import { WebSocketService } from '../../services/websocket.service';
@@ -10,6 +10,7 @@ import { AuthStore } from '../../../state/auth.store';
 @Component({
     selector: 'app-top-header-dock',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [RouterLink, RouterLinkActive, ButtonComponent, BadgeComponent, AvatarComponent, LucidePlus, LucideLogIn, LucideLogOut],
     template: `
         <header class="top-header-dock" role="banner">
@@ -103,6 +104,8 @@ import { AuthStore } from '../../../state/auth.store';
                 position: sticky;
                 top: 0;
                 z-index: 1000;
+                transform: translateZ(0);
+                will-change: transform;
             }
             .top-header-dock {
                 height: 60px;

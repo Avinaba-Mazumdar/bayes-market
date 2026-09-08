@@ -1,10 +1,11 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 export type LabelSize = 'sm' | 'default' | 'lg';
 
 @Component({
     selector: 'app-label',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <label [attr.for]="htmlFor() || null" [class]="labelClass()">
             <ng-content />

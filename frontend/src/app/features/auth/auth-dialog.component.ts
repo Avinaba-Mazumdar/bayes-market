@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { LucideCheck, LucideShieldCheck, LucideZap } from '@lucide/angular';
@@ -12,6 +12,7 @@ import { ApiService } from '../../core/services/api.service';
 @Component({
     selector: 'app-auth-dialog',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CommonModule, DialogComponent, ButtonComponent, AvatarComponent, BadgeComponent, LucideCheck, LucideShieldCheck, LucideZap],
     template: `
         <app-dialog

@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, computed, inject, input, model, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, computed, inject, input, model, signal } from '@angular/core';
 import { LucideChevronDown, LucideCheck } from '@lucide/angular';
 
 export interface SelectOption {
@@ -14,6 +14,7 @@ export type SelectVariant = 'default' | 'mono';
 @Component({
     selector: 'app-select',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [LucideChevronDown, LucideCheck],
     template: `
         <div class="select-container" [class.select-disabled]="disabled()">

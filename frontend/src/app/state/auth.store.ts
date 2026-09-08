@@ -83,11 +83,13 @@ export class AuthStore {
         }
         this.apiService.getCurrentUser(token).subscribe({
             next: (profile) => {
-                this.user.set(profile);
-                this.userId.set(profile.id);
-                const formatted = this.formatBalance(profile.cash_balance);
-                this.updateBalance(formatted);
-                this.persistSession(token, profile);
+                if (profile) {
+                    this.user.set(profile);
+                    this.userId.set(profile.id);
+                    const formatted = this.formatBalance(profile.cash_balance ?? '1000.00');
+                    this.updateBalance(formatted);
+                    this.persistSession(token, profile);
+                }
             },
             error: (err) => {
                 // If token expired or invalid, seamlessly re-provision guest
@@ -109,12 +111,14 @@ export class AuthStore {
         this.isInitializing.set(true);
         this.apiService.createGuestSession().subscribe({
             next: (res) => {
-                this.token.set(res.token);
-                this.user.set(res.user);
-                this.userId.set(res.user.id);
-                const formattedBalance = this.formatBalance(res.user.cash_balance);
-                this.updateBalance(formattedBalance);
-                this.persistSession(res.token, res.user);
+                if (res && res.user) {
+                    this.token.set(res.token);
+                    this.user.set(res.user);
+                    this.userId.set(res.user.id);
+                    const formattedBalance = this.formatBalance(res.user.cash_balance ?? '1000.00');
+                    this.updateBalance(formattedBalance);
+                    this.persistSession(res.token, res.user);
+                }
                 this.isInitializing.set(false);
             },
             error: (err) => {
@@ -133,12 +137,14 @@ export class AuthStore {
 
         this.apiService.verifyGoogleToken({ id_token: idToken, email, name }, guestToken).subscribe({
             next: (res) => {
-                this.token.set(res.token);
-                this.user.set(res.user);
-                this.userId.set(res.user.id);
-                const formattedBalance = this.formatBalance(res.user.cash_balance);
-                this.updateBalance(formattedBalance);
-                this.persistSession(res.token, res.user);
+                if (res && res.user) {
+                    this.token.set(res.token);
+                    this.user.set(res.user);
+                    this.userId.set(res.user.id);
+                    const formattedBalance = this.formatBalance(res.user.cash_balance ?? '1000.00');
+                    this.updateBalance(formattedBalance);
+                    this.persistSession(res.token, res.user);
+                }
                 this.isAuthenticating.set(false);
                 this.isAuthModalOpen.set(false);
 

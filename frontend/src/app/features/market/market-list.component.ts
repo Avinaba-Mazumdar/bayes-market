@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { LucideSearch, LucideSearchX } from '@lucide/angular';
@@ -14,6 +14,7 @@ export type CategoryFilter = 'all' | 'macro' | 'crypto' | 'ai' | 'science';
 @Component({
     selector: 'app-market-list',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [FormsModule, MarketCardComponent, GlossaryPopoverComponent, ButtonComponent, InputComponent, LucideSearch, LucideSearchX],
     template: `
         <div class="market-catalog-container">

@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, input, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, model, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LucideArrowUp, LucideArrowDown, LucideAlertCircle } from '@lucide/angular';
 import { ApiService } from '../../core/services/api.service';
@@ -12,6 +12,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 @Component({
     selector: 'app-cash-out-dialog',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [DialogComponent, ButtonComponent, BadgeComponent, LucideArrowUp, LucideArrowDown, LucideAlertCircle],
     template: `
         <app-dialog

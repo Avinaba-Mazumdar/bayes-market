@@ -1,4 +1,17 @@
-import { Component, computed, DestroyRef, effect, inject, input, OnDestroy, OnInit, signal, untracked, viewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    DestroyRef,
+    effect,
+    inject,
+    input,
+    OnDestroy,
+    OnInit,
+    signal,
+    untracked,
+    viewChild
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { LucideArrowLeft, LucideArrowUp, LucideArrowDown, LucideCheckCircle2 } from '@lucide/angular';
@@ -17,6 +30,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 @Component({
     selector: 'app-market-detail',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         RouterLink,
         PriceChartComponent,

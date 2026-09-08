@@ -1,10 +1,11 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { LucideCheck, LucideCircleAlert, LucideTriangleAlert, LucideInfo, LucideBell, LucideX } from '@lucide/angular';
 import { Toast, ToastService } from './toast.service';
 
 @Component({
     selector: 'app-toast-container',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [LucideCheck, LucideCircleAlert, LucideTriangleAlert, LucideInfo, LucideBell, LucideX],
     template: `
         <div class="toast-viewport" role="region" aria-label="Notifications" aria-live="polite">

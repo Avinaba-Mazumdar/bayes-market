@@ -1,4 +1,4 @@
-import { Component, computed, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 
 export type InputType = 'text' | 'number' | 'password' | 'email' | 'search' | 'tel' | 'url';
 export type InputSize = 'sm' | 'default' | 'lg';
@@ -7,6 +7,7 @@ export type InputVariant = 'default' | 'mono';
 @Component({
     selector: 'app-input',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div [class]="wrapperClass()">
             <div class="prefix-slot">

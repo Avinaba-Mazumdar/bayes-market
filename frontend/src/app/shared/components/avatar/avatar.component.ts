@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
 import { LucideUser } from '@lucide/angular';
 
 export type AvatarSize = 'sm' | 'default' | 'lg' | 'xl';
@@ -8,6 +8,7 @@ export type AvatarStatus = 'online' | 'offline' | 'busy' | 'away';
 @Component({
     selector: 'app-avatar',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [LucideUser],
     template: `
         <div [class]="containerClass()" [attr.aria-label]="ariaLabelText()">
