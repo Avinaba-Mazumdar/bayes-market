@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucidePlay, LucidePause, LucidePlus, LucideLogIn, LucideLogOut, LucideUser } from '@lucide/angular';
+import { LucidePlus, LucideLogIn, LucideLogOut, LucideUser } from '@lucide/angular';
 import { WebSocketService } from '../../services/websocket.service';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { AuthStore } from '../../../state/auth.store';
@@ -8,7 +8,7 @@ import { AuthStore } from '../../../state/auth.store';
 @Component({
     selector: 'app-top-header-dock',
     standalone: true,
-    imports: [RouterLink, RouterLinkActive, ButtonComponent, LucidePlay, LucidePause, LucidePlus, LucideLogIn, LucideLogOut, LucideUser],
+    imports: [RouterLink, RouterLinkActive, ButtonComponent, LucidePlus, LucideLogIn, LucideLogOut, LucideUser],
     template: `
         <header class="top-header-dock" role="banner">
             <div class="dock-container">
@@ -30,54 +30,12 @@ import { AuthStore } from '../../../state/auth.store';
                     </nav>
                 </div>
 
-                <!-- Right: Telemetry, Stream Control, Balance, Faucet -->
+                <!-- Right: Balance, Faucet, Auth -->
                 <div class="dock-right">
-                    <!-- Live Telemetry Status Pulse -->
-                    <div
-                        class="telemetry-pill"
-                        [attr.aria-label]="'Live connection status: ' + wsService.connectionStatus()"
-                        [title]="'WebSocket: ' + wsService.connectionStatus()"
-                    >
-                        <span
-                            class="status-dot"
-                            [class.connected]="wsService.isConnected()"
-                            [class.reconnecting]="wsService.connectionStatus() === 'reconnecting'"
-                            aria-hidden="true"
-                        ></span>
-                        <span class="status-label">
-                            @if (wsService.isConnected()) {
-                                LIVE
-                            } @else if (wsService.connectionStatus() === 'reconnecting') {
-                                RECONNECTING
-                            } @else {
-                                OFFLINE
-                            }
-                        </span>
-                    </div>
-
-                    <!-- WCAG 2.2 SC 2.2.4 Stream Pause / Mute Toggle -->
-                    <button
-                        type="button"
-                        (click)="toggleStreamPause()"
-                        class="stream-toggle-btn"
-                        [class.paused]="wsService.isPaused()"
-                        [attr.aria-pressed]="wsService.isPaused()"
-                        [attr.aria-label]="wsService.isPaused() ? 'Resume live ticker stream' : 'Pause live ticker stream'"
-                        [title]="wsService.isPaused() ? 'Stream Paused (SC 2.2.4)' : 'Stream Active (SC 2.2.4)'"
-                    >
-                        @if (wsService.isPaused()) {
-                            <svg lucidePlay class="toggle-icon" [size]="14" aria-hidden="true"></svg>
-                            <span class="toggle-text">Resume</span>
-                        } @else {
-                            <svg lucidePause class="toggle-icon" [size]="14" aria-hidden="true"></svg>
-                            <span class="toggle-text">Pause</span>
-                        }
-                    </button>
-
                     <!-- Guest Balance Pill (JetBrains Mono tabular figures) -->
                     <div class="balance-pill" aria-label="Current cash balance">
                         <span class="balance-label">USDC</span>
-                        <span class="balance-amount tabular-nums">\${{ userBalance() }}</span>
+                        <span class="balance-amount tabular-nums">{{ userBalance() }}</span>
                     </div>
 
                     <!-- Faucet Button -->
@@ -228,68 +186,6 @@ import { AuthStore } from '../../../state/auth.store';
                 color: #ffffff;
                 border: 1px solid var(--hairline, #252140);
             }
-            .telemetry-pill {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                padding: 6px 12px;
-                background-color: var(--canvas-subtle, #0c1017);
-                border: 1px solid var(--hairline, #1e2638);
-                border-radius: var(--radius-pill, 9999px);
-                min-height: 36px;
-            }
-            .status-dot {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background-color: #64748b;
-            }
-            .status-dot.connected {
-                background-color: #10b981;
-                box-shadow: 0 0 8px #10b981;
-            }
-            .status-dot.reconnecting {
-                background-color: #f59e0b;
-                box-shadow: 0 0 8px #f59e0b;
-                animation: pulse 1.5s infinite;
-            }
-            .status-label {
-                font-family: var(--font-mono);
-                font-size: 10px;
-                font-weight: 700;
-                color: var(--ink-secondary, #cbd5e1);
-                letter-spacing: 0.5px;
-            }
-            .stream-toggle-btn {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                min-height: var(--touch-target-min, 44px);
-                min-width: var(--touch-target-min, 44px);
-                padding: 8px 12px;
-                background-color: var(--canvas-subtle, #0c1017);
-                color: var(--ink-secondary, #cbd5e1);
-                border: 1px solid var(--border-strong, #606e85);
-                border-radius: var(--radius-md, 10px);
-                font-family: var(--font-ui);
-                font-size: 12px;
-                font-weight: 600;
-                cursor: pointer;
-                user-select: none;
-                transition:
-                    background-color 0.15s ease,
-                    border-color 0.15s ease;
-            }
-            .stream-toggle-btn:hover {
-                background-color: var(--surface-card-elevated, #1a1733);
-                color: var(--ink, #f8f7ff);
-                border-color: var(--primary-border, #7c4dff);
-            }
-            .stream-toggle-btn.paused {
-                background-color: rgba(245, 158, 11, 0.15);
-                border-color: #f59e0b;
-                color: #fcd34d;
-            }
             .balance-pill {
                 display: inline-flex;
                 align-items: center;
@@ -314,17 +210,7 @@ import { AuthStore } from '../../../state/auth.store';
                 color: var(--ink, #f8f7ff);
                 font-feature-settings: 'tnum' 1;
             }
-            @keyframes pulse {
-                0%,
-                100% {
-                    opacity: 1;
-                }
-                50% {
-                    opacity: 0.4;
-                }
-            }
             @media (max-width: 768px) {
-                .toggle-text,
                 .balance-label {
                     display: none;
                 }
@@ -338,13 +224,6 @@ import { AuthStore } from '../../../state/auth.store';
                 .brand-text {
                     font-size: 16px;
                 }
-            }
-
-            .toggle-icon {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
             }
 
             .faucet-plus-icon {
@@ -467,10 +346,6 @@ export class TopHeaderDockComponent implements OnInit {
 
     get isClaimingFaucet() {
         return this.authStore.isClaimingFaucet;
-    }
-
-    toggleStreamPause(): void {
-        this.wsService.togglePause();
     }
 
     onClaimFaucet(): void {

@@ -61,27 +61,15 @@ describe('TopHeaderDockComponent', () => {
         expect(navTabs[1].textContent?.trim()).toBe('Portfolio');
     });
 
-    it('should reflect live WebSocket connection status in telemetry pill', () => {
+    it('should render faucet button and handle faucet claims', () => {
         const el = fixture.nativeElement as HTMLElement;
-        const statusLabel = el.querySelector('.status-label');
-        expect(statusLabel?.textContent?.trim()).toBe('OFFLINE');
+        const faucetBtn = el.querySelector('app-button[variant="faucet"]') as HTMLElement;
+        expect(faucetBtn).toBeTruthy();
+        expect(faucetBtn.textContent).toContain('Faucet');
 
-        wsService.isConnected.set(true);
-        fixture.detectChanges();
-        expect(el.querySelector('.status-label')?.textContent?.trim()).toBe('LIVE');
-        expect(el.querySelector('.status-dot.connected')).toBeTruthy();
-    });
-
-    it('should toggle live stream pause fulfilling WCAG 2.2 SC 2.2.4', () => {
-        const el = fixture.nativeElement as HTMLElement;
-        const pauseBtn = el.querySelector('.stream-toggle-btn') as HTMLButtonElement;
-        expect(pauseBtn).toBeTruthy();
-        expect(pauseBtn.textContent).toContain('Pause');
-
-        pauseBtn.click();
-        fixture.detectChanges();
-        expect(wsService.isPaused()).toBe(true);
-        expect(pauseBtn.textContent).toContain('Resume');
+        const claimSpy = vi.spyOn(authStore, 'claimFaucet');
+        component.onClaimFaucet();
+        expect(claimSpy).toHaveBeenCalled();
     });
 
     it('should show Sign In button for guest trader and open auth modal on click', () => {
