@@ -318,8 +318,8 @@ import { ApiService } from '../../core/services/api.service';
                 justify-content: space-between;
                 gap: 12px;
                 padding: 10px 14px;
-                background-color: rgba(245, 158, 11, 0.06);
-                border: 1px dashed rgba(245, 158, 11, 0.3);
+                background-color: var(--status-warning-bg, rgba(245, 158, 11, 0.06));
+                border: 1px dashed var(--status-warning-border, rgba(245, 158, 11, 0.3));
                 border-radius: var(--radius-md, 10px);
             }
 
@@ -329,12 +329,12 @@ import { ApiService } from '../../core/services/api.service';
                 gap: 8px;
                 font-family: var(--font-ui);
                 font-size: 12px;
-                color: #fcd34d;
+                color: var(--status-warning, #b45309);
             }
 
             .dev-icon {
                 flex-shrink: 0;
-                color: #f59e0b;
+                color: var(--status-warning, #b45309);
             }
 
             .guest-info-row {

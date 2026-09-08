@@ -79,8 +79,8 @@ interface GlossaryTerm {
             }
 
             .plain-english-summary {
-                background-color: rgba(166, 3, 76, 0.12);
-                border: 1px solid var(--primary-border, #e84089);
+                background-color: var(--primary-subtle, rgba(79, 70, 229, 0.08));
+                border: 1px solid var(--primary-border, #6366f1);
                 border-radius: var(--radius-lg, 14px);
                 padding: 16px;
             }
@@ -89,7 +89,7 @@ interface GlossaryTerm {
                 font-family: var(--font-ui);
                 font-size: 15px;
                 font-weight: 700;
-                color: #fbcfe8;
+                color: var(--primary, #4f46e5);
                 margin-bottom: 8px;
             }
 
@@ -122,7 +122,7 @@ interface GlossaryTerm {
                 font-family: var(--font-ui);
                 font-size: 15px;
                 font-weight: 700;
-                color: var(--primary-border, #e84089);
+                color: var(--primary-border, #6366f1);
             }
 
             .term-def {

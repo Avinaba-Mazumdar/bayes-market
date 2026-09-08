@@ -64,8 +64,8 @@ export type SwitchColor = 'primary' | 'yes';
                 display: inline-flex;
                 align-items: center;
                 border-radius: var(--radius-pill, 9999px);
-                border: 1px solid var(--border-strong, #606e85);
-                background-color: var(--surface-terminal, #0e131d);
+                border: 1px solid var(--border-strong, #cbd5e1);
+                background-color: var(--canvas-subtle, #f1f5f9);
                 transition:
                     background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
                     border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),

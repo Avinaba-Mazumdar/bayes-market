@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { TopHeaderDockComponent } from './core/components/top-header-dock/top-header-dock.component';
 import { ToastContainerComponent } from './shared/components/toast/toast-container.component';
 import { AuthDialogComponent } from './features/auth/auth-dialog.component';
+import { ThemeService } from './core/services/theme.service';
 
 @Component({
     imports: [RouterOutlet, TopHeaderDockComponent, ToastContainerComponent, AuthDialogComponent],
@@ -12,5 +13,6 @@ import { AuthDialogComponent } from './features/auth/auth-dialog.component';
     templateUrl: './app.component.html'
 })
 export class App {
+    private readonly themeService = inject(ThemeService);
     protected readonly title = signal('BayesMarket');
 }

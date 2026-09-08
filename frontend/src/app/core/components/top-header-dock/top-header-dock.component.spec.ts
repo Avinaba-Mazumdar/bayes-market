@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { TopHeaderDockComponent } from './top-header-dock.component';
 import { WebSocketService } from '../../services/websocket.service';
+import { ThemeService } from '../../services/theme.service';
 import { AuthStore } from '../../../state/auth.store';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
@@ -112,5 +113,21 @@ describe('TopHeaderDockComponent', () => {
         const logoutSpy = vi.spyOn(authStore, 'logout');
         signOutBtn.click();
         expect(logoutSpy).toHaveBeenCalled();
+    });
+
+    it('should render theme toggle button and toggle theme when clicked', () => {
+        const el = fixture.nativeElement as HTMLElement;
+        const themeToggleBtn = el.querySelector('.theme-toggle-btn') as HTMLButtonElement;
+        expect(themeToggleBtn).toBeTruthy();
+
+        const themeService = TestBed.inject(ThemeService);
+        const initialTheme = themeService.theme();
+        expect(initialTheme).toBe('light');
+
+        themeToggleBtn.click();
+        expect(themeService.theme()).toBe('dark');
+
+        themeToggleBtn.click();
+        expect(themeService.theme()).toBe('light');
     });
 });

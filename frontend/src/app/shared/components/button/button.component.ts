@@ -169,7 +169,7 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
                 border: 1px solid transparent;
             }
             .btn-variant-ghost:hover:not(:disabled) {
-                background-color: rgba(255, 255, 255, 0.07);
+                background-color: var(--primary-subtle, rgba(79, 70, 229, 0.08));
                 color: var(--ink, #f8f7ff);
             }
 
@@ -199,33 +199,33 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             }
 
             .btn-variant-yes {
-                background-color: rgba(0, 220, 130, 0.12);
+                background-color: var(--outcome-yes-subtle, rgba(0, 220, 130, 0.12));
                 color: var(--outcome-yes, #00dc82);
-                border: 1px solid rgba(0, 220, 130, 0.35);
+                border: 1px solid var(--outcome-yes-border, rgba(0, 220, 130, 0.35));
             }
             .btn-variant-yes:hover:not(:disabled) {
-                background-color: rgba(0, 220, 130, 0.22);
+                background-color: var(--outcome-yes-subtle, rgba(0, 220, 130, 0.22));
                 box-shadow: var(--shadow-glow-yes);
             }
             .btn-variant-yes.selected {
                 background-color: var(--outcome-yes, #00dc82);
                 border-color: var(--outcome-yes, #00dc82);
-                box-shadow: 0 0 16px rgba(0, 220, 130, 0.45);
+                box-shadow: 0 0 16px var(--outcome-yes-glow, rgba(0, 220, 130, 0.45));
             }
 
             .btn-variant-no {
-                background-color: rgba(255, 51, 102, 0.12);
+                background-color: var(--outcome-no-subtle, rgba(255, 51, 102, 0.12));
                 color: var(--outcome-no, #ff3366);
-                border: 1px solid rgba(255, 51, 102, 0.35);
+                border: 1px solid var(--outcome-no-border, rgba(255, 51, 102, 0.35));
             }
             .btn-variant-no:hover:not(:disabled) {
-                background-color: rgba(255, 51, 102, 0.22);
+                background-color: var(--outcome-no-subtle, rgba(255, 51, 102, 0.22));
                 box-shadow: var(--shadow-glow-no);
             }
             .btn-variant-no.selected {
                 background-color: var(--outcome-no, #ff3366);
                 border-color: var(--outcome-no, #ff3366);
-                box-shadow: 0 0 16px rgba(255, 51, 102, 0.45);
+                box-shadow: 0 0 16px var(--outcome-no-glow, rgba(255, 51, 102, 0.45));
             }
 
             /* Chip (Amount presets & timeframe intervals) */
@@ -247,11 +247,11 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
                 color: var(--ink, #f8f7ff);
             }
             .btn-variant-chip.selected {
-                background-color: rgba(54, 0, 179, 0.25);
-                border-color: #7c4dff;
-                color: #b388ff;
+                background-color: var(--primary-subtle, rgba(54, 0, 179, 0.25));
+                border-color: var(--primary-border, #7c4dff);
+                color: var(--primary, #b388ff);
                 font-weight: 700;
-                box-shadow: 0 0 10px rgba(124, 77, 255, 0.35);
+                box-shadow: 0 0 10px var(--primary-glow, rgba(124, 77, 255, 0.35));
             }
 
             /* Full Width */

@@ -17,6 +17,7 @@ import {
 import { AreaSeries, ColorType, createChart, IChartApi, ISeriesApi, Time, UTCTimestamp } from 'lightweight-charts';
 import { LucideTrendingUp, LucideTrendingDown } from '@lucide/angular';
 import { WebSocketService } from '../../core/services/websocket.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 
 export type ChartTimeframe = '1H' | '1D' | '1W' | 'ALL';
@@ -240,6 +241,7 @@ export class PriceChartComponent implements OnInit, OnDestroy {
     private readonly wsService = inject(WebSocketService);
     private readonly destroyRef = inject(DestroyRef);
     private readonly ngZone = inject(NgZone);
+    private readonly themeService = inject(ThemeService);
 
     protected readonly timeframes: ChartTimeframe[] = ['1H', '1D', '1W', 'ALL'];
     readonly selectedTimeframe = signal<ChartTimeframe>('1D');
@@ -280,6 +282,12 @@ export class PriceChartComponent implements OnInit, OnDestroy {
                 }
             }
         });
+
+        // Reactively update chart colors and series styling when active theme changes
+        effect(() => {
+            const isDark = this.themeService.isDark();
+            this.updateChartTheme(isDark);
+        });
     }
 
     ngOnInit(): void {
@@ -302,51 +310,53 @@ export class PriceChartComponent implements OnInit, OnDestroy {
         const el = this.chartContainer()?.nativeElement;
         if (!el) return;
 
+        const isDark = this.themeService.isDark();
+
         this.ngZone.runOutsideAngular(() => {
             this.chart = createChart(el, {
                 autoSize: true,
                 layout: {
-                    background: { type: ColorType.Solid, color: '#080711' },
-                    textColor: '#9d97b8',
+                    background: { type: ColorType.Solid, color: isDark ? '#080711' : '#ffffff' },
+                    textColor: isDark ? '#9d97b8' : '#64748b',
                     fontSize: 12,
                     fontFamily: "'JetBrains Mono', monospace"
                 },
                 grid: {
-                    vertLines: { color: 'rgba(37, 33, 64, 0.55)', style: 1 },
-                    horzLines: { color: 'rgba(37, 33, 64, 0.55)', style: 1 }
+                    vertLines: { color: isDark ? 'rgba(37, 33, 64, 0.55)' : 'rgba(226, 232, 240, 0.8)', style: 1 },
+                    horzLines: { color: isDark ? 'rgba(37, 33, 64, 0.55)' : 'rgba(226, 232, 240, 0.8)', style: 1 }
                 },
                 crosshair: {
                     vertLine: {
-                        color: '#7c4dff',
+                        color: isDark ? '#7c4dff' : '#6366f1',
                         width: 1,
                         style: 2,
-                        labelBackgroundColor: '#3600b3'
+                        labelBackgroundColor: isDark ? '#3600b3' : '#4f46e5'
                     },
                     horzLine: {
-                        color: '#7c4dff',
+                        color: isDark ? '#7c4dff' : '#6366f1',
                         width: 1,
                         style: 2,
-                        labelBackgroundColor: '#3600b3'
+                        labelBackgroundColor: isDark ? '#3600b3' : '#4f46e5'
                     }
                 },
                 rightPriceScale: {
-                    borderColor: '#252140',
+                    borderColor: isDark ? '#252140' : '#e2e8f0',
                     scaleMargins: {
                         top: 0.1,
                         bottom: 0.1
                     }
                 },
                 timeScale: {
-                    borderColor: '#252140',
+                    borderColor: isDark ? '#252140' : '#e2e8f0',
                     timeVisible: true,
                     secondsVisible: false
                 }
             });
 
             this.areaSeries = this.chart.addSeries(AreaSeries, {
-                topColor: 'rgba(0, 220, 130, 0.35)',
-                bottomColor: 'rgba(0, 220, 130, 0.01)',
-                lineColor: '#00dc82',
+                topColor: isDark ? 'rgba(0, 220, 130, 0.35)' : 'rgba(5, 150, 105, 0.28)',
+                bottomColor: isDark ? 'rgba(0, 220, 130, 0.01)' : 'rgba(5, 150, 105, 0.01)',
+                lineColor: isDark ? '#00dc82' : '#059669',
                 lineWidth: 2,
                 priceFormat: {
                     type: 'custom',
@@ -355,6 +365,45 @@ export class PriceChartComponent implements OnInit, OnDestroy {
             });
 
             this.generateDataForTimeframe(this.selectedTimeframe());
+        });
+    }
+
+    private updateChartTheme(isDark: boolean): void {
+        if (!this.chart || !this.areaSeries) return;
+
+        this.ngZone.runOutsideAngular(() => {
+            this.chart?.applyOptions({
+                layout: {
+                    background: { type: ColorType.Solid, color: isDark ? '#080711' : '#ffffff' },
+                    textColor: isDark ? '#9d97b8' : '#64748b'
+                },
+                grid: {
+                    vertLines: { color: isDark ? 'rgba(37, 33, 64, 0.55)' : 'rgba(226, 232, 240, 0.8)', style: 1 },
+                    horzLines: { color: isDark ? 'rgba(37, 33, 64, 0.55)' : 'rgba(226, 232, 240, 0.8)', style: 1 }
+                },
+                crosshair: {
+                    vertLine: {
+                        color: isDark ? '#7c4dff' : '#6366f1',
+                        labelBackgroundColor: isDark ? '#3600b3' : '#4f46e5'
+                    },
+                    horzLine: {
+                        color: isDark ? '#7c4dff' : '#6366f1',
+                        labelBackgroundColor: isDark ? '#3600b3' : '#4f46e5'
+                    }
+                },
+                rightPriceScale: {
+                    borderColor: isDark ? '#252140' : '#e2e8f0'
+                },
+                timeScale: {
+                    borderColor: isDark ? '#252140' : '#e2e8f0'
+                }
+            });
+
+            this.areaSeries?.applyOptions({
+                topColor: isDark ? 'rgba(0, 220, 130, 0.35)' : 'rgba(5, 150, 105, 0.28)',
+                bottomColor: isDark ? 'rgba(0, 220, 130, 0.01)' : 'rgba(5, 150, 105, 0.01)',
+                lineColor: isDark ? '#00dc82' : '#059669'
+            });
         });
     }
 

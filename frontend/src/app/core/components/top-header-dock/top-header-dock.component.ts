@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucidePlus, LucideLogIn, LucideLogOut } from '@lucide/angular';
+import { LucidePlus, LucideLogIn, LucideLogOut, LucideSun, LucideMoon } from '@lucide/angular';
 import { WebSocketService } from '../../services/websocket.service';
+import { ThemeService } from '../../services/theme.service';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
@@ -11,7 +12,7 @@ import { AuthStore } from '../../../state/auth.store';
     selector: 'app-top-header-dock',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [RouterLink, RouterLinkActive, ButtonComponent, BadgeComponent, AvatarComponent, LucidePlus, LucideLogIn, LucideLogOut],
+    imports: [RouterLink, RouterLinkActive, ButtonComponent, BadgeComponent, AvatarComponent, LucidePlus, LucideLogIn, LucideLogOut, LucideSun, LucideMoon],
     template: `
         <header class="top-header-dock" role="banner">
             <div class="dock-container">
@@ -20,8 +21,14 @@ import { AuthStore } from '../../../state/auth.store';
                     <a routerLink="/" class="brand-link" aria-label="BayesMarket Home">
                         <div class="brand-emblem" aria-hidden="true">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="10" stroke="#7c4dff" stroke-width="2.5" />
-                                <path d="M7 12L10.5 15.5L17 9" stroke="#00d4ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="12" cy="12" r="10" stroke="var(--primary-border, #7c4dff)" stroke-width="2.5" />
+                                <path
+                                    d="M7 12L10.5 15.5L17 9"
+                                    stroke="var(--accent, #00d4ff)"
+                                    stroke-width="2.5"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
                             </svg>
                         </div>
                         <span class="brand-text">Bayes<span class="brand-highlight">Market</span></span>
@@ -33,7 +40,7 @@ import { AuthStore } from '../../../state/auth.store';
                     </nav>
                 </div>
 
-                <!-- Right: Balance, Faucet, Auth -->
+                <!-- Right: Balance, Faucet, Theme Toggle, Auth -->
                 <div class="dock-right">
                     <!-- Guest Balance Badge (JetBrains Mono tabular figures) -->
                     <app-badge variant="outline" size="sm" class="balance-badge" aria-label="Current cash balance">
@@ -56,6 +63,21 @@ import { AuthStore } from '../../../state/auth.store';
                             <span>Faucet</span>
                         }
                     </app-button>
+
+                    <!-- Theme Switcher Toggle -->
+                    <button
+                        type="button"
+                        class="theme-toggle-btn"
+                        (click)="themeService.toggleTheme()"
+                        [attr.aria-label]="themeService.isDark() ? 'Switch to light theme' : 'Switch to dark theme'"
+                        [title]="themeService.isDark() ? 'Switch to light theme' : 'Switch to dark theme'"
+                    >
+                        @if (themeService.isDark()) {
+                            <svg lucideSun [size]="16" class="theme-icon sun-icon" aria-hidden="true"></svg>
+                        } @else {
+                            <svg lucideMoon [size]="16" class="theme-icon moon-icon" aria-hidden="true"></svg>
+                        }
+                    </button>
 
                     <!-- Auth State & Sign In / Profile -->
                     @if (authStore.isGuest()) {
@@ -186,8 +208,9 @@ import { AuthStore } from '../../../state/auth.store';
             }
             .nav-tab.active {
                 background-color: var(--surface-card-elevated, #1a1733);
-                color: #ffffff;
+                color: var(--ink, #f8f7ff);
                 border: 1px solid var(--hairline, #252140);
+                font-weight: 700;
             }
             .balance-badge {
                 display: inline-flex;
@@ -236,6 +259,46 @@ import { AuthStore } from '../../../state/auth.store';
                 justify-content: center;
                 flex-shrink: 0;
                 margin-right: 4px;
+            }
+
+            /* Theme Switcher Toggle */
+            .theme-toggle-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 38px;
+                height: 38px;
+                min-width: 38px;
+                min-height: 38px;
+                padding: 0;
+                background-color: var(--surface-card, #131126);
+                border: 1px solid var(--hairline, #252140);
+                border-radius: var(--radius-pill, 9999px);
+                color: var(--ink-secondary, #9d97b8);
+                cursor: pointer;
+                transition:
+                    background-color 0.15s ease,
+                    border-color 0.15s ease,
+                    color 0.15s ease,
+                    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+
+            .theme-toggle-btn:hover {
+                background-color: var(--surface-card-elevated, #1a1733);
+                border-color: var(--primary-border, #7c4dff);
+                transform: rotate(15deg);
+            }
+
+            .theme-toggle-btn:active {
+                transform: scale(0.92) rotate(15deg);
+            }
+
+            .sun-icon {
+                color: #f59e0b;
+            }
+
+            .moon-icon {
+                color: var(--primary, #4f46e5);
             }
 
             /* Auth Styles */
@@ -322,6 +385,7 @@ import { AuthStore } from '../../../state/auth.store';
 export class TopHeaderDockComponent implements OnInit {
     readonly wsService = inject(WebSocketService);
     readonly authStore = inject(AuthStore);
+    readonly themeService = inject(ThemeService);
 
     ngOnInit(): void {
         // WebSocket connections are managed by individual pages (market-detail, market-list)

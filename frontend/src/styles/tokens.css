@@ -1,15 +1,123 @@
 /* BayesMarket Design System - Institutional Trading Tokens */
-/* Anchored around Primary #3600b3 (Deep Royal Indigo) - Strict WCAG 2.2 Level AAA */
+/* Anchored around Primary Brand & Dual Theme Support - Strict WCAG 2.2 Level AAA */
 
 :root {
-    /* Surface & Base Colors (Harmonized Midnight Violet-Slate Obsidian) */
-    --canvas: #080711;
-    --canvas-subtle: #0e0c1c;
-    --surface-card: #131126;
-    --surface-card-elevated: #1a1733;
-    --surface-terminal: #100e21;
-    --surface-glass: rgba(19, 17, 38, 0.88);
-    --surface-glass-border: rgba(124, 77, 255, 0.12);
+    /* ==========================================================================
+       SHARED STRUCTURAL TOKENS (Radii, Spacing, Typography, Geometry)
+       ========================================================================== */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+    --radius-pill: 9999px;
+    --radius-full: 9999px;
+
+    --space-xxs: 4px;
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 16px;
+    --space-lg: 20px;
+    --space-xl: 24px;
+    --space-xxl: 32px;
+    --space-section: 48px;
+
+    --font-ui: 'Scoutie Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+
+    --touch-target-min: 44px;
+
+    /* ==========================================================================
+       LIGHT THEME (DEFAULT PALETTE)
+       ========================================================================== */
+    color-scheme: light;
+
+    /* Surface & Base Colors (Crisp Institutional Porcelain & Slate) */
+    --canvas: #f8f9fc;
+    --canvas-subtle: #f1f5f9;
+    --surface-card: #ffffff;
+    --surface-card-elevated: #ffffff;
+    --surface-terminal: #f8fafc;
+    --surface-glass: rgba(255, 255, 255, 0.88);
+    --surface-glass-border: rgba(0, 0, 0, 0.08);
+    --dock-bg: rgba(255, 255, 255, 0.92);
+
+    /* Primary Brand (Vibrant Royal Indigo #4f46e5) */
+    --primary: #4f46e5;
+    --primary-active: #3730a3;
+    --primary-hover: #4338ca;
+    --primary-subtle: rgba(79, 70, 229, 0.08);
+    --primary-border: #6366f1;
+    --primary-glow: rgba(99, 102, 241, 0.25);
+
+    /* Accent (Cobalt / Sky Blue) */
+    --accent: #0284c7;
+    --accent-active: #0369a1;
+    --accent-subtle: rgba(2, 132, 199, 0.1);
+
+    /* Outcome YES (High-Contrast Emerald Mint) */
+    --outcome-yes: #059669;
+    --outcome-yes-text: #059669;
+    --outcome-yes-active: #047857;
+    --outcome-yes-subtle: rgba(5, 150, 105, 0.1);
+    --outcome-yes-border: rgba(5, 150, 105, 0.35);
+    --outcome-yes-glow: rgba(5, 150, 105, 0.2);
+
+    /* Outcome NO (High-Contrast Ruby Rose) */
+    --outcome-no: #e11d48;
+    --outcome-no-text: #e11d48;
+    --outcome-no-active: #be123c;
+    --outcome-no-subtle: rgba(225, 29, 72, 0.1);
+    --outcome-no-border: rgba(225, 29, 72, 0.35);
+    --outcome-no-glow: rgba(225, 29, 72, 0.2);
+
+    /* Typography & Ink (WCAG AAA Contrast >= 7.0:1) */
+    --ink: #0f172a;
+    --ink-secondary: #334155;
+    --body: #475569;
+    --muted: #64748b;
+    --hairline: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --on-primary: #ffffff;
+    --on-outcome: #ffffff;
+    --on-dark: #0f172a;
+
+    /* Status Tokens */
+    --status-profit: #059669;
+    --status-profit-bg: #ecfdf5;
+    --status-profit-border: #a7f3d0;
+    --status-loss: #e11d48;
+    --status-loss-bg: #fff1f2;
+    --status-loss-border: #fecdd3;
+    --status-warning: #b45309;
+    --status-warning-bg: #fffbeb;
+    --status-warning-border: #fde68a;
+    --status-info: #0284c7;
+    --status-info-bg: #f0f9ff;
+    --status-info-border: #bae6fd;
+    --status-resolved: #7c3aed;
+    --status-resolved-bg: #f5f3ff;
+    --status-resolved-border: #ddd6fe;
+
+    /* Interactive & Focus (WCAG SC 2.4.12 & SC 2.4.13) */
+    --link: #4f46e5;
+    --link-active: #3730a3;
+    --focus-outline: #4f46e5;
+    --focus-ring: rgba(79, 70, 229, 0.25);
+
+    /* Elevation Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+    --shadow-terminal: 0 10px 25px -5px rgba(0, 0, 0, 0.09), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    --shadow-glow-primary: 0 0 20px rgba(79, 70, 229, 0.15);
+    --shadow-glow-yes: 0 0 16px rgba(5, 150, 105, 0.15);
+    --shadow-glow-no: 0 0 16px rgba(225, 29, 72, 0.15);
+
+    /* Hero & Special Surfaces */
+    --hero-gradient: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    --hero-glow: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+    --dialog-overlay: rgba(15, 23, 42, 0.45);
 
     /* Backward compatibility aliases */
     --color-canvas: var(--canvas);
@@ -19,72 +127,27 @@
     --color-surface-terminal: var(--surface-terminal);
     --color-surface-glass: var(--surface-glass);
     --color-surface-glass-border: var(--surface-glass-border);
-
-    /* Primary Brand (Deep Royal Indigo #3600b3) */
-    --primary: #3600b3;
-    --primary-active: #29008a;
-    --primary-hover: #4e10d8;
-    --primary-subtle: rgba(54, 0, 179, 0.16);
-    --primary-border: #7c4dff;
-    --primary-glow: rgba(124, 77, 255, 0.35);
-
     --color-primary: var(--primary);
     --color-primary-active: var(--primary-active);
     --color-primary-hover: var(--primary-hover);
     --color-primary-subtle: var(--primary-subtle);
     --color-primary-border: var(--primary-border);
     --color-primary-glow: var(--primary-glow);
-
-    /* Accent (Luminous Electric Cyan - High Contrast Complement) */
-    --accent: #00d4ff;
-    --accent-active: #00a2e8;
-    --accent-subtle: rgba(0, 212, 255, 0.14);
-
     --color-accent: var(--accent);
     --color-accent-active: var(--accent-active);
     --color-accent-subtle: var(--accent-subtle);
-
-    /* Outcome YES (Luminous Jade Mint) */
-    --outcome-yes: #00dc82;
-    --outcome-yes-text: #34d399;
-    --outcome-yes-active: #00b86b;
-    --outcome-yes-subtle: rgba(0, 220, 130, 0.12);
-    --outcome-yes-border: #00dc82;
-    --outcome-yes-glow: rgba(0, 220, 130, 0.35);
-
     --color-outcome-yes: var(--outcome-yes);
     --color-outcome-yes-text: var(--outcome-yes-text);
     --color-outcome-yes-active: var(--outcome-yes-active);
     --color-outcome-yes-subtle: var(--outcome-yes-subtle);
     --color-outcome-yes-border: var(--outcome-yes-border);
     --color-outcome-yes-glow: var(--outcome-yes-glow);
-
-    /* Outcome NO (Vibrant Neon Rose) */
-    --outcome-no: #ff3366;
-    --outcome-no-text: #fda4af;
-    --outcome-no-active: #e01a4f;
-    --outcome-no-subtle: rgba(255, 51, 102, 0.12);
-    --outcome-no-border: #ff3366;
-    --outcome-no-glow: rgba(255, 51, 102, 0.35);
-
     --color-outcome-no: var(--outcome-no);
     --color-outcome-no-text: var(--outcome-no-text);
     --color-outcome-no-active: var(--outcome-no-active);
     --color-outcome-no-subtle: var(--outcome-no-subtle);
     --color-outcome-no-border: var(--outcome-no-border);
     --color-outcome-no-glow: var(--outcome-no-glow);
-
-    /* Typography & Ink (Strict WCAG 2.2 AAA Contrast >= 7.0:1) */
-    --ink: #f8f7ff;
-    --ink-secondary: #9d97b8;
-    --body: #ccc7e6;
-    --muted: #9d97b8;
-    --hairline: #252140;
-    --border-strong: #3d3766;
-    --on-primary: #ffffff;
-    --on-outcome: #080711;
-    --on-dark: #f8f7ff;
-
     --color-ink: var(--ink);
     --color-ink-secondary: var(--ink-secondary);
     --color-body: var(--body);
@@ -94,6 +157,163 @@
     --color-on-primary: var(--on-primary);
     --color-on-outcome: var(--on-outcome);
     --color-on-dark: var(--on-dark);
+    --color-status-profit: var(--status-profit);
+    --color-status-profit-bg: var(--status-profit-bg);
+    --color-status-profit-border: var(--status-profit-border);
+    --color-status-loss: var(--status-loss);
+    --color-status-loss-bg: var(--status-loss-bg);
+    --color-status-loss-border: var(--status-loss-border);
+    --color-status-warning: var(--status-warning);
+    --color-status-warning-bg: var(--status-warning-bg);
+    --color-status-warning-border: var(--status-warning-border);
+    --color-status-info: var(--status-info);
+    --color-status-info-bg: var(--status-info-bg);
+    --color-status-info-border: var(--status-info-border);
+    --color-status-resolved: var(--status-resolved);
+    --color-status-resolved-bg: var(--status-resolved-bg);
+    --color-status-resolved-border: var(--status-resolved-border);
+    --color-link: var(--link);
+    --color-link-active: var(--link-active);
+    --color-focus-outline: var(--focus-outline);
+    --color-focus-ring: var(--focus-ring);
+}
+
+/* Explicit Light Theme Scope (Matches :root) */
+[data-theme='light'] {
+    color-scheme: light;
+    --canvas: #f8f9fc;
+    --canvas-subtle: #f1f5f9;
+    --surface-card: #ffffff;
+    --surface-card-elevated: #ffffff;
+    --surface-terminal: #f8fafc;
+    --surface-glass: rgba(255, 255, 255, 0.88);
+    --surface-glass-border: rgba(0, 0, 0, 0.08);
+    --dock-bg: rgba(255, 255, 255, 0.92);
+
+    --primary: #4f46e5;
+    --primary-active: #3730a3;
+    --primary-hover: #4338ca;
+    --primary-subtle: rgba(79, 70, 229, 0.08);
+    --primary-border: #6366f1;
+    --primary-glow: rgba(99, 102, 241, 0.25);
+
+    --accent: #0284c7;
+    --accent-active: #0369a1;
+    --accent-subtle: rgba(2, 132, 199, 0.1);
+
+    --outcome-yes: #059669;
+    --outcome-yes-text: #059669;
+    --outcome-yes-active: #047857;
+    --outcome-yes-subtle: rgba(5, 150, 105, 0.1);
+    --outcome-yes-border: rgba(5, 150, 105, 0.35);
+    --outcome-yes-glow: rgba(5, 150, 105, 0.2);
+
+    --outcome-no: #e11d48;
+    --outcome-no-text: #e11d48;
+    --outcome-no-active: #be123c;
+    --outcome-no-subtle: rgba(225, 29, 72, 0.1);
+    --outcome-no-border: rgba(225, 29, 72, 0.35);
+    --outcome-no-glow: rgba(225, 29, 72, 0.2);
+
+    --ink: #0f172a;
+    --ink-secondary: #334155;
+    --body: #475569;
+    --muted: #64748b;
+    --hairline: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --on-primary: #ffffff;
+    --on-outcome: #ffffff;
+    --on-dark: #0f172a;
+
+    --status-profit: #059669;
+    --status-profit-bg: #ecfdf5;
+    --status-profit-border: #a7f3d0;
+    --status-loss: #e11d48;
+    --status-loss-bg: #fff1f2;
+    --status-loss-border: #fecdd3;
+    --status-warning: #b45309;
+    --status-warning-bg: #fffbeb;
+    --status-warning-border: #fde68a;
+    --status-info: #0284c7;
+    --status-info-bg: #f0f9ff;
+    --status-info-border: #bae6fd;
+    --status-resolved: #7c3aed;
+    --status-resolved-bg: #f5f3ff;
+    --status-resolved-border: #ddd6fe;
+
+    --link: #4f46e5;
+    --link-active: #3730a3;
+    --focus-outline: #4f46e5;
+    --focus-ring: rgba(79, 70, 229, 0.25);
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+    --shadow-terminal: 0 10px 25px -5px rgba(0, 0, 0, 0.09), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    --shadow-glow-primary: 0 0 20px rgba(79, 70, 229, 0.15);
+    --shadow-glow-yes: 0 0 16px rgba(5, 150, 105, 0.15);
+    --shadow-glow-no: 0 0 16px rgba(225, 29, 72, 0.15);
+
+    --hero-gradient: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    --hero-glow: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+    --dialog-overlay: rgba(15, 23, 42, 0.45);
+}
+
+/* ==========================================================================
+   DARK THEME (CLASSIC MIDNIGHT VIOLET-SLATE OBSIDIAN)
+   ========================================================================== */
+[data-theme='dark'] {
+    color-scheme: dark;
+
+    /* Surface & Base Colors */
+    --canvas: #080711;
+    --canvas-subtle: #0e0c1c;
+    --surface-card: #131126;
+    --surface-card-elevated: #1a1733;
+    --surface-terminal: #100e21;
+    --surface-glass: rgba(19, 17, 38, 0.88);
+    --surface-glass-border: rgba(124, 77, 255, 0.12);
+    --dock-bg: rgba(14, 12, 28, 0.9);
+
+    /* Primary Brand */
+    --primary: #3600b3;
+    --primary-active: #29008a;
+    --primary-hover: #4e10d8;
+    --primary-subtle: rgba(54, 0, 179, 0.16);
+    --primary-border: #7c4dff;
+    --primary-glow: rgba(124, 77, 255, 0.35);
+
+    /* Accent */
+    --accent: #00d4ff;
+    --accent-active: #00a2e8;
+    --accent-subtle: rgba(0, 212, 255, 0.14);
+
+    /* Outcome YES */
+    --outcome-yes: #00dc82;
+    --outcome-yes-text: #34d399;
+    --outcome-yes-active: #00b86b;
+    --outcome-yes-subtle: rgba(0, 220, 130, 0.12);
+    --outcome-yes-border: #00dc82;
+    --outcome-yes-glow: rgba(0, 220, 130, 0.35);
+
+    /* Outcome NO */
+    --outcome-no: #ff3366;
+    --outcome-no-text: #fda4af;
+    --outcome-no-active: #e01a4f;
+    --outcome-no-subtle: rgba(255, 51, 102, 0.12);
+    --outcome-no-border: #ff3366;
+    --outcome-no-glow: rgba(255, 51, 102, 0.35);
+
+    /* Typography & Ink */
+    --ink: #f8f7ff;
+    --ink-secondary: #9d97b8;
+    --body: #ccc7e6;
+    --muted: #9d97b8;
+    --hairline: #252140;
+    --border-strong: #3d3766;
+    --on-primary: #ffffff;
+    --on-outcome: #080711;
+    --on-dark: #f8f7ff;
 
     /* Status Tokens */
     --status-profit: #00dc82;
@@ -112,32 +332,11 @@
     --status-resolved-bg: rgba(179, 136, 255, 0.12);
     --status-resolved-border: #9d71ff;
 
-    --color-status-profit: var(--status-profit);
-    --color-status-profit-bg: var(--status-profit-bg);
-    --color-status-profit-border: var(--status-profit-border);
-    --color-status-loss: var(--status-loss);
-    --color-status-loss-bg: var(--status-loss-bg);
-    --color-status-loss-border: var(--status-loss-border);
-    --color-status-warning: var(--status-warning);
-    --color-status-warning-bg: var(--status-warning-bg);
-    --color-status-warning-border: var(--status-warning-border);
-    --color-status-info: var(--status-info);
-    --color-status-info-bg: var(--status-info-bg);
-    --color-status-info-border: var(--status-info-border);
-    --color-status-resolved: var(--status-resolved);
-    --color-status-resolved-bg: var(--status-resolved-bg);
-    --color-status-resolved-border: var(--status-resolved-border);
-
-    /* Interactive & Focus (WCAG SC 2.4.12 & SC 2.4.13) */
+    /* Interactive & Focus */
     --link: #9d71ff;
     --link-active: #ffffff;
     --focus-outline: #7c4dff;
     --focus-ring: rgba(124, 77, 255, 0.4);
-
-    --color-link: var(--link);
-    --color-link-active: var(--link-active);
-    --color-focus-outline: var(--focus-outline);
-    --color-focus-ring: var(--focus-ring);
 
     /* Elevation Shadows */
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
@@ -148,29 +347,8 @@
     --shadow-glow-yes: 0 0 16px rgba(0, 220, 130, 0.35);
     --shadow-glow-no: 0 0 16px rgba(255, 51, 102, 0.35);
 
-    /* Border Radii */
-    --radius-xs: 4px;
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 14px;
-    --radius-xl: 18px;
-    --radius-pill: 9999px;
-    --radius-full: 9999px;
-
-    /* Spacing Scale (8-point grid with 4px sub-grid) */
-    --space-xxs: 4px;
-    --space-xs: 8px;
-    --space-sm: 12px;
-    --space-md: 16px;
-    --space-lg: 20px;
-    --space-xl: 24px;
-    --space-xxl: 32px;
-    --space-section: 48px;
-
-    /* Typography Families */
-    --font-ui: 'Scoutie Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
-
-    /* Minimum Accessible Touch Envelope (WCAG SC 2.5.5 Level AAA: >= 44x44px) */
-    --touch-target-min: 44px;
+    /* Hero & Special Surfaces */
+    --hero-gradient: linear-gradient(135deg, rgba(19, 17, 38, 0.95) 0%, rgba(14, 12, 28, 0.9) 100%);
+    --hero-glow: radial-gradient(circle, rgba(54, 0, 179, 0.18) 0%, transparent 60%);
+    --dialog-overlay: rgba(8, 7, 17, 0.84);
 }
