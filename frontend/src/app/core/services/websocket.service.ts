@@ -183,6 +183,8 @@ export class WebSocketService implements OnDestroy {
                 // If frontend is on localhost:4200, point to default Go backend port 8080
                 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                     base = `${protocol}//${window.location.hostname}:8080`;
+                } else if (window.location.hostname.includes('vercel.app')) {
+                    base = 'wss://bayesmarket-oss.onrender.com';
                 } else {
                     base = `${protocol}//${window.location.host}`;
                 }
