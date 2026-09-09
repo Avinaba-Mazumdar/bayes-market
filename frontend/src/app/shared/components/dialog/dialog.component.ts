@@ -88,17 +88,21 @@ export type DialogRole = 'dialog' | 'alertdialog';
                 justify-content: center;
                 padding: 16px;
                 box-sizing: border-box;
+                overflow-x: hidden;
                 overflow-y: auto;
+                contain: paint layout;
             }
 
             /* --- Backdrop Overlay --- */
             .dialog-overlay {
                 position: fixed;
                 inset: 0;
-                background-color: rgba(8, 7, 17, 0.84);
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-                animation: overlayFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                background-color: rgba(6, 5, 14, 0.82);
+                backdrop-filter: blur(4px);
+                -webkit-backdrop-filter: blur(4px);
+                will-change: opacity;
+                transform: translateZ(0);
+                animation: overlayFadeIn 0.14s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             }
 
             @keyframes overlayFadeIn {
@@ -119,6 +123,8 @@ export type DialogRole = 'dialog' | 'alertdialog';
                 justify-content: center;
                 pointer-events: none;
                 margin: auto;
+                will-change: transform, opacity;
+                transform: translateZ(0);
             }
 
             /* --- Content Modal Box --- */
@@ -137,17 +143,27 @@ export type DialogRole = 'dialog' | 'alertdialog';
                     0 0 0 1px rgba(255, 255, 255, 0.08);
                 box-sizing: border-box;
                 outline: none;
-                animation: dialogZoomIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+                will-change: transform, opacity;
+                transform: translateZ(0);
+                contain: layout;
+                animation: dialogZoomIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             }
 
             @keyframes dialogZoomIn {
                 from {
-                    transform: scale(0.95) translateY(8px);
+                    transform: translate3d(0, 6px, 0) scale(0.98);
                     opacity: 0;
                 }
                 to {
-                    transform: scale(1) translateY(0);
+                    transform: translate3d(0, 0, 0) scale(1);
                     opacity: 1;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .dialog-overlay,
+                .dialog-content {
+                    animation: none !important;
                 }
             }
 
@@ -331,9 +347,9 @@ export class DialogComponent {
             if (content) {
                 const focusables = this.getFocusableElements(content);
                 if (focusables.length > 0) {
-                    focusables[0].focus();
+                    focusables[0].focus({ preventScroll: true });
                 } else {
-                    content.focus();
+                    content.focus({ preventScroll: true });
                 }
             }
         }, 16);
@@ -349,7 +365,7 @@ export class DialogComponent {
         // Restore focus
         if (this.previouslyFocusedElement && typeof this.previouslyFocusedElement.focus === 'function') {
             try {
-                this.previouslyFocusedElement.focus();
+                this.previouslyFocusedElement.focus({ preventScroll: true });
             } catch {
                 // Element might have unmounted
             }
