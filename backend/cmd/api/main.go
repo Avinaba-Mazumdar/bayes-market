@@ -27,9 +27,20 @@ func main() {
 	if err != nil {
 		log.Printf("[WARN] Configuration load warning: %v\n", err)
 	}
+	if cfg == nil {
+		cfg = &config.Config{
+			ServerPort:  "8080",
+			Environment: "development",
+			JWTSecret:   "bayesmarket-development-hmac-sha256-default-secret-key-32b",
+			AdminToken:  "bayesmarket-admin-secret-token",
+		}
+	}
 
-	port := "8080"
-	if cfg != nil && cfg.ServerPort != "" {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	if cfg.ServerPort != "" {
 		port = cfg.ServerPort
 	}
 

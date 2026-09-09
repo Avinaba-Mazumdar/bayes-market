@@ -94,11 +94,15 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config, hubOpt ...*ws.Hub) *gin
 	actionLimiter := middleware.NewActionLimiter()
 	quoteLimiter := middleware.NewQuoteLimiter()
 
-	jwtSecret := ""
+	jwtSecret := "bayesmarket-development-hmac-sha256-default-secret-key-32b"
 	corsOrigin := "*"
 	if cfg != nil {
-		jwtSecret = cfg.JWTSecret
-		corsOrigin = cfg.CORSOrigin
+		if cfg.JWTSecret != "" {
+			jwtSecret = cfg.JWTSecret
+		}
+		if cfg.CORSOrigin != "" {
+			corsOrigin = cfg.CORSOrigin
+		}
 	}
 
 	// In-memory read-through cache (5-second TTL, event-invalidated on trades/settlements)
@@ -127,13 +131,10 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config, hubOpt ...*ws.Hub) *gin
 		router.GET("/ws", wsHandler.HandleGlobalWS)
 	}
 
-	// Health check endpoint (unlimited)
-	router.GET("/healthz", func(c *gin.Context) {
+	// Health check endpoints (unlimited, for keep-alive cron jobs, load balancers, and orchestrators)
+	healthHandler := func(c *gin.Context) {
 		dbStatus := "disconnected"
 		if pool != nil {
-			pingCtx, pingCancel := c.Request.Context(), func() {}
-			_ = pingCtx
-			_ = pingCancel
 			if err := pool.Ping(c.Request.Context()); err == nil {
 				dbStatus = "connected"
 			} else {
@@ -147,7 +148,12 @@ func SetupRouter(pool *pgxpool.Pool, cfg *config.Config, hubOpt ...*ws.Hub) *gin
 			"database":  dbStatus,
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
 		})
-	})
+	}
+
+	router.GET("/healthz", healthHandler)
+	router.GET("/health", healthHandler)
+	router.HEAD("/healthz", healthHandler)
+	router.HEAD("/health", healthHandler)
 
 	// Prometheus metrics endpoint (unlimited)
 	router.GET("/metrics", func(c *gin.Context) {
@@ -216,7 +222,7 @@ bayesmarket_up 1
 			markets.GET("/:id", publicReadLimiter.LimitByIP(), marketHandler.HandleGetMarketByID)
 			markets.POST("/:id/quote", quoteLimiter.LimitByClientOrUser(), marketHandler.HandleMarketQuote)
 			markets.POST("/:id/orders",
-				middleware.RequireAuth(cfg.JWTSecret),
+				middleware.RequireAuth(jwtSecret),
 				actionLimiter.LimitByClientOrUser(),
 				tradeHandler.HandlePlaceOrder,
 			)
@@ -224,18 +230,18 @@ bayesmarket_up 1
 
 		// 3. Faucet claim (Protected)
 		v1.POST("/faucet",
-			middleware.RequireAuth(cfg.JWTSecret),
+			middleware.RequireAuth(jwtSecret),
 			actionLimiter.LimitByClientOrUser(),
 			faucetHandler.HandleClaimFaucet,
 		)
 
 		// 4. Portfolio read & Cashout (Protected)
 		v1.GET("/portfolio",
-			middleware.RequireAuth(cfg.JWTSecret),
+			middleware.RequireAuth(jwtSecret),
 			portfolioHandler.HandleGetPortfolio,
 		)
 		v1.POST("/portfolio/cashout",
-			middleware.RequireAuth(cfg.JWTSecret),
+			middleware.RequireAuth(jwtSecret),
 			actionLimiter.LimitByClientOrUser(),
 			tradeHandler.HandleCashOut,
 		)
