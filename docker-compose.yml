@@ -1,0 +1,52 @@
+services:
+    postgres:
+        image: postgres:17-alpine
+        container_name: bayesmarket-db
+        environment:
+            POSTGRES_USER: bayesuser
+            POSTGRES_PASSWORD: bayespassword
+            POSTGRES_DB: bayesmarket
+        ports:
+            - '5432:5432'
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U bayesuser -d bayesmarket']
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        container_name: bayesmarket-backend
+        environment:
+            DATABASE_URL: postgres://bayesuser:bayespassword@postgres:5432/bayesmarket?sslmode=disable
+            SERVER_PORT: '8080'
+            CORS_ORIGIN: 'http://localhost:4200,http://localhost:80,http://localhost'
+            JWT_SECRET: 'bayesmarket-docker-jwt-secret-key-at-least-32-chars'
+            ADMIN_TOKEN: 'bayesmarket-admin-secret-token'
+            AUTO_SEED: 'true'
+        ports:
+            - '8080:8080'
+        depends_on:
+            postgres:
+                condition: service_healthy
+        restart: unless-stopped
+
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        container_name: bayesmarket-frontend
+        ports:
+            - '4200:80'
+        depends_on:
+            backend:
+                condition: service_healthy
+        restart: unless-stopped
+
+volumes:
+    pgdata:

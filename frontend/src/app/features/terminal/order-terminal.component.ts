@@ -260,7 +260,23 @@ export interface OrderIntent {
             .outcome-toggle-group {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 12px;
+                gap: 8px;
+            }
+
+            :host ::ng-deep .outcome-toggle-group app-button {
+                display: block;
+                width: 100%;
+                min-width: 0;
+            }
+
+            :host ::ng-deep .outcome-toggle-group button {
+                width: 100%;
+                min-width: 0;
+                white-space: nowrap !important;
+                flex-wrap: nowrap !important;
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+                gap: 5px !important;
             }
 
             .outcome-glyph {
@@ -268,19 +284,23 @@ export interface OrderIntent {
                 align-items: center;
                 justify-content: center;
                 flex-shrink: 0;
-                margin-right: 4px;
+                margin-right: 2px;
             }
 
             .outcome-text {
                 font-weight: 700;
                 letter-spacing: 0.2px;
+                white-space: nowrap !important;
+                flex-shrink: 0;
             }
 
             .outcome-prob {
                 font-family: var(--font-mono);
                 font-size: 12px;
                 opacity: 0.9;
-                margin-left: 6px;
+                margin-left: auto;
+                white-space: nowrap !important;
+                flex-shrink: 0;
             }
 
             .input-section {

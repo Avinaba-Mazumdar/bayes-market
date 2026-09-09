@@ -9,6 +9,9 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [LucideLoaderCircle],
+    host: {
+        '[class.full-width]': 'fullWidth()'
+    },
     template: `
         <button
             [type]="type()"
@@ -40,6 +43,8 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
                 align-items: center;
                 justify-content: center;
                 gap: 8px;
+                white-space: nowrap;
+                flex-wrap: nowrap;
                 font-family: var(--font-ui, system-ui, sans-serif);
                 font-weight: 600;
                 line-height: 1.3;
@@ -191,6 +196,15 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'pill';
             .btn-variant-yes,
             .btn-variant-no {
                 border-radius: var(--radius-md, 10px);
+                white-space: nowrap;
+                flex-wrap: nowrap;
+            }
+
+            .btn-variant-yes.btn-size-lg,
+            .btn-variant-no.btn-size-lg {
+                padding: 10px 12px;
+                gap: 6px;
+                font-size: 14px;
             }
 
             /* --- Unselected Outcome Buttons --- */

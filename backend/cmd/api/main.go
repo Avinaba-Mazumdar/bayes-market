@@ -78,6 +78,18 @@ func main() {
 				log.Println("[INFO] Migrations completed successfully.")
 				return
 			}
+
+			// Check if markets need seeding (auto-seed if empty or requested via env)
+			var marketCount int
+			_ = dbPool.QueryRow(ctx, "SELECT COUNT(*) FROM markets").Scan(&marketCount)
+			if marketCount == 0 || os.Getenv("AUTO_SEED") == "true" {
+				log.Println("[INFO] Auto-seeding initial prediction markets...")
+				if err := database.SeedInitialMarkets(ctx, dbPool); err != nil {
+					log.Printf("[WARN] Auto-seeding warning: %v\n", err)
+				} else {
+					log.Println("[INFO] Initial prediction markets ready.")
+				}
+			}
 		}
 	} else {
 		log.Println("[INFO] Placeholder or empty DATABASE_URL detected. Server running in disconnected sandbox mode.")

@@ -3,14 +3,28 @@
 [![CI](https://github.com/Avinaba-Mazumdar/bayesmarket-oss/actions/workflows/ci.yml/badge.svg)](https://github.com/Avinaba-Mazumdar/bayesmarket-oss/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.24%2B-00ADD8?logo=go&logoColor=white)](https://go.dev)
-[![Angular](https://img.shields.io/badge/Angular-22%20(Zoneless)-DD0031?logo=angular&logoColor=white)](https://angular.dev)
+[![Angular](<https://img.shields.io/badge/Angular-22%20(Zoneless)-DD0031?logo=angular&logoColor=white>)](https://angular.dev)
 [![WCAG AAA](https://img.shields.io/badge/WCAG%202.2-Level%20AAA-brightgreen)](target/DESIGN.md)
 
 > **High-Performance Binary Prediction Market Exchange Engine & Reactive Trading Platform**
 
+<p align="center">
+  <a href="https://bayesmarket-oss.vercel.app"><b>🌐 Launch Live Application (Vercel)</b></a> &nbsp;•&nbsp;
+  <a href="https://bayesmarket-oss.onrender.com/healthz"><b>⚡ Live Backend Health (Render)</b></a> &nbsp;•&nbsp;
+  <a href="#quick-start-with-docker-1-command"><b>🐳 Docker Quickstart</b></a>
+</p>
+
 BayesMarket is a modern, open-source prediction market platform inspired by Polymarket. Users trade binary outcome shares (**YES** and **NO**) on real-world events.
 
 Unlike traditional wagering apps, BayesMarket implements a **collateralized complete-set Constant Product Automated Market Maker (CPMM)**: every USDC deposited mints matched YES/NO shares, while an atomic PostgreSQL ledger tracks collateral, positions, and settlement. The platform also includes real-time **WebSocket broadcast pipelines** and a **zoneless Angular (Signals) frontend** featuring hardware-accelerated TradingView charts.
+
+---
+
+## Preview
+
+|              Institutional Trading Terminal & Live Chart               |            Real-Time Market Catalog & Probability Split            |
+| :--------------------------------------------------------------------: | :----------------------------------------------------------------: |
+| ![BayesMarket Trading Terminal](docs/screenshots/trading_terminal.png) | ![BayesMarket Discovery Page](docs/screenshots/discovery_page.png) |
 
 ---
 
@@ -135,25 +149,45 @@ When depositing $\Delta USDC$ to purchase `YES` shares:
 
 ---
 
-## Getting Started
+## Quick Start with Docker (1-Command)
+
+Run the entire platform locally — including PostgreSQL 17, automated database migrations, pre-calibrated prediction markets, Go trading engine, and Angular 22 frontend — with a single command:
+
+```bash
+# Clone the repository
+git clone https://github.com/Avinaba-Mazumdar/bayesmarket-oss.git
+cd bayesmarket-oss
+
+# Boot all services via Docker Compose
+docker compose up --build -d
+```
+
+Once initialized, open your browser:
+
+- **Trading Application**: `http://localhost:4200`
+- **Backend API & Health**: `http://localhost:8080/healthz`
+- **Database**: `localhost:5432` (`bayesuser` / `bayespassword`)
+
+---
+
+## Manual Development Setup
+
+If developing locally without Docker:
 
 ### Prerequisites
 
 - **Go**: `v1.24+`
 - **Node.js**: `v22+` (or `v24 LTS`)
 - **pnpm**: `v10+` (or `npm`)
-- **PostgreSQL**: Neon Serverless PostgreSQL (`v17+`)
+- **PostgreSQL**: Local PostgreSQL 17 or **[Neon.tech](https://neon.tech)**
 
-### 1. Database Setup (Neon Serverless PostgreSQL)
-
-1. Create a free project on **[Neon.tech](https://neon.tech)** (e.g. named `bayesmarket`).
-2. Create `.env` in the repository root:
+### 1. Environment Configuration
 
 ```bash
 cp .env.example .env
 ```
 
-3. Configure `DATABASE_URL` with your Neon pooled/direct connection string:
+Set `DATABASE_URL` in `.env`:
 
 ```env
 DATABASE_URL=postgres://user:password@ep-cool-pool-123456.us-east-2.aws.neon.tech/bayesmarket?sslmode=require
@@ -181,6 +215,18 @@ pnpm dev
 ```
 
 The web application will be accessible at `http://localhost:4200`.
+
+---
+
+## Engineering Decisions & Invariants
+
+| Decision                               | Implementation                                           | Engineering Rationale                                                                                                                 |
+| :------------------------------------- | :------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| **Zero-Float Financial Math**          | `shopspring/decimal` fixed-point arithmetic              | Eliminates IEEE-754 floating-point drift across iterative buy/sell bonding curves.                                                    |
+| **Balance Solvency & Race Prevention** | PostgreSQL `SELECT ... FOR UPDATE` row locks             | Enforces serializable isolation; 20 parallel threads attempting to drain the same balance yields exactly 1 success and 19 rejections. |
+| **High-Performance Canvas Charts**     | TradingView Lightweight Charts + Angular Signals         | 60fps canvas rendering isolated from framework change-detection cycles.                                                               |
+| **Non-Blocking WS Telemetry**          | Go channels with buffered fan-out and select-drop        | Slow network consumers are gracefully disconnected without stalling the central matching pipeline.                                    |
+| **Institutional Accessibility**        | WCAG 2.2 Level AAA (7:1 contrast, 44×44px touch targets) | Dual-coded outcome indicators, 2-step financial confirmation modal, full keyboard navigability.                                       |
 
 ---
 
