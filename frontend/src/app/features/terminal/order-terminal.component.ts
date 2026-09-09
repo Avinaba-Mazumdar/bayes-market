@@ -1,17 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    DestroyRef,
-    effect,
-    ElementRef,
-    inject,
-    input,
-    output,
-    signal,
-    untracked,
-    viewChild
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -46,8 +33,13 @@ export interface OrderIntent {
             <div class="terminal-header">
                 <span class="terminal-title">Trade Outcome</span>
                 <div class="balance-display" aria-label="Available USDC Cash Balance">
-                    <span class="balance-title">Balance:</span>
-                    <span class="balance-num tabular-nums">{{ authStore.cashBalance() }}</span>
+                    @if (authStore.isAuthenticated()) {
+                        <span class="balance-title">Balance:</span>
+                        <span class="balance-num tabular-nums">{{ authStore.cashBalance() }}</span>
+                    } @else {
+                        <span class="balance-title">Mode:</span>
+                        <span class="balance-num simulation-badge">Paper Trading</span>
+                    }
                 </div>
             </div>
 
@@ -144,6 +136,12 @@ export interface OrderIntent {
                 </div>
             </div>
 
+            <!-- Paper Trading Disclaimer Notice -->
+            <div class="terminal-paper-notice" role="note">
+                <span class="paper-dot"></span>
+                <span class="paper-notice-text">Simulated paper trade — no real funds at risk</span>
+            </div>
+
             <!-- Primary Trade Action Button (Triggers Two-Step Confirmation Review) -->
             <div class="action-footer">
                 <app-button
@@ -223,6 +221,40 @@ export interface OrderIntent {
                 font-weight: 700;
                 color: var(--ink, #f8f7ff);
                 font-feature-settings: 'tnum' 1;
+            }
+
+            .simulation-badge {
+                font-size: 11px;
+                color: var(--primary-border, #a855f7);
+                background-color: rgba(168, 85, 247, 0.12);
+                padding: 1px 6px;
+                border-radius: var(--radius-pill, 9999px);
+                border: 1px solid rgba(168, 85, 247, 0.3);
+            }
+
+            .terminal-paper-notice {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                padding: 6px 10px;
+                background-color: rgba(124, 77, 255, 0.06);
+                border: 1px solid rgba(124, 77, 255, 0.2);
+                border-radius: var(--radius-sm, 6px);
+            }
+
+            .paper-dot {
+                width: 5px;
+                height: 5px;
+                border-radius: 50%;
+                background-color: #a855f7;
+            }
+
+            .paper-notice-text {
+                font-family: var(--font-ui);
+                font-size: 11.5px;
+                color: var(--muted, #9d97b8);
+                letter-spacing: 0.1px;
             }
 
             .outcome-toggle-group {
@@ -458,6 +490,9 @@ export class OrderTerminalComponent {
         if (amt <= 0) {
             return 'Enter a valid positive USDC amount';
         }
+        if (!this.authStore.isAuthenticated()) {
+            return null;
+        }
         const balStr = this.authStore.cashBalance().replace(/[$,]/g, '');
         const balNum = parseFloat(balStr);
         if (!isNaN(balNum) && amt > balNum) {
@@ -467,6 +502,9 @@ export class OrderTerminalComponent {
     });
 
     protected readonly isTradeDisabled = computed(() => {
+        if (!this.authStore.isAuthenticated()) {
+            return false;
+        }
         return !!this.validationError() || this.isLoadingQuote() || !this.latestQuote();
     });
 
@@ -527,12 +565,18 @@ export class OrderTerminalComponent {
     });
 
     protected readonly tradeButtonText = computed(() => {
+        if (!this.authStore.isAuthenticated()) {
+            return 'Sign in to Trade';
+        }
         const outcome = this.selectedOutcome();
         const amt = this.currentNumericAmount();
         return `Trade $${amt.toFixed(2)} on ${outcome}`;
     });
 
     protected readonly tradeButtonLabel = computed(() => {
+        if (!this.authStore.isAuthenticated()) {
+            return 'Sign in or continue as guest to start trading';
+        }
         return `Review and place trade for $${this.currentNumericAmount().toFixed(2)} USDC on outcome ${this.selectedOutcome()}`;
     });
 
@@ -578,6 +622,10 @@ export class OrderTerminalComponent {
     }
 
     onSetMax(): void {
+        if (!this.authStore.isAuthenticated()) {
+            this.authStore.openAuthModal();
+            return;
+        }
         const balStr = this.authStore.cashBalance().replace(/[$,]/g, '');
         const balNum = parseFloat(balStr);
         if (!isNaN(balNum) && balNum > 0) {
@@ -658,6 +706,11 @@ export class OrderTerminalComponent {
     }
 
     onRequestOrderReview(): void {
+        if (!this.authStore.isAuthenticated()) {
+            this.authStore.openAuthModal();
+            return;
+        }
+
         const quote = this.latestQuote();
         const m = this.market();
         if (!quote || !m || this.isTradeDisabled()) return;

@@ -26,7 +26,7 @@ func NewFaucetHandler(pool *pgxpool.Pool) *FaucetHandler {
 	return &FaucetHandler{pool: pool}
 }
 
-// HandleClaimFaucet issues 500 virtual USDC to the user with a 5-minute cooldown.
+// HandleClaimFaucet issues 100 virtual USDC to the user with a 24-hour cooldown.
 //
 // POST /api/v1/faucet
 func (h *FaucetHandler) HandleClaimFaucet(c *gin.Context) {
@@ -40,8 +40,8 @@ func (h *FaucetHandler) HandleClaimFaucet(c *gin.Context) {
 	}
 
 	clientIP := c.ClientIP()
-	cooldownDuration := 5 * time.Minute
-	faucetGrant := decimal.NewFromInt(500)
+	cooldownDuration := 24 * time.Hour
+	faucetGrant := decimal.NewFromInt(100)
 
 	idempotencyKey := strings.TrimSpace(c.GetHeader("Idempotency-Key"))
 
@@ -161,7 +161,7 @@ func (h *FaucetHandler) HandleClaimFaucet(c *gin.Context) {
 		"amount_claimed":   faucetGrant.StringFixed(8),
 		"amount":           faucetGrant.StringFixed(0),
 		"new_balance":      updatedBalance.StringFixed(8),
-		"cooldown_seconds": 300,
+		"cooldown_seconds": 86400,
 		"user": gin.H{
 			"id":           userID.String(),
 			"cash_balance": updatedBalance.StringFixed(8),

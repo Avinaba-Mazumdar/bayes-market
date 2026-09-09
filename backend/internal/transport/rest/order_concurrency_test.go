@@ -136,9 +136,10 @@ func TestConcurrency_DoubleSpendAttack(t *testing.T) {
 	successCount := 0
 	insufficientBalanceCount := 0
 	for _, code := range statusCodes {
-		if code == http.StatusCreated {
+		switch code {
+		case http.StatusCreated:
 			successCount++
-		} else if code == http.StatusBadRequest {
+		case http.StatusBadRequest:
 			insufficientBalanceCount++
 		}
 	}

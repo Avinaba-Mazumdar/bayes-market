@@ -20,9 +20,10 @@ export class AuthStore {
     readonly userId = signal<string | null>(this.getInitialProfile()?.id || null);
     readonly cashBalance = signal<string>(this.getInitialBalance());
 
-    readonly isGuest = computed(() => this.user()?.is_guest ?? true);
-    readonly authProvider = computed(() => this.user()?.auth_provider || 'guest');
-    readonly userName = computed(() => this.user()?.name || (this.isGuest() ? 'Guest Trader' : 'Verified Trader'));
+    readonly isGuest = computed(() => this.user()?.is_guest ?? false);
+    readonly isAuthenticated = computed(() => !!this.token() && !!this.user());
+    readonly authProvider = computed(() => this.user()?.auth_provider || 'none');
+    readonly userName = computed(() => this.user()?.name || (this.isGuest() ? 'Guest Trader' : this.isAuthenticated() ? 'Verified Trader' : 'Visitor'));
     readonly userEmail = computed(() => this.user()?.email || null);
     readonly userAvatar = computed(() => this.user()?.avatar_url || null);
 
@@ -30,6 +31,9 @@ export class AuthStore {
     readonly isAuthenticating = signal<boolean>(false);
     readonly isClaimingFaucet = signal<boolean>(false);
     readonly isAuthModalOpen = signal<boolean>(false);
+
+    readonly isDev = signal<boolean>(typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'));
+    readonly appEnv = signal<string>('development');
 
     constructor() {
         this.initializeSession();
@@ -58,23 +62,40 @@ export class AuthStore {
 
     private getInitialBalance(): string {
         if (typeof window !== 'undefined' && window.localStorage) {
-            return localStorage.getItem(BALANCE_STORAGE_KEY) || '$1,000.00';
+            const token = this.getInitialToken();
+            if (token) {
+                return localStorage.getItem(BALANCE_STORAGE_KEY) || '$1,000.00';
+            }
+            return '$0.00';
         }
-        return '$1,000.00';
+        return '$0.00';
     }
 
     /**
      * Initializes or verifies session (Google or Guest).
+     * Does NOT automatically create guest sessions for first-time visitors.
      */
     initializeSession(): void {
+        this.fetchAppConfig();
         const existingToken = this.token();
         if (existingToken) {
             // Verify session by fetching user profile and portfolio balance
             this.fetchCurrentUserProfile(existingToken);
+        }
+    }
+
+    private fetchAppConfig(): void {
+        if (!this.apiService || typeof this.apiService.getConfig !== 'function') {
             return;
         }
-
-        this.provisionNewGuestSession();
+        this.apiService.getConfig().subscribe({
+            next: (cfg) => {
+                if (cfg) {
+                    this.isDev.set(cfg.is_dev);
+                    this.appEnv.set(cfg.app_env);
+                }
+            }
+        });
     }
 
     private fetchCurrentUserProfile(token: string): void {
@@ -92,19 +113,18 @@ export class AuthStore {
                 }
             },
             error: (err) => {
-                // If token expired or invalid, seamlessly re-provision guest
+                // If token expired or invalid, clear session
                 if (err?.status === 401) {
                     this.clearSession();
-                    this.provisionNewGuestSession();
                 }
             }
         });
     }
 
     /**
-     * Provisions a fresh anonymous guest session.
+     * Explicitly provisions a fresh guest session seeded with 1,000 USD on user request.
      */
-    provisionNewGuestSession(): void {
+    continueAsGuest(onSuccess?: () => void): void {
         if (!this.apiService || typeof this.apiService.createGuestSession !== 'function') {
             return;
         }
@@ -118,14 +138,25 @@ export class AuthStore {
                     const formattedBalance = this.formatBalance(res.user.cash_balance ?? '1000.00');
                     this.updateBalance(formattedBalance);
                     this.persistSession(res.token, res.user);
+                    this.closeAuthModal();
+                    this.toastService.success('Guest Session Active', 'Gifted $1,000.00 virtual USDC for paper trading!');
+                    if (onSuccess) onSuccess();
                 }
                 this.isInitializing.set(false);
             },
             error: (err) => {
                 console.error('Failed to provision guest session:', err);
                 this.isInitializing.set(false);
+                this.toastService.error('Session Error', 'Could not start guest session. Please try again.');
             }
         });
+    }
+
+    /**
+     * Provisions a fresh anonymous guest session (internal).
+     */
+    provisionNewGuestSession(): void {
+        this.continueAsGuest();
     }
 
     /**
@@ -159,12 +190,11 @@ export class AuthStore {
     }
 
     /**
-     * Logs out of Google / registered account and reverts to a fresh guest session.
+     * Logs out of account and reverts to unauthenticated surfing state.
      */
     logout(): void {
         this.clearSession();
-        this.provisionNewGuestSession();
-        this.toastService.info('Signed Out', 'Switched back to an anonymous guest sandbox.');
+        this.toastService.info('Signed Out', 'You have been signed out.');
     }
 
     /**
@@ -224,7 +254,7 @@ export class AuthStore {
                 }
 
                 this.isClaimingFaucet.set(false);
-                const claimedAmount = res.amount_claimed ? Math.round(parseFloat(res.amount_claimed)).toString() : (res.amount ?? '500');
+                const claimedAmount = res.amount_claimed ? Math.round(parseFloat(res.amount_claimed)).toString() : (res.amount ?? '100');
                 this.toastService.success('Faucet Claimed', `+$${claimedAmount} USDC credited to your balance`);
             },
             error: (err) => {
@@ -260,6 +290,7 @@ export class AuthStore {
         this.token.set(null);
         this.user.set(null);
         this.userId.set(null);
+        this.cashBalance.set('$0.00');
     }
 
     formatBalance(raw: string | number): string {

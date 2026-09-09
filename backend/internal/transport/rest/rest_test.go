@@ -240,8 +240,8 @@ func TestFaucetClaimAndCooldown(t *testing.T) {
 
 	var faucetResp map[string]interface{}
 	_ = json.Unmarshal(wFaucet1.Body.Bytes(), &faucetResp)
-	if faucetResp["new_balance"] != "1500.00000000" {
-		t.Errorf("Expected new balance '1500.00000000', got %v", faucetResp["new_balance"])
+	if faucetResp["new_balance"] != "1100.00000000" {
+		t.Errorf("Expected new balance '1100.00000000', got %v", faucetResp["new_balance"])
 	}
 
 	// Claim 2: Immediate second claim must trigger HTTP 429 Cooldown
@@ -252,6 +252,71 @@ func TestFaucetClaimAndCooldown(t *testing.T) {
 
 	if wFaucet2.Code != http.StatusTooManyRequests {
 		t.Fatalf("Expected HTTP 429 for cooldown rejection, got %d. Body: %s", wFaucet2.Code, wFaucet2.Body.String())
+	}
+}
+
+// 7. Admin Market Creation & Verification Endpoints
+func TestAdminCreateMarketAndVerify(t *testing.T) {
+	pool, cfg, router := getTestEnv(t)
+	defer pool.Close()
+
+	adminToken := cfg.AdminToken
+	if adminToken == "" {
+		adminToken = "dev-admin-secret-key-bayesmarket"
+	}
+
+	// 1. Test GET /api/v1/admin/verify unauthorized
+	wVerifyFail := httptest.NewRecorder()
+	reqVerifyFail, _ := http.NewRequest(http.MethodGet, "/api/v1/admin/verify", nil)
+	router.ServeHTTP(wVerifyFail, reqVerifyFail)
+	if wVerifyFail.Code != http.StatusUnauthorized {
+		t.Errorf("Expected 401 for unauthorized verify, got %d", wVerifyFail.Code)
+	}
+
+	// 2. Test GET /api/v1/admin/verify authorized
+	wVerifyOk := httptest.NewRecorder()
+	reqVerifyOk, _ := http.NewRequest(http.MethodGet, "/api/v1/admin/verify", nil)
+	reqVerifyOk.Header.Set("Authorization", "Bearer "+adminToken)
+	router.ServeHTTP(wVerifyOk, reqVerifyOk)
+	if wVerifyOk.Code != http.StatusOK {
+		t.Errorf("Expected 200 for authorized verify, got %d. Body: %s", wVerifyOk.Code, wVerifyOk.Body.String())
+	}
+
+	// 3. Test POST /api/v1/admin/markets
+	createPayload := map[string]string{
+		"title":                   "Will Mars Sample Return Launch Before 2030?",
+		"description":             "Resolves YES if NASA/ESA launches the Mars Sample Return mission spacecraft by Dec 31, 2029.",
+		"category":                "science",
+		"resolution_source":       "Official NASA / ESA mission press releases.",
+		"resolution_date":         "2029-12-31T23:59:59Z",
+		"initial_collateral_usdc": "10000.00000000",
+		"initial_probability_yes": "0.35000000",
+	}
+	payloadBytes, _ := json.Marshal(createPayload)
+
+	wCreate := httptest.NewRecorder()
+	reqCreate, _ := http.NewRequest(http.MethodPost, "/api/v1/admin/markets", bytes.NewReader(payloadBytes))
+	reqCreate.Header.Set("Content-Type", "application/json")
+	reqCreate.Header.Set("Authorization", "Bearer "+adminToken)
+	router.ServeHTTP(wCreate, reqCreate)
+
+	if wCreate.Code != http.StatusCreated {
+		t.Fatalf("Expected 201 for market creation, got %d. Body: %s", wCreate.Code, wCreate.Body.String())
+	}
+
+	var createResp map[string]interface{}
+	if err := json.Unmarshal(wCreate.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("Failed to parse market creation response: %v", err)
+	}
+
+	if createResp["id"] == "" || createResp["slug"] == "" {
+		t.Errorf("Expected id and slug in response: %+v", createResp)
+	}
+	if createResp["probability_yes_pct"] != "35.00" {
+		t.Errorf("Expected probability_yes_pct '35.00', got %v", createResp["probability_yes_pct"])
+	}
+	if createResp["collateral_reserve"] != "10000.00000000" {
+		t.Errorf("Expected collateral '10000.00000000', got %v", createResp["collateral_reserve"])
 	}
 }
 

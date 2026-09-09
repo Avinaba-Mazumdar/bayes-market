@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucidePlus, LucideLogIn, LucideLogOut, LucideSun, LucideMoon } from '@lucide/angular';
-import { WebSocketService } from '../../services/websocket.service';
+import { LucideLogIn, LucideLogOut, LucideSun, LucideMoon } from '@lucide/angular';
 import { ThemeService } from '../../services/theme.service';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
@@ -12,7 +11,7 @@ import { AuthStore } from '../../../state/auth.store';
     selector: 'app-top-header-dock',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [RouterLink, RouterLinkActive, ButtonComponent, BadgeComponent, AvatarComponent, LucidePlus, LucideLogIn, LucideLogOut, LucideSun, LucideMoon],
+    imports: [RouterLink, RouterLinkActive, ButtonComponent, BadgeComponent, AvatarComponent, LucideLogIn, LucideLogOut, LucideSun, LucideMoon],
     template: `
         <header class="top-header-dock" role="banner">
             <div class="dock-container">
@@ -42,27 +41,28 @@ import { AuthStore } from '../../../state/auth.store';
 
                 <!-- Right: Balance, Faucet, Theme Toggle, Auth -->
                 <div class="dock-right">
-                    <!-- Guest Balance Badge (JetBrains Mono tabular figures) -->
-                    <app-badge variant="outline" size="sm" class="balance-badge" aria-label="Current cash balance">
-                        <span class="balance-label">USDC</span>
-                        <span class="balance-amount tabular-nums">{{ userBalance() }}</span>
-                    </app-badge>
+                    @if (authStore.isAuthenticated()) {
+                        <!-- User Cash Balance Badge (JetBrains Mono tabular figures) -->
+                        <app-badge variant="outline" size="sm" class="balance-badge" aria-label="Current cash balance">
+                            <span class="balance-label">USDC</span>
+                            <span class="balance-amount tabular-nums">{{ userBalance() }}</span>
+                        </app-badge>
 
-                    <!-- Faucet Button -->
-                    <app-button
-                        variant="secondary"
-                        size="default"
-                        [loading]="isClaimingFaucet()"
-                        ariaLabel="Claim testnet faucet USDC"
-                        (btnClick)="onClaimFaucet()"
-                    >
-                        @if (isClaimingFaucet()) {
-                            <span>Claiming...</span>
-                        } @else {
-                            <svg lucidePlus class="faucet-plus-icon" [size]="14" aria-hidden="true"></svg>
-                            <span>Faucet</span>
-                        }
-                    </app-button>
+                        <!-- Faucet Button -->
+                        <app-button
+                            variant="secondary"
+                            size="default"
+                            [loading]="isClaimingFaucet()"
+                            ariaLabel="Claim testnet faucet USDC"
+                            (btnClick)="onClaimFaucet()"
+                        >
+                            @if (isClaimingFaucet()) {
+                                <span>Claiming...</span>
+                            } @else {
+                                <span>+100 Faucet</span>
+                            }
+                        </app-button>
+                    }
 
                     <!-- Theme Switcher Toggle -->
                     <button
@@ -79,19 +79,35 @@ import { AuthStore } from '../../../state/auth.store';
                         }
                     </button>
 
-                    <!-- Auth State & Sign In / Profile -->
-                    @if (authStore.isGuest()) {
+                    <!-- Auth State: Unauthenticated vs Guest vs Google Profile -->
+                    @if (!authStore.isAuthenticated()) {
                         <app-button
                             variant="primary"
                             size="default"
-                            class="guest-signin-btn"
-                            ariaLabel="Guest session active. Click to sign in or connect account."
-                            title="Guest Trader (Click to Sign In with Google)"
+                            class="signin-main-btn"
+                            ariaLabel="Click to sign in or start trading"
+                            title="Sign In to Start Paper Trading"
                             (btnClick)="authStore.openAuthModal()"
                         >
                             <span class="auth-btn-text">Sign In</span>
                             <svg lucideLogIn class="auth-icon" [size]="14" aria-hidden="true"></svg>
                         </app-button>
+                    } @else if (authStore.isGuest()) {
+                        <div class="user-profile-dock">
+                            <button
+                                type="button"
+                                class="auth-action-btn guest-logged-in-btn"
+                                (click)="authStore.openAuthModal()"
+                                [attr.aria-label]="'Trading as Guest. Click to connect Google account.'"
+                                title="Guest Trader (Click to connect Google)"
+                            >
+                                <span class="guest-badge-pill">Guest</span>
+                                <span class="auth-user-name">Guest Trader</span>
+                            </button>
+                            <button type="button" class="signout-quick-btn" (click)="authStore.logout()" aria-label="Sign out" title="Sign out">
+                                <svg lucideLogOut [size]="14" aria-hidden="true"></svg>
+                            </button>
+                        </div>
                     } @else {
                         <div class="user-profile-dock">
                             <button
@@ -104,13 +120,7 @@ import { AuthStore } from '../../../state/auth.store';
                                 <app-avatar [src]="authStore.userAvatar() || ''" [alt]="authStore.userName()" size="sm" />
                                 <span class="auth-user-name">{{ authStore.userName() }}</span>
                             </button>
-                            <button
-                                type="button"
-                                class="signout-quick-btn"
-                                (click)="authStore.logout()"
-                                aria-label="Sign out and switch to guest"
-                                title="Sign out"
-                            >
+                            <button type="button" class="signout-quick-btn" (click)="authStore.logout()" aria-label="Sign out" title="Sign out">
                                 <svg lucideLogOut [size]="14" aria-hidden="true"></svg>
                             </button>
                         </div>
@@ -253,14 +263,6 @@ import { AuthStore } from '../../../state/auth.store';
                 }
             }
 
-            .faucet-plus-icon {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
-                margin-right: 4px;
-            }
-
             /* Theme Switcher Toggle */
             .theme-toggle-btn {
                 display: inline-flex;
@@ -302,11 +304,6 @@ import { AuthStore } from '../../../state/auth.store';
             }
 
             /* Auth Styles */
-            .guest-signin-btn {
-                display: inline-flex;
-                align-items: center;
-            }
-
             .auth-action-btn {
                 display: inline-flex;
                 align-items: center;
@@ -342,12 +339,27 @@ import { AuthStore } from '../../../state/auth.store';
                 border-color: var(--primary-border, #7c4dff);
             }
 
-            .header-avatar {
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                object-fit: cover;
-                border: 1px solid var(--primary-border, #7c4dff);
+            .guest-logged-in-btn {
+                background-color: var(--surface-card, #131126);
+                border: 1px solid var(--hairline, #252140);
+                color: var(--ink, #f8f7ff);
+                padding: 6px 12px;
+            }
+
+            .guest-logged-in-btn:hover {
+                background-color: var(--surface-card-elevated, #1a1733);
+                border-color: var(--primary-border, #7c4dff);
+            }
+
+            .guest-badge-pill {
+                font-family: var(--font-mono);
+                font-size: 11px;
+                font-weight: 700;
+                color: var(--accent, #00d4ff);
+                background-color: rgba(0, 212, 255, 0.12);
+                border: 1px solid rgba(0, 212, 255, 0.3);
+                padding: 2px 6px;
+                border-radius: var(--radius-pill, 9999px);
             }
 
             .auth-user-name {
@@ -382,15 +394,9 @@ import { AuthStore } from '../../../state/auth.store';
         `
     ]
 })
-export class TopHeaderDockComponent implements OnInit {
-    readonly wsService = inject(WebSocketService);
+export class TopHeaderDockComponent {
     readonly authStore = inject(AuthStore);
     readonly themeService = inject(ThemeService);
-
-    ngOnInit(): void {
-        // WebSocket connections are managed by individual pages (market-detail, market-list)
-        // to avoid duplicate connections and unnecessary reconnection churn.
-    }
 
     get userBalance() {
         return this.authStore.cashBalance;

@@ -36,7 +36,7 @@ func main() {
 	// Attempt database connection pool initialization (Neon PostgreSQL)
 	var dbPool *pgxpool.Pool
 	if cfg != nil && cfg.DatabaseURL != "" && !strings.Contains(cfg.DatabaseURL, "ep-cool-pool-123456") {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 		defer cancel()
 
 		pool, err := database.NewPool(ctx, cfg.DatabaseURL)

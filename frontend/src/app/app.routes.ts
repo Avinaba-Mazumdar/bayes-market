@@ -17,6 +17,11 @@ export const routes: Routes = [
         title: 'Portfolio & PnL Ledger — BayesMarket'
     },
     {
+        path: 'admin',
+        loadComponent: () => import('./features/admin/admin-dashboard.component').then((m) => m.AdminDashboardComponent),
+        title: 'Superadmin Liquidity & Market Creator — BayesMarket'
+    },
+    {
         path: '**',
         redirectTo: ''
     }

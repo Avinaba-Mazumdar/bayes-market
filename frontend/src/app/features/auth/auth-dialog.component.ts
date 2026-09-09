@@ -8,6 +8,7 @@ import { AvatarComponent } from '../../shared/components/avatar/avatar.component
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { AuthStore } from '../../state/auth.store';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../shared/components/toast/toast.service';
 
 @Component({
     selector: 'app-auth-dialog',
@@ -18,28 +19,38 @@ import { ApiService } from '../../core/services/api.service';
         <app-dialog
             [open]="authStore.isAuthModalOpen()"
             (closed)="onClose()"
-            [title]="authStore.isGuest() ? 'Sign In to BayesMarket' : 'Your Account'"
+            [title]="!authStore.isAuthenticated() || authStore.isGuest() ? 'Sign In to BayesMarket' : 'Your Account'"
             [description]="
-                authStore.isGuest()
-                    ? 'Connect your Google account to preserve your predictions, portfolio balance, and track performance.'
-                    : 'Manage your verified trading profile and preferences.'
+                !authStore.isAuthenticated()
+                    ? 'Choose an option to begin trading with your complimentary $1,000.00 USDC paper balance.'
+                    : authStore.isGuest()
+                      ? 'Connect your Google account to preserve your predictions, portfolio balance, and track performance.'
+                      : 'Manage your verified trading profile and preferences.'
             "
             size="default"
             role="dialog"
             ariaLabel="Authentication Dialog"
         >
             <div class="auth-dialog-content">
-                @if (authStore.isGuest()) {
-                    <!-- Guest Upgrade Callout -->
-                    <div class="upgrade-banner" role="status">
-                        <svg lucideShieldCheck class="banner-icon" [size]="20" aria-hidden="true"></svg>
-                        <div class="banner-text">
-                            <span class="banner-title">Guest Session Active</span>
-                            <span class="banner-desc">
-                                Upgrading to Google will preserve your active positions and {{ authStore.cashBalance() }} balance.
-                            </span>
+                <!-- Simulation / Paper Trading Notice -->
+                <div class="simulation-banner" role="status">
+                    <span class="simulation-tag">PAPER TRADING</span>
+                    <span class="simulation-text">All trading on BayesMarket is simulated with virtual USDC. No real money or cryptocurrency is involved.</span>
+                </div>
+
+                @if (!authStore.isAuthenticated() || authStore.isGuest()) {
+                    @if (authStore.isGuest()) {
+                        <!-- Guest Upgrade Callout -->
+                        <div class="upgrade-banner" role="status">
+                            <svg lucideShieldCheck class="banner-icon" [size]="20" aria-hidden="true"></svg>
+                            <div class="banner-text">
+                                <span class="banner-title">Guest Session Active</span>
+                                <span class="banner-desc">
+                                    Upgrading to Google will preserve your active positions and {{ authStore.cashBalance() }} balance.
+                                </span>
+                            </div>
                         </div>
-                    </div>
+                    }
 
                     <!-- Main Google Sign-In Action -->
                     <div class="auth-card primary-auth">
@@ -82,42 +93,56 @@ import { ApiService } from '../../core/services/api.service';
                         </div>
                     </div>
 
-                    <!-- Development Quick Login (Available when simulated / local dev) -->
-                    <div class="dev-quick-option">
-                        <div class="divider">
-                            <span class="divider-label">DEVELOPMENT & TESTING</span>
-                        </div>
-                        <div class="dev-box">
-                            <div class="dev-info">
-                                <svg lucideZap class="dev-icon" [size]="16" aria-hidden="true"></svg>
-                                <span>Simulate Google Sign-In with mock developer credentials</span>
+                    <!-- Development Quick Login (Available only in local / dev environments) -->
+                    @if (authStore.isDev()) {
+                        <div class="dev-quick-option">
+                            <div class="divider">
+                                <span class="divider-label">DEVELOPMENT & TESTING</span>
                             </div>
-                            <app-button
-                                variant="secondary"
-                                size="sm"
-                                [loading]="authStore.isAuthenticating()"
-                                (btnClick)="onDevQuickLogin()"
-                                ariaLabel="One-click simulate Google sign-in"
-                            >
-                                Quick Dev Sign-In
-                            </app-button>
+                            <div class="dev-box">
+                                <div class="dev-info">
+                                    <svg lucideZap class="dev-icon" [size]="16" aria-hidden="true"></svg>
+                                    <span>Simulate Google Sign-In with mock developer credentials</span>
+                                </div>
+                                <app-button
+                                    variant="secondary"
+                                    size="sm"
+                                    [loading]="authStore.isAuthenticating()"
+                                    (btnClick)="onDevQuickLogin()"
+                                    ariaLabel="One-click simulate Google sign-in"
+                                >
+                                    Quick Dev Sign-In
+                                </app-button>
+                            </div>
                         </div>
-                    </div>
+                    }
 
                     <div class="divider">
                         <span class="divider-label">OR</span>
                     </div>
 
-                    <!-- Guest Session Details -->
+                    <!-- Guest Session Option -->
                     <div class="auth-card guest-auth">
                         <div class="auth-card-body">
                             <div class="guest-info-row">
                                 <div class="guest-details">
-                                    <h4 class="guest-title">Continue as Anonymous Guest</h4>
-                                    <p class="guest-desc">Instant access to prediction markets with $1,000 sandbox USDC. No email or registration required.</p>
+                                    <h4 class="guest-title">{{ authStore.isGuest() ? 'Active Guest Session' : 'Continue as Guest' }}</h4>
+                                    <p class="guest-desc">
+                                        {{
+                                            authStore.isGuest()
+                                                ? 'You are currently trading as an anonymous guest with virtual testnet USDC.'
+                                                : 'Immediate sandbox trading. You will receive a $1,000.00 virtual USDC gift with zero registration required.'
+                                        }}
+                                    </p>
                                 </div>
-                                <app-button variant="ghost" size="default" (btnClick)="continueAsGuest()" ariaLabel="Continue as guest trader">
-                                    Stay as Guest
+                                <app-button
+                                    variant="secondary"
+                                    size="default"
+                                    [loading]="authStore.isInitializing()"
+                                    (btnClick)="continueAsGuest()"
+                                    ariaLabel="Continue as guest trader"
+                                >
+                                    {{ authStore.isGuest() ? 'Stay as Guest' : 'Start as Guest' }}
                                 </app-button>
                             </div>
                         </div>
@@ -164,6 +189,35 @@ import { ApiService } from '../../core/services/api.service';
                 display: flex;
                 flex-direction: column;
                 gap: 16px;
+            }
+
+            .simulation-banner {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 14px;
+                background-color: rgba(124, 77, 255, 0.08);
+                border: 1px solid rgba(124, 77, 255, 0.25);
+                border-radius: var(--radius-md, 10px);
+            }
+
+            .simulation-tag {
+                font-family: var(--font-mono);
+                font-size: 10px;
+                font-weight: 800;
+                color: var(--primary-border, #7c4dff);
+                background-color: rgba(124, 77, 255, 0.16);
+                padding: 2px 6px;
+                border-radius: var(--radius-sm, 4px);
+                letter-spacing: 0.5px;
+                flex-shrink: 0;
+            }
+
+            .simulation-text {
+                font-family: var(--font-ui);
+                font-size: 12px;
+                color: var(--muted, #9d97b8);
+                line-height: 1.35;
             }
 
             .upgrade-banner {
@@ -426,19 +480,12 @@ import { ApiService } from '../../core/services/api.service';
             }
 
             .provider-badge {
-                display: inline-flex;
-                align-items: center;
-                gap: 4px;
-                font-family: var(--font-mono);
-                font-size: 11px;
-                font-weight: 600;
-                color: var(--status-profit, #065f46);
-                background-color: var(--status-profit-bg, #ecfdf5);
-                border: 1px solid var(--status-profit-border, #059669);
-                padding: 2px 8px;
-                border-radius: 9999px;
                 width: fit-content;
                 margin-top: 2px;
+            }
+
+            .badge-icon {
+                flex-shrink: 0;
             }
 
             .profile-stats {
@@ -513,6 +560,7 @@ import { ApiService } from '../../core/services/api.service';
 export class AuthDialogComponent {
     readonly authStore = inject(AuthStore);
     private readonly apiService = inject(ApiService);
+    private readonly toastService = inject(ToastService);
     private readonly destroyRef = inject(DestroyRef);
 
     readonly isRedirecting = signal<boolean>(false);
@@ -522,10 +570,18 @@ export class AuthDialogComponent {
     }
 
     continueAsGuest(): void {
-        this.authStore.closeAuthModal();
+        if (this.authStore.isGuest()) {
+            this.authStore.closeAuthModal();
+        } else {
+            this.authStore.continueAsGuest();
+        }
     }
 
     onDevQuickLogin(): void {
+        if (!this.authStore.isDev()) {
+            this.toastService.warning('Disabled', 'Dev Quick Login is only available when APP_ENV=local or dev');
+            return;
+        }
         this.authStore.loginWithGoogle('dev-mock-id-token-12345', 'trader@bayesmarket.com', 'Alex Mercer (Trader)');
     }
 
@@ -540,17 +596,26 @@ export class AuthDialogComponent {
                 next: (res) => {
                     this.isRedirecting.set(false);
                     if (res.simulated || !res.url) {
-                        // Backend is running in simulated / dev mode without client ID
-                        this.onDevQuickLogin();
+                        if (this.authStore.isDev()) {
+                            // Backend is running in simulated / dev mode without client ID
+                            this.onDevQuickLogin();
+                        } else {
+                            this.toastService.error('OAuth Error', 'Google OAuth is not configured in this environment');
+                        }
                     } else {
                         // Real Google OAuth redirect flow
                         window.location.href = res.url;
                     }
                 },
-                error: () => {
+                error: (err) => {
                     this.isRedirecting.set(false);
-                    // Fallback to dev quick login if error or offline
-                    this.onDevQuickLogin();
+                    if (this.authStore.isDev()) {
+                        // Fallback to dev quick login if error or offline in dev
+                        this.onDevQuickLogin();
+                    } else {
+                        const msg = err?.error?.message || 'Failed to initiate Google authentication';
+                        this.toastService.error('Authentication Error', msg);
+                    }
                 }
             });
     }

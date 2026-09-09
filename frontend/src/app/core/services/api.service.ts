@@ -1,11 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { catchError, Observable, of } from 'rxjs';
 import {
+    AppConfig,
     AuthResponse,
     BuyQuoteResponse,
     CashOutRequest,
     CashOutResponse,
+    CreateMarketRequest,
+    CreateMarketResponse,
     FaucetResponse,
     GoogleVerifyRequest,
     Market,
@@ -140,5 +143,39 @@ export class ApiService {
     resolveMarket(marketId: string, request: ResolveMarketRequest, adminToken: string, idempotencyKey: string): Observable<ResolveMarketResponse> {
         const headers = this.buildHeaders(adminToken, idempotencyKey);
         return this.http.post<ResolveMarketResponse>(`${this.baseUrl}/admin/markets/${encodeURIComponent(marketId)}/resolve`, request, { headers });
+    }
+
+    /**
+     * Verify whether an admin authorization token is valid.
+     */
+    verifyAdmin(adminToken: string): Observable<{ status: string; message: string }> {
+        const headers = this.buildHeaders(adminToken);
+        return this.http.get<{ status: string; message: string }>(`${this.baseUrl}/admin/verify`, { headers });
+    }
+
+    /**
+     * Create a new prediction market with calibrated CPMM liquidity reserves.
+     */
+    createMarket(request: CreateMarketRequest, adminToken: string): Observable<CreateMarketResponse> {
+        const headers = this.buildHeaders(adminToken);
+        return this.http.post<CreateMarketResponse>(`${this.baseUrl}/admin/markets`, request, { headers });
+    }
+
+    /**
+     * Fetch runtime system configuration including APP_ENV and is_dev mode.
+     */
+    getConfig(): Observable<AppConfig> {
+        return this.http.get<AppConfig>(`${this.baseUrl}/config`).pipe(
+            catchError(() =>
+                of({
+                    app_env:
+                        typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                            ? 'local'
+                            : 'production',
+                    is_dev: typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'),
+                    google_auth_enabled: false
+                })
+            )
+        );
     }
 }

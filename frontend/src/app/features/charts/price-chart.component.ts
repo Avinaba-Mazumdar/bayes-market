@@ -499,17 +499,23 @@ export class PriceChartComponent implements OnInit, OnDestroy {
                     const { prob, date: tickDate } = this.pendingTick;
                     this.pendingTick = null;
 
-                    const time = Math.floor(tickDate.getTime() / 1000) as UTCTimestamp;
+                    const nowSec = Math.floor(tickDate.getTime() / 1000);
+                    const lastTime = this.currentData.length > 0 ? (this.currentData[this.currentData.length - 1].time as number) : 0;
+                    const time = (nowSec >= lastTime ? nowSec : lastTime) as UTCTimestamp;
 
                     if (this.areaSeries) {
-                        const point: ChartPoint = { time, value: prob };
-                        this.areaSeries.update(point as any);
-                        if (this.currentData.length > 0) {
-                            const first = this.currentData[0].value;
-                            const newChange = (prob - first) * 100;
-                            if (Math.abs(this.priceChange() - newChange) > 0.001) {
-                                this.priceChange.set(newChange);
+                        try {
+                            const point: ChartPoint = { time, value: prob };
+                            this.areaSeries.update(point as any);
+                            if (this.currentData.length > 0) {
+                                const first = this.currentData[0].value;
+                                const newChange = (prob - first) * 100;
+                                if (Math.abs(this.priceChange() - newChange) > 0.001) {
+                                    this.priceChange.set(newChange);
+                                }
                             }
+                        } catch {
+                            // Ignore non-critical timestamp collision
                         }
                     }
                 });

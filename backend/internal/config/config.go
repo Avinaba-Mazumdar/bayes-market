@@ -50,14 +50,32 @@ func Load() (*Config, error) {
 		corsOrigin = "http://localhost:4200"
 	}
 
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		env = os.Getenv("ENVIRONMENT")
+		if env == "" {
+			env = "development"
+		}
+	}
+	env = strings.ToLower(strings.TrimSpace(env))
+	isDevOrLocal := env == "local" || env == "dev" || env == "development"
+
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
-		jwtSecret = "bayesmarket-development-hmac-sha256-default-secret-key-32b"
+		if isDevOrLocal {
+			jwtSecret = "bayesmarket-development-hmac-sha256-default-secret-key-32b"
+		} else {
+			return nil, fmt.Errorf("missing required environment variable: JWT_SECRET (required in %s environment)", env)
+		}
 	}
 
 	adminToken := os.Getenv("ADMIN_TOKEN")
 	if adminToken == "" {
-		adminToken = "bayesmarket-admin-secret-token"
+		if isDevOrLocal {
+			adminToken = "bayesmarket-admin-secret-token"
+		} else {
+			return nil, fmt.Errorf("missing required environment variable: ADMIN_TOKEN (required in %s environment)", env)
+		}
 	}
 
 	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
@@ -65,11 +83,6 @@ func Load() (*Config, error) {
 	googleRedirectURI := os.Getenv("GOOGLE_REDIRECT_URI")
 	if googleRedirectURI == "" {
 		googleRedirectURI = "http://localhost:4200/auth/callback"
-	}
-
-	env := os.Getenv("APP_ENV")
-	if env == "" {
-		env = "development"
 	}
 
 	return &Config{
@@ -83,4 +96,13 @@ func Load() (*Config, error) {
 		GoogleClientSecret: strings.TrimSpace(googleClientSecret),
 		GoogleRedirectURI:  strings.TrimSpace(googleRedirectURI),
 	}, nil
+}
+
+// IsDevOrLocal returns true if the current environment is dev or local.
+func (c *Config) IsDevOrLocal() bool {
+	if c == nil {
+		return true
+	}
+	env := strings.ToLower(strings.TrimSpace(c.Environment))
+	return env == "local" || env == "dev" || env == "development"
 }

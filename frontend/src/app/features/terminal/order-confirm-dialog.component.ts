@@ -82,6 +82,11 @@ import { OrderIntent } from './order-terminal.component';
                         </div>
                     </div>
 
+                    <div class="paper-trade-callout" role="note">
+                        <span class="paper-trade-pill">PAPER TRADE</span>
+                        <span class="paper-trade-text">Executed with simulated USDC test funds. No real money or cryptocurrency is involved.</span>
+                    </div>
+
                     <div class="reversibility-notice" role="note">
                         <svg lucideInfo class="notice-icon" [size]="16" aria-hidden="true"></svg>
                         <span>
@@ -240,6 +245,35 @@ import { OrderIntent } from './order-terminal.component';
             .balance-preview {
                 color: var(--status-info, #075985);
                 font-weight: 700;
+            }
+
+            .paper-trade-callout {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 12px;
+                background-color: rgba(168, 85, 247, 0.08);
+                border: 1px solid rgba(168, 85, 247, 0.25);
+                border-radius: var(--radius-md, 10px);
+            }
+
+            .paper-trade-pill {
+                font-family: var(--font-mono);
+                font-size: 10.5px;
+                font-weight: 800;
+                color: var(--primary-border, #a855f7);
+                background-color: rgba(168, 85, 247, 0.16);
+                padding: 2px 6px;
+                border-radius: var(--radius-sm, 4px);
+                letter-spacing: 0.5px;
+                flex-shrink: 0;
+            }
+
+            .paper-trade-text {
+                font-family: var(--font-ui);
+                font-size: 12px;
+                color: var(--muted, #9d97b8);
+                line-height: 1.35;
             }
 
             .reversibility-notice {

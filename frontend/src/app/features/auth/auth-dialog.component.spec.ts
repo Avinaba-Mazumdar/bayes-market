@@ -85,6 +85,13 @@ describe('AuthDialogComponent', () => {
     });
 
     it('should display guest sign-in options when opened for a guest trader', () => {
+        authStore.user.set({
+            id: 'guest-1',
+            cash_balance: '1000.00',
+            is_guest: true,
+            auth_provider: 'guest',
+            created_at: '2026-01-01T00:00:00Z'
+        });
         authStore.isAuthModalOpen.set(true);
         fixture.detectChanges();
 
@@ -99,6 +106,20 @@ describe('AuthDialogComponent', () => {
         const devSignBtn = el.querySelector('.dev-box button');
         expect(devSignBtn).toBeTruthy();
         expect(devSignBtn?.textContent).toContain('Quick Dev Sign-In');
+    });
+
+    it('should display paper trading notice and guest option for unauthenticated visitors', () => {
+        authStore.user.set(null);
+        authStore.token.set(null);
+        authStore.isAuthModalOpen.set(true);
+        fixture.detectChanges();
+
+        const el = fixture.nativeElement as HTMLElement;
+        expect(el.querySelector('.simulation-banner')).toBeTruthy();
+        expect(el.querySelector('.simulation-banner')?.textContent).toContain('PAPER TRADING');
+        expect(el.querySelector('.guest-auth')).toBeTruthy();
+        expect(el.querySelector('.guest-title')?.textContent).toContain('Continue as Guest');
+        expect(el.querySelector('.guest-auth app-button')?.textContent).toContain('Start as Guest');
     });
 
     it('should execute dev quick login when clicked', () => {

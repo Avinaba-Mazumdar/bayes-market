@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 
-export type InputType = 'text' | 'number' | 'password' | 'email' | 'search' | 'tel' | 'url';
+export type InputType = 'text' | 'number' | 'password' | 'email' | 'search' | 'tel' | 'url' | 'datetime-local';
 export type InputSize = 'sm' | 'default' | 'lg';
 export type InputVariant = 'default' | 'mono';
 

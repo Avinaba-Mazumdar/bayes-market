@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -17,6 +18,18 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 )
+
+// CreateMarketRequest defines input payload for creating a new prediction market.
+type CreateMarketRequest struct {
+	Title                 string `json:"title" binding:"required"`
+	Description           string `json:"description" binding:"required"`
+	Category              string `json:"category" binding:"required"`
+	ResolutionSource      string `json:"resolution_source" binding:"required"`
+	ResolutionDate        string `json:"resolution_date" binding:"required"`
+	ImageURL              string `json:"image_url"`
+	InitialCollateralUSDC string `json:"initial_collateral_usdc"` // e.g. "10000.00000000" (default 10000)
+	InitialProbabilityYes string `json:"initial_probability_yes"` // e.g. "0.50000000" or "50" (default 0.5)
+}
 
 // ResolveMarketRequest defines input payload for settling a prediction market.
 type ResolveMarketRequest struct {
@@ -407,4 +420,234 @@ func (h *AdminHandler) HandleResolveMarket(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, responseObj)
+}
+
+// HandleVerifyAdmin validates the admin credential and returns 200 OK.
+//
+// GET /api/v1/admin/verify
+func (h *AdminHandler) HandleVerifyAdmin(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "authorized",
+		"message": "Admin credential is valid",
+	})
+}
+
+var slugRegex = regexp.MustCompile(`[^a-z0-9]+`)
+
+func slugifyTitle(title string) string {
+	slug := strings.ToLower(strings.TrimSpace(title))
+	slug = slugRegex.ReplaceAllString(slug, "-")
+	slug = strings.Trim(slug, "-")
+	if len(slug) > 80 {
+		slug = slug[:80]
+		slug = strings.Trim(slug, "-")
+	}
+	if slug == "" {
+		slug = "market-" + uuid.New().String()[:8]
+	}
+	return slug
+}
+
+func parseResolutionDate(raw string) (time.Time, error) {
+	raw = strings.TrimSpace(raw)
+	formats := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02T15:04:05",
+		"2006-01-02T15:04",
+		"2006-01-02 15:04:05",
+		"2006-01-02 15:04",
+		"2006-01-02",
+	}
+	for _, f := range formats {
+		if t, err := time.Parse(f, raw); err == nil {
+			return t.UTC(), nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("invalid resolution date; expected RFC3339 or ISO-8601 (e.g. 2026-12-31T23:59:59Z)")
+}
+
+// HandleCreateMarket provisions a new prediction market and calibrates its CPMM liquidity pool.
+//
+// POST /api/v1/admin/markets
+func (h *AdminHandler) HandleCreateMarket(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
+	defer cancel()
+
+	var req CreateMarketRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "invalid_request",
+			"message": "Required fields: title, description, category, resolution_source, resolution_date",
+		})
+		return
+	}
+
+	req.Title = strings.TrimSpace(req.Title)
+	req.Description = strings.TrimSpace(req.Description)
+	req.Category = strings.ToLower(strings.TrimSpace(req.Category))
+	req.ResolutionSource = strings.TrimSpace(req.ResolutionSource)
+	if req.Title == "" || req.Description == "" || req.Category == "" || req.ResolutionSource == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "invalid_request",
+			"message": "Title, description, category, and resolution_source cannot be empty",
+		})
+		return
+	}
+
+	resolutionDate, err := parseResolutionDate(req.ResolutionDate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "invalid_date",
+			"message": err.Error(),
+		})
+		return
+	}
+	if resolutionDate.Before(time.Now().UTC()) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "invalid_date",
+			"message": "Resolution date must be in the future",
+		})
+		return
+	}
+
+	// 1. Initial Collateral (default 10,000 USDC)
+	collateral := decimal.NewFromInt(10000)
+	if req.InitialCollateralUSDC != "" {
+		cDec, err := decimal.NewFromString(strings.TrimSpace(req.InitialCollateralUSDC))
+		if err != nil || cDec.LessThan(decimal.NewFromInt(100)) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "invalid_collateral",
+				"message": "Initial pool collateral must be at least 100 USDC",
+			})
+			return
+		}
+		collateral = cDec
+	}
+
+	// 2. Initial Probability for YES (default 0.50 / 50%)
+	probYes := decimal.NewFromFloat(0.50)
+	if req.InitialProbabilityYes != "" {
+		pDec, err := decimal.NewFromString(strings.TrimSpace(req.InitialProbabilityYes))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "invalid_probability",
+				"message": "Initial probability must be a decimal (0.01 to 0.99) or percentage (1 to 99)",
+			})
+			return
+		}
+		if pDec.GreaterThan(decimal.NewFromInt(1)) {
+			pDec = pDec.Div(decimal.NewFromInt(100))
+		}
+		if pDec.LessThan(decimal.NewFromFloat(0.01)) || pDec.GreaterThan(decimal.NewFromFloat(0.99)) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "invalid_probability",
+				"message": "Initial probability must be between 1% (0.01) and 99% (0.99)",
+			})
+			return
+		}
+		probYes = pDec
+	}
+
+	probNo := decimal.NewFromInt(1).Sub(probYes)
+
+	// Fixed-point CPMM inventory derivation:
+	// Setting R_yes = Collateral * (1 - P_yes) and R_no = Collateral * P_yes guarantees:
+	// R_yes + R_no = Collateral, so P_yes = R_no / Collateral
+	reserveYes := collateral.Mul(probNo).Truncate(8)
+	reserveNo := collateral.Mul(probYes).Truncate(8)
+	kInvariant := reserveYes.Mul(reserveNo)
+
+	// 3. Unique slug generation
+	baseSlug := slugifyTitle(req.Title)
+	slug := baseSlug
+	for i := 0; i < 5; i++ {
+		var exists bool
+		err := h.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM markets WHERE slug = $1)", slug).Scan(&exists)
+		if err == nil && !exists {
+			break
+		}
+		slug = fmt.Sprintf("%s-%s", baseSlug, uuid.New().String()[:6])
+	}
+
+	imageURL := strings.TrimSpace(req.ImageURL)
+	if imageURL == "" {
+		imageURL = fmt.Sprintf("/assets/markets/%s.webp", req.Category)
+	}
+
+	// 4. Atomic database insertion
+	tx, err := h.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "database_error",
+			"message": "Failed to begin transaction",
+		})
+		return
+	}
+	defer tx.Rollback(ctx)
+
+	var (
+		marketID  uuid.UUID
+		createdAt time.Time
+	)
+	queryMarket := `
+		INSERT INTO markets (slug, title, description, category, image_url, resolution_source, resolution_date, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, 'active')
+		RETURNING id, created_at;
+	`
+	err = tx.QueryRow(ctx, queryMarket,
+		slug, req.Title, req.Description, req.Category, imageURL, req.ResolutionSource, resolutionDate,
+	).Scan(&marketID, &createdAt)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "database_error",
+			"message": fmt.Sprintf("Failed to insert market record: %v", err),
+		})
+		return
+	}
+
+	queryPool := `
+		INSERT INTO liquidity_pools (market_id, reserve_yes, reserve_no, collateral_reserve, k_invariant, total_volume_usdc, lock_version)
+		VALUES ($1, $2, $3, $4, $5, 0, 0);
+	`
+	if _, err := tx.Exec(ctx, queryPool, marketID, reserveYes, reserveNo, collateral, kInvariant); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "database_error",
+			"message": fmt.Sprintf("Failed to insert liquidity pool: %v", err),
+		})
+		return
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "database_error",
+			"message": "Failed to commit market creation transaction",
+		})
+		return
+	}
+
+	if h.marketCache != nil {
+		h.marketCache.InvalidateAll()
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"id":                  marketID.String(),
+		"slug":                slug,
+		"title":               req.Title,
+		"description":         req.Description,
+		"category":            req.Category,
+		"image_url":           imageURL,
+		"resolution_source":   req.ResolutionSource,
+		"resolution_date":     resolutionDate.Format(time.RFC3339),
+		"status":              "active",
+		"reserve_yes":         reserveYes.StringFixed(8),
+		"reserve_no":          reserveNo.StringFixed(8),
+		"collateral_reserve":  collateral.StringFixed(8),
+		"k_invariant":         kInvariant.StringFixed(16),
+		"probability_yes":     probYes.StringFixed(4),
+		"probability_no":      probNo.StringFixed(4),
+		"probability_yes_pct": probYes.Mul(decimal.NewFromInt(100)).StringFixed(2),
+		"probability_no_pct":  probNo.Mul(decimal.NewFromInt(100)).StringFixed(2),
+		"created_at":          createdAt.Format(time.RFC3339),
+	})
 }

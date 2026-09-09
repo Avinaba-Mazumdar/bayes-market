@@ -28,6 +28,7 @@ type AuthHandler struct {
 	googleClientSecret string
 	googleRedirectURI  string
 	httpClient         *http.Client
+	isDevOrLocal       bool
 }
 
 // NewAuthHandler constructs an AuthHandler with configuration.
@@ -36,6 +37,7 @@ func NewAuthHandler(pool *pgxpool.Pool, cfg *config.Config) *AuthHandler {
 	googleClientSecret := ""
 	googleRedirectURI := "http://localhost:4200/auth/callback"
 	jwtSecret := "bayesmarket-development-hmac-sha256-default-secret-key-32b"
+	isDevOrLocal := true
 
 	if cfg != nil {
 		if cfg.JWTSecret != "" {
@@ -46,6 +48,7 @@ func NewAuthHandler(pool *pgxpool.Pool, cfg *config.Config) *AuthHandler {
 		if cfg.GoogleRedirectURI != "" {
 			googleRedirectURI = cfg.GoogleRedirectURI
 		}
+		isDevOrLocal = cfg.IsDevOrLocal()
 	}
 
 	return &AuthHandler{
@@ -54,6 +57,7 @@ func NewAuthHandler(pool *pgxpool.Pool, cfg *config.Config) *AuthHandler {
 		googleClientID:     googleClientID,
 		googleClientSecret: googleClientSecret,
 		googleRedirectURI:  googleRedirectURI,
+		isDevOrLocal:       isDevOrLocal,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -122,20 +126,28 @@ func (h *AuthHandler) HandleGuestAuth(c *gin.Context) {
 		createdAt    time.Time
 	)
 
-	query := `
-		INSERT INTO users (is_guest, cash_balance, auth_provider, ip_address)
-		VALUES (true, $1, 'guest', $2)
-		RETURNING id, is_guest, auth_provider, cash_balance, created_at;
-	`
-	err := h.pool.QueryRow(ctx, query, initialBalance, clientIP).Scan(
-		&userID, &isGuest, &authProvider, &cashBalance, &createdAt,
-	)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "database_error",
-			"message": "Failed to provision guest user session",
-		})
-		return
+	if h.pool == nil {
+		userID = uuid.New()
+		isGuest = true
+		authProvider = "guest"
+		cashBalance = initialBalance
+		createdAt = time.Now().UTC()
+	} else {
+		query := `
+			INSERT INTO users (is_guest, cash_balance, auth_provider, ip_address)
+			VALUES (true, $1, 'guest', $2)
+			RETURNING id, is_guest, auth_provider, cash_balance, created_at;
+		`
+		err := h.pool.QueryRow(ctx, query, initialBalance, clientIP).Scan(
+			&userID, &isGuest, &authProvider, &cashBalance, &createdAt,
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "database_error",
+				"message": "Failed to provision guest user session",
+			})
+			return
+		}
 	}
 
 	tokenString, err := h.generateJWT(userID.String(), isGuest, "", "", "", authProvider)
@@ -184,8 +196,33 @@ func (h *AuthHandler) HandleGoogleAuthVerify(c *gin.Context) {
 	)
 
 	// Check if this is local dev simulation mode or mock token
-	isDevMode := h.googleClientID == "" || strings.HasPrefix(req.IDToken, "mock-") || strings.HasPrefix(req.IDToken, "dev-")
-	if isDevMode {
+	isMockToken := strings.HasPrefix(req.IDToken, "mock-") || strings.HasPrefix(req.IDToken, "dev-")
+	if isMockToken {
+		if !h.isDevOrLocal {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error":   "dev_mode_disabled",
+				"message": "Dev mock authentication tokens are only allowed when APP_ENV=local or dev",
+			})
+			return
+		}
+		googleID = "google-mock-" + uuid.New().String()[:8]
+		email = "trader@bayesmarket.com"
+		if req.Email != "" {
+			email = req.Email
+		}
+		name = "Institutional Trader"
+		if req.Name != "" {
+			name = req.Name
+		}
+		avatarURL = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80"
+	} else if h.googleClientID == "" {
+		if !h.isDevOrLocal {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"error":   "oauth_not_configured",
+				"message": "Google OAuth is not configured in this environment",
+			})
+			return
+		}
 		googleID = "google-mock-" + uuid.New().String()[:8]
 		email = "trader@bayesmarket.com"
 		if req.Email != "" {
@@ -250,6 +287,15 @@ func (h *AuthHandler) HandleGoogleAuthVerify(c *gin.Context) {
 // GET /api/v1/auth/google/url
 func (h *AuthHandler) HandleGoogleAuthURL(c *gin.Context) {
 	if h.googleClientID == "" {
+		if !h.isDevOrLocal {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"error":     "oauth_not_configured",
+				"message":   "Google OAuth is not configured in this environment",
+				"simulated": false,
+				"url":       "",
+			})
+			return
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"url":       "",
 			"simulated": true,
@@ -396,6 +442,19 @@ func (h *AuthHandler) HandleGetMe(c *gin.Context) {
 		createdAt    time.Time
 	)
 
+	if h.pool == nil {
+		nameStr := "Guest Trader"
+		c.JSON(http.StatusOK, UserResponse{
+			ID:           userID.String(),
+			Name:         &nameStr,
+			AuthProvider: "guest",
+			IsGuest:      true,
+			CashBalance:  "1000.00000000",
+			CreatedAt:    time.Now().UTC().Format(time.RFC3339),
+		})
+		return
+	}
+
 	query := `
 		SELECT id, is_guest, auth_provider, email, name, avatar_url, cash_balance, created_at
 		FROM users
@@ -487,6 +546,20 @@ func (h *AuthHandler) upsertGoogleUser(
 		existingName        *string
 		existingAvatar      *string
 	)
+
+	if h.pool == nil {
+		mockID := uuid.New().String()
+		return &UserResponse{
+			ID:           mockID,
+			Email:        &email,
+			Name:         &name,
+			AvatarURL:    &avatarURL,
+			IsGuest:      false,
+			AuthProvider: "google",
+			CashBalance:  "1000.00000000",
+			CreatedAt:    time.Now().UTC().Format(time.RFC3339),
+		}, nil
+	}
 
 	queryFind := `
 		SELECT id, is_guest, auth_provider, email, name, avatar_url, cash_balance, created_at

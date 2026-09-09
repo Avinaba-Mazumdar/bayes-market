@@ -23,7 +23,7 @@ func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	config.MaxConnIdleTime = 15 * time.Minute
 	config.HealthCheckPeriod = 1 * time.Minute
 
-	connectCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	connectCtx, cancel := context.WithTimeout(ctx, 25*time.Second)
 	defer cancel()
 
 	pool, err := pgxpool.NewWithConfig(connectCtx, config)
@@ -31,13 +31,22 @@ func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("failed to create pgxpool connection to Neon: %w", err)
 	}
 
-	// Verify connectivity with immediate ping
-	pingCtx, pingCancel := context.WithTimeout(ctx, 5*time.Second)
-	defer pingCancel()
+	// Verify connectivity with ping (allow up to 25s for serverless wake-up)
+	var pingErr error
+	for attempt := 1; attempt <= 3; attempt++ {
+		pingCtx, pingCancel := context.WithTimeout(ctx, 20*time.Second)
+		pingErr = pool.Ping(pingCtx)
+		pingCancel()
+		if pingErr == nil {
+			break
+		}
+		log.Printf("[WARN] Neon ping attempt %d/3 failed: %v. Retrying in 2s...", attempt, pingErr)
+		time.Sleep(2 * time.Second)
+	}
 
-	if err := pool.Ping(pingCtx); err != nil {
+	if pingErr != nil {
 		pool.Close()
-		return nil, fmt.Errorf("failed to ping Neon database: %w", err)
+		return nil, fmt.Errorf("failed to ping Neon database after retries: %w", pingErr)
 	}
 
 	log.Println("[INFO] Successfully established pgx connection pool with Neon Serverless PostgreSQL")

@@ -182,6 +182,23 @@ bayesmarket_up 1
 	// API v1 Group
 	v1 := router.Group("/api/v1")
 	{
+		// 0. Public System Configuration
+		v1.GET("/config", publicReadLimiter.LimitByIP(), func(c *gin.Context) {
+			appEnv := "development"
+			isDev := true
+			googleAuthEnabled := false
+			if cfg != nil {
+				appEnv = cfg.Environment
+				isDev = cfg.IsDevOrLocal()
+				googleAuthEnabled = cfg.GoogleClientID != ""
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"app_env":             appEnv,
+				"is_dev":              isDev,
+				"google_auth_enabled": googleAuthEnabled,
+			})
+		})
+
 		// 1. Auth routes
 		auth := v1.Group("/auth")
 		{
@@ -223,9 +240,18 @@ bayesmarket_up 1
 			tradeHandler.HandleCashOut,
 		)
 
-		// 5. Admin Market Resolution & Payout Settlement (Protected)
+		// 5. Admin Market Management, Creation & Resolution (Protected)
 		admin := v1.Group("/admin")
 		{
+			admin.GET("/verify",
+				middleware.RequireAdminAuth(adminToken, jwtSecret),
+				adminHandler.HandleVerifyAdmin,
+			)
+			admin.POST("/markets",
+				middleware.RequireAdminAuth(adminToken, jwtSecret),
+				actionLimiter.LimitByClientOrUser(),
+				adminHandler.HandleCreateMarket,
+			)
 			admin.POST("/markets/:id/resolve",
 				middleware.RequireAdminAuth(adminToken, jwtSecret),
 				actionLimiter.LimitByClientOrUser(),

@@ -170,3 +170,41 @@ export interface FaucetResponse {
     };
     message?: string;
 }
+
+export interface CreateMarketRequest {
+    title: string;
+    description: string;
+    category: string;
+    resolution_source: string;
+    resolution_date: string;
+    image_url?: string;
+    initial_collateral_usdc?: string;
+    initial_probability_yes?: string;
+}
+
+export interface CreateMarketResponse {
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+    category: string;
+    image_url?: string;
+    resolution_source: string;
+    resolution_date: string;
+    status: string;
+    reserve_yes: string;
+    reserve_no: string;
+    collateral_reserve: string;
+    k_invariant: string;
+    probability_yes: string;
+    probability_no: string;
+    probability_yes_pct: string;
+    probability_no_pct: string;
+    created_at: string;
+}
+
+export interface AppConfig {
+    app_env: string;
+    is_dev: boolean;
+    google_auth_enabled: boolean;
+}

@@ -77,6 +77,7 @@ describe('OrderTerminalComponent', () => {
         authStore = TestBed.inject(AuthStore);
 
         authStore.token.set('test-token');
+        authStore.user.set({ id: 'u1', cash_balance: '500.00', is_guest: true, auth_provider: 'guest', created_at: '2026-01-01T00:00:00Z' });
         authStore.userId.set('u1');
         authStore.cashBalance.set('$500.00');
 
@@ -168,5 +169,15 @@ describe('OrderTerminalComponent', () => {
 
         component.focusAmountInput();
         expect(focusSpy).toHaveBeenCalled();
+    });
+
+    it('should open auth modal when unauthenticated trader attempts to trade', () => {
+        authStore.user.set(null);
+        authStore.token.set(null);
+        fixture.detectChanges();
+
+        expect(component['tradeButtonText']()).toBe('Sign in to Trade');
+        component.onRequestOrderReview();
+        expect(authStore.isAuthModalOpen()).toBe(true);
     });
 });
