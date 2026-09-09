@@ -12,6 +12,7 @@ import { InputComponent } from '../../shared/components/input/input.component';
 import { LabelComponent } from '../../shared/components/label/label.component';
 import { SelectComponent, SelectOption } from '../../shared/components/select/select.component';
 import { TextareaComponent } from '../../shared/components/textarea/textarea.component';
+import { BrandIconComponent } from '../../shared/components/brand-icon/brand-icon.component';
 
 const ADMIN_TOKEN_KEY = 'bayesmarket_admin_token';
 const DEFAULT_DEV_ADMIN_TOKEN = 'bayesmarket-admin-secret-token';
@@ -26,6 +27,7 @@ const DEFAULT_DEV_ADMIN_TOKEN = 'bayesmarket-admin-secret-token';
         RouterLink,
         ButtonComponent,
         BadgeComponent,
+        BrandIconComponent,
         InputComponent,
         LabelComponent,
         SelectComponent,
@@ -51,7 +53,10 @@ const DEFAULT_DEV_ADMIN_TOKEN = 'bayesmarket-admin-secret-token';
                         </app-badge>
                         <span class="env-tag">RESTRICTED ENVIRONMENT</span>
                     </div>
-                    <h1 class="admin-title">Prediction Market Operations</h1>
+                    <div class="admin-title-row">
+                        <app-brand-icon [size]="32" [glow]="true"></app-brand-icon>
+                        <h1 class="admin-title">Prediction Market Operations</h1>
+                    </div>
                     <p class="admin-subtitle">
                         Provision algorithmic binary prediction markets with complete-set CPMM liquidity, or settle mature contracts via authoritative oracle
                         proof.
@@ -494,12 +499,19 @@ const DEFAULT_DEV_ADMIN_TOKEN = 'bayesmarket-admin-secret-token';
                 letter-spacing: 0.5px;
             }
 
+            .admin-title-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 8px;
+            }
+
             .admin-title {
                 font-family: var(--font-ui);
                 font-size: 28px;
                 font-weight: 800;
                 color: var(--ink, #f8f7ff);
-                margin: 0 0 8px 0;
+                margin: 0;
                 letter-spacing: -0.5px;
             }
 

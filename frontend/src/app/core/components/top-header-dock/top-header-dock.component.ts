@@ -5,31 +5,32 @@ import { ThemeService } from '../../services/theme.service';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { BrandIconComponent } from '../../../shared/components/brand-icon/brand-icon.component';
 import { AuthStore } from '../../../state/auth.store';
 
 @Component({
     selector: 'app-top-header-dock',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [RouterLink, RouterLinkActive, ButtonComponent, BadgeComponent, AvatarComponent, LucideLogIn, LucideLogOut, LucideSun, LucideMoon],
+    imports: [
+        RouterLink,
+        RouterLinkActive,
+        ButtonComponent,
+        BadgeComponent,
+        AvatarComponent,
+        BrandIconComponent,
+        LucideLogIn,
+        LucideLogOut,
+        LucideSun,
+        LucideMoon
+    ],
     template: `
         <header class="top-header-dock" role="banner">
             <div class="dock-container">
                 <!-- Left: Brand Emblem & Navigation -->
                 <div class="dock-left">
                     <a routerLink="/" class="brand-link" aria-label="BayesMarket Home">
-                        <div class="brand-emblem" aria-hidden="true">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="10" stroke="var(--primary-border, #7c4dff)" stroke-width="2.5" />
-                                <path
-                                    d="M7 12L10.5 15.5L17 9"
-                                    stroke="var(--accent, #00d4ff)"
-                                    stroke-width="2.5"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                />
-                            </svg>
-                        </div>
+                        <app-brand-icon [size]="30" [glow]="true"></app-brand-icon>
                         <span class="brand-text">Bayes<span class="brand-highlight">Market</span></span>
                     </a>
 
