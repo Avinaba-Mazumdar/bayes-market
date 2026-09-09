@@ -30,7 +30,7 @@ import { AuthStore } from '../../../state/auth.store';
                 <!-- Left: Brand Emblem & Navigation -->
                 <div class="dock-left">
                     <a routerLink="/" class="brand-link" aria-label="BayesMarket Home">
-                        <app-brand-icon [size]="30" [glow]="true"></app-brand-icon>
+                        <app-brand-icon [size]="30"></app-brand-icon>
                         <span class="brand-text">Bayes<span class="brand-highlight">Market</span></span>
                     </a>
 

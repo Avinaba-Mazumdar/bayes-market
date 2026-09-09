@@ -1,68 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <!-- Background: Deep Obsidian Violet matching --surface-card (#131126) and --canvas (#080711) -->
-    <linearGradient id="bm-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#14112c"/>
-      <stop offset="100%" stop-color="#080711"/>
-    </linearGradient>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Solid Primary Color Background -->
+  <rect width="32" height="32" rx="7" fill="#4338ca"/>
 
-    <!-- Glowing Rim: Royal Violet (#7c4dff) -> Electric Sky (#38bdf8) -> Mint (#00dc82) -->
-    <linearGradient id="bm-rim" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#7c4dff" stop-opacity="0.95"/>
-      <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.9"/>
-      <stop offset="100%" stop-color="#00dc82" stop-opacity="0.85"/>
-    </linearGradient>
-
-    <!-- Core Glyph: Royal Violet (#7c4dff) to Electric Lavender (#c4b5fd) -->
-    <linearGradient id="bm-glyph" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#7c4dff"/>
-      <stop offset="50%" stop-color="#a855f7"/>
-      <stop offset="100%" stop-color="#c4b5fd"/>
-    </linearGradient>
-
-    <!-- Prediction Vector: Sky Blue (#7dd3fc) to Mint YES (#00dc82) -->
-    <linearGradient id="bm-vec" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#7dd3fc"/>
-      <stop offset="100%" stop-color="#00dc82"/>
-    </linearGradient>
-
-    <!-- Radial Violet Ambient Glow -->
-    <radialGradient id="bm-radial-glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#7c4dff" stop-opacity="0.32"/>
-      <stop offset="60%" stop-color="#38bdf8" stop-opacity="0.08"/>
-      <stop offset="100%" stop-color="#7c4dff" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-
-  <!-- Container Squircle with Royal Violet / Sky Rim -->
-  <rect x="2.5" y="2.5" width="59" height="59" rx="16" fill="url(#bm-bg)"/>
-  <rect x="2.5" y="2.5" width="59" height="59" rx="16" stroke="url(#bm-rim)" stroke-width="1.8"/>
-
-  <!-- Radial Core Glow -->
-  <circle cx="32" cy="32" r="22" fill="url(#bm-radial-glow)"/>
-
-  <!-- Ambient Bayesian Bell Curve (Prior Probability Wave) -->
-  <path d="M10 46 C18 46, 24 23, 32 23 C40 23, 46 46, 54 46" 
-        stroke="#7dd3fc" stroke-width="1.6" stroke-dasharray="2 3.5" stroke-opacity="0.4" stroke-linecap="round"/>
-
-  <!-- Bayesian 'B' Emblem in Royal Violet -->
-  <!-- 1. Vertical Probability Axis (Spine) -->
-  <rect x="18" y="14" width="4.5" height="36" rx="2.25" fill="url(#bm-glyph)"/>
-
-  <!-- 2. Upper Loop (Prior Distribution) -->
-  <path d="M19.5 15.5 H33 C38.5 15.5, 42 19, 42 24 C42 29, 38.5 32, 33 32 H19.5" 
-        stroke="url(#bm-glyph)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
-
-  <!-- 3. Lower Loop (Posterior Distribution) -->
-  <path d="M19.5 32 H35 C41.5 32, 45.5 35.5, 45.5 41 C45.5 46.5, 41.5 49, 35 49 H19.5" 
-        stroke="url(#bm-glyph)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
-
-  <!-- 4. Ascending Prediction Vector -->
-  <path d="M13 42 L26 28 L37 34 L48 16" 
-        stroke="url(#bm-vec)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-
-  <!-- 5. Outcome Probability Vertices -->
-  <circle cx="26" cy="28" r="2.2" fill="#38bdf8"/>
-  <circle cx="48" cy="16" r="3.4" fill="#00dc82"/>
-  <circle cx="48" cy="16" r="1.6" fill="#ffffff"/>
+  <!-- Simple Lucide TrendingUp Icon -->
+  <g transform="translate(4, 4)">
+    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="16 7 22 7 22 13" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 </svg>
