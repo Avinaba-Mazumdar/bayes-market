@@ -39,7 +39,10 @@ func Load() (*Config, error) {
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
-		port = "8080"
+		port = os.Getenv("PORT")
+		if port == "" {
+			port = "8080"
+		}
 	}
 
 	corsOrigin := os.Getenv("CORS_ORIGIN")
