@@ -1,5 +1,11 @@
 # BayesMarket
 
+[![CI](https://github.com/Avinaba-Mazumdar/bayesmarket-oss/actions/workflows/ci.yml/badge.svg)](https://github.com/Avinaba-Mazumdar/bayesmarket-oss/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Go Version](https://img.shields.io/badge/Go-1.24%2B-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![Angular](https://img.shields.io/badge/Angular-22%20(Zoneless)-DD0031?logo=angular&logoColor=white)](https://angular.dev)
+[![WCAG AAA](https://img.shields.io/badge/WCAG%202.2-Level%20AAA-brightgreen)](target/DESIGN.md)
+
 > **High-Performance Binary Prediction Market Exchange Engine & Reactive Trading Platform**
 
 BayesMarket is a modern, open-source prediction market platform inspired by Polymarket. Users trade binary outcome shares (**YES** and **NO**) on real-world events.

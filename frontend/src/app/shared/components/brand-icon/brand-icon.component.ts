@@ -17,13 +17,7 @@ export type BrandIconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
             role="img"
             [attr.aria-label]="ariaLabel() || 'BayesMarket logo'"
         >
-            <svg
-                lucideTrendingUp
-                class="brand-lucide-icon"
-                [size]="iconSize()"
-                [strokeWidth]="2.5"
-                aria-hidden="true"
-            ></svg>
+            <svg lucideTrendingUp class="brand-lucide-icon" [size]="iconSize()" [strokeWidth]="2.5" aria-hidden="true"></svg>
         </div>
     `,
     styles: [
@@ -55,8 +49,8 @@ export type BrandIconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
                 display: block;
                 color: #ffffff;
             }
-        `,
-    ],
+        `
+    ]
 })
 export class BrandIconComponent {
     public readonly size = input<BrandIconSize>('md');
